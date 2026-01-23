@@ -10,9 +10,13 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "turbo": "latest",
-    "prettier": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
     "eslint": "latest",
+    "eslint-plugin-svelte": "^3.14.0",
+    "prettier": "latest",
+    "svelte-eslint-parser": "^1.4.1",
+    "turbo": "latest",
     "typescript": "latest"
   },
   "workspaces": [
