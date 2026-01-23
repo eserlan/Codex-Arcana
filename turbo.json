@@ -6,12 +6,16 @@
         "^build"
       ],
       "outputs": [
-        ".next/**",
-        "!.next/cache/**",
+        ".svelte-kit/**",
         "dist/**"
       ]
     },
     "lint": {},
+    "test": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
     "dev": {
       "cache": false,
       "persistent": true
