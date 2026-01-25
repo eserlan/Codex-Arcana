@@ -24,11 +24,13 @@
     "editor-core": "*",
     "graph-engine": "*",
     "idb": "^7.1.1",
+    "js-yaml": "^4.1.1",
     "rxdb": "^15.0.0",
     "rxjs": "^7.8.0",
     "schema": "*"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.0",
     "@sveltejs/adapter-auto": "^7.0.0",
     "@sveltejs/kit": "^2.49.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
@@ -36,6 +38,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.3.1",
     "@types/google.accounts": "^0.0.18",
+    "@types/js-yaml": "^4.0.9",
     "autoprefixer": "^10.4.23",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.6",
@@ -44,6 +47,6 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
-    "vitest": "^1.6.1"
+    "vitest": "^4.0.18"
   }
 }
