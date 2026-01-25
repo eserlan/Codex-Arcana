@@ -69,6 +69,8 @@
                 <button
                     onclick={onClose}
                     class="text-green-700 hover:text-green-500 transition"
+                    aria-label="Close panel"
+                    title="Close"
                 >
                     <svg
                         class="w-5 h-5"
@@ -90,9 +92,10 @@
                 <div class="mb-4">
                     <label
                         class="block text-[10px] text-green-600 font-bold mb-1"
-                        >IMAGE URL</label
+                        for="entity-image-url">IMAGE URL</label
                     >
                     <input
+                        id="entity-image-url"
                         type="text"
                         bind:value={editImage}
                         class="bg-black/50 border border-green-800 text-gray-300 px-2 py-1 text-xs focus:outline-none focus:border-green-500 w-full placeholder-green-900/50"

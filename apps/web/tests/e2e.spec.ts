@@ -61,13 +61,13 @@ test.describe('Vault E2E', () => {
             try {
                 // Try simple assignment first
                 // @ts-ignore
-                window.indexedDB = mockIDB;
+                window.indexedDB = mockIDB as unknown as IDBFactory;
             } catch (e) {
                 console.log('Simple assignment failed, trying defineProperty');
             }
 
             // Force override if simple assignment didn't work or just to be safe
-            if (window.indexedDB !== mockIDB) {
+            if (window.indexedDB !== (mockIDB as unknown as IDBFactory)) {
                 Object.defineProperty(window, 'indexedDB', {
                     value: mockIDB,
                     writable: true,
@@ -82,7 +82,7 @@ test.describe('Vault E2E', () => {
                 queryPermission: async () => 'granted',
                 entries: async function* () { return; },
                 values: () => [],
-                getFileHandle: async (name) => ({
+                getFileHandle: async (name: string) => ({
                     kind: 'file',
                     name: name,
                     getFile: async () => new File(['---\nid: ' + name.replace('.md', '') + '\ntitle: ' + name + '\ntype: npc\n---\n# Content'], name)
@@ -137,7 +137,7 @@ test.describe('Vault E2E', () => {
                             yield [file.name, handle];
                         }
                     },
-                    getFileHandle: async (name) => ({
+                    getFileHandle: async (name: string) => ({
                         kind: 'file',
                         name: name,
                         getFile: async () => new File([''], name)
@@ -179,7 +179,7 @@ test.describe('Vault E2E', () => {
                 kind: "directory", name: "test-vault", requestPermission: async () => "granted", queryPermission: async () => "granted",
                 values: () => files,
                 entries: async function* () { for (const f of files) yield [f.name, { kind: "file", name: f.name, getFile: async () => new File([f.content], f.name) }]; },
-                getFileHandle: async (name) => ({ kind: "file", name, getFile: async () => new File([""], name) }),
+                getFileHandle: async (name: string) => ({ kind: "file", name, getFile: async () => new File([""], name) }),
                 getDirectoryHandle: async () => ({})
             });
         });
@@ -205,7 +205,7 @@ test.describe('Vault E2E', () => {
                 kind: "directory", name: "test-vault", requestPermission: async () => "granted", queryPermission: async () => "granted",
                 values: () => files,
                 entries: async function* () { for (const f of files) yield [f.name, { kind: "file", name: f.name, getFile: async () => new File([f.content], f.name) }]; },
-                getFileHandle: async (name) => ({ kind: "file", name, getFile: async () => new File([""], name) }),
+                getFileHandle: async (name: string) => ({ kind: "file", name, getFile: async () => new File([""], name) }),
                 getDirectoryHandle: async () => ({})
             });
         });

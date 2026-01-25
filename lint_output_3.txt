@@ -1,0 +1,77 @@
+
+> web@0.0.1 lint
+> svelte-check --tsconfig ./tsconfig.json && eslint .
+
+Loading svelte-check in workspace: /home/espen/proj/Codex-Arcana/apps/web
+Getting Svelte diagnostics...
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/components/GraphView.svelte:289:5
+Warn: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+  <div class="absolute bottom-6 left-6 z-20 flex gap-1">
+    <button
+      class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
+      onclick={() => cy?.zoom(cy.zoom() * 1.2)}
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        ><path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+        ></path></svg
+      >
+    </button>
+    <button
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/components/GraphView.svelte:302:5
+Warn: Buttons and links should either contain text or have an `aria-label`, `aria-labelledby` or `title` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+    </button>
+    <button
+      class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
+      onclick={() => cy?.zoom(cy.zoom() / 1.2)}
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        ><path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
+        ></path></svg
+      >
+    </button>
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/components/GraphView.svelte:202:13
+Error: 'cy' is possibly 'undefined'. (ts)
+          if (currentIds.has(el.data.id)) {
+            cy.$id(el.data.id).data(el.data);
+          }
+
+/home/espen/proj/Codex-Arcana/apps/web/tests/e2e.spec.ts:70:17
+Error: This comparison appears to be unintentional because the types 'IDBFactory' and '{ open: () => any; }' have no overlap. 
+            // Force override if simple assignment didn't work or just to be safe
+            if (window.indexedDB !== mockIDB) {
+                Object.defineProperty(window, 'indexedDB', {
+
+/home/espen/proj/Codex-Arcana/apps/web/tests/e2e.spec.ts:85:39
+Error: Parameter 'name' implicitly has an 'any' type. 
+                values: () => [],
+                getFileHandle: async (name) => ({
+                    kind: 'file',
+
+/home/espen/proj/Codex-Arcana/apps/web/tests/e2e.spec.ts:140:43
+Error: Parameter 'name' implicitly has an 'any' type. 
+                    },
+                    getFileHandle: async (name) => ({
+                        kind: 'file',
+
+====================================
+svelte-check found 4 errors and 2 warnings in 2 files
+npm error Lifecycle script `lint` failed with error:
+npm error code 1
+npm error path /home/espen/proj/Codex-Arcana/apps/web
+npm error workspace web@0.0.1
+npm error location /home/espen/proj/Codex-Arcana/apps/web
+npm error command failed
+npm error command sh -c svelte-check --tsconfig ./tsconfig.json && eslint .

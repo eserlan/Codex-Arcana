@@ -1,6 +1,6 @@
 import { parseMarkdown, stringifyEntity, sanitizeId } from '../utils/markdown';
 import { walkDirectory, readFile, writeFile } from '../utils/fs';
-import { getPersistedHandle, persistHandle, clearPersistedHandle } from '../utils/idb';
+import { getPersistedHandle, persistHandle } from '../utils/idb';
 import type { Entity } from 'schema';
 
 class VaultStore {
@@ -64,6 +64,7 @@ class VaultStore {
   async openDirectory() {
     this.errorMessage = null;
 
+    // @ts-ignore
     if (typeof window.showDirectoryPicker === 'undefined') {
       this.status = 'error';
       this.errorMessage = "API unsupported. Try Chrome or check Brave Shield/Flags.";

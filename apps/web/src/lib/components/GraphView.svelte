@@ -199,7 +199,7 @@
         // 3. Update existing elements (labels, etc)
         graph.elements.forEach((el) => {
           if (currentIds.has(el.data.id)) {
-            cy.$id(el.data.id).data(el.data);
+            cy?.$id(el.data.id).data(el.data);
           }
         });
 
@@ -215,6 +215,7 @@
           const layout = cy.layout({
             name: "cose",
             animate: true,
+            // @ts-ignore - 'duration' is valid for cose but types might be strict
             duration: 800,
             padding: 50,
             componentSpacing: 100,
@@ -288,6 +289,8 @@
     <button
       class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
       onclick={() => cy?.zoom(cy.zoom() * 1.2)}
+      title="Zoom In"
+      aria-label="Zoom In"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
         ><path
@@ -301,6 +304,8 @@
     <button
       class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
       onclick={() => cy?.zoom(cy.zoom() / 1.2)}
+      title="Zoom Out"
+      aria-label="Zoom Out"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
         ><path

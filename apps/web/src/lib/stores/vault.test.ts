@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { vault } from './vault.svelte';
+import { SvelteMap } from 'svelte/reactivity';
 import * as fsUtils from '../utils/fs';
 
 // Mock dependencies
@@ -7,6 +8,12 @@ vi.mock('../utils/fs', () => ({
   walkDirectory: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
+}));
+
+vi.mock('../utils/idb', () => ({
+  persistHandle: vi.fn(),
+  getPersistedHandle: vi.fn(),
+  clearPersistedHandle: vi.fn(),
 }));
 
 // Mock global window.showDirectoryPicker
@@ -18,11 +25,11 @@ global.window.showDirectoryPicker = vi.fn();
 describe('VaultStore', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vault.entities = new Map();
+    vault.entities = {};
   });
 
   it('should initialize with empty state', () => {
-    expect(vault.entities.size).toBe(0);
+    expect(Object.keys(vault.entities).length).toBe(0);
     expect(vault.status).toBe('idle');
   });
 
@@ -49,9 +56,9 @@ Content`);
     await vault.openDirectory();
 
     expect(vault.status).toBe('idle');
-    expect(vault.entities.size).toBe(1);
+    expect(Object.keys(vault.entities).length).toBe(1);
 
-    const entity = vault.entities.get('test');
+    const entity = vault.entities['test'];
     expect(entity).toBeDefined();
     expect(entity?.title).toBe('Test Node');
   });
@@ -63,19 +70,19 @@ Content`);
 
     const id = await vault.createEntity('npc', 'New Hero');
     expect(id).toBe('new-hero');
-    expect(vault.entities.has(id)).toBe(true);
-    expect(vault.entities.get(id)?.title).toBe('New Hero');
+    expect(vault.entities[id]).toBeDefined();
+    expect(vault.entities[id]?.title).toBe('New Hero');
   });
 
   it('should update entity and schedule save', async () => {
     vi.useFakeTimers();
     const mockFileHandle = { createWritable: vi.fn().mockResolvedValue({ write: vi.fn(), close: vi.fn() }) };
     const entity = { id: 'test', title: 'Test', _fsHandle: mockFileHandle } as any;
-    vault.entities.set('test', entity);
+    vault.entities['test'] = entity;
 
     vault.updateEntity('test', { title: 'Updated' });
 
-    expect(vault.entities.get('test')?.title).toBe('Updated');
+    expect(vault.entities['test']?.title).toBe('Updated');
 
     // Fast-forward debounce timer
     vi.runAllTimers();
@@ -89,16 +96,16 @@ Content`);
     const mockRootHandle = { removeEntry: vi.fn() };
     vault.rootHandle = mockRootHandle as any;
 
-    vault.entities.set('test', {
+    vault.entities['test'] = {
       id: 'test',
       _fsHandle: mockFileHandle,
       _path: ['test.md']
-    } as any);
+    } as any;
 
     await vault.deleteEntity('test');
 
     expect(mockRootHandle.removeEntry).toHaveBeenCalledWith('test.md');
-    expect(vault.entities.has('test')).toBe(false);
+    expect(vault.entities['test']).toBeUndefined();
   });
 
   it('should parse wiki-links with labels correctly', async () => {
@@ -113,7 +120,7 @@ Link to [[Other|The Label]]`);
     window.showDirectoryPicker.mockResolvedValue({});
     await vault.openDirectory();
 
-    const entity = vault.entities.get('test');
+    const entity = vault.entities['test'];
     expect(entity?.connections).toContainEqual({
       target: 'other',
       type: 'related_to',

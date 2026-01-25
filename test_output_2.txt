@@ -1,0 +1,82 @@
+
+> web@0.0.1 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/home/espen/proj/Codex-Arcana/apps/web[39m
+
+ [32m✓[39m src/lib/cloud-bridge/sync-engine/conflict.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/cloud-bridge/sync-engine/engine.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/smoke.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/cloud-bridge/google-drive/adapter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstderr[2m | src/lib/stores/vault.test.ts[2m > [22m[2mVaultStore[2m > [22m[2mshould load files from directory
+[22m[39mReferenceError: indexedDB is not defined
+    at [90m/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/utils/idb.ts:30:25
+    at new Promise (<anonymous>)
+    at persistHandle [90m(/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/utils/idb.ts:29:12[90m)[39m
+    at VaultStore.openDirectory [90m(/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/stores/vault.svelte.ts:82:13[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at [90m/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/stores/vault.test.ts:50:5
+    at [90mfile:///home/espen/proj/Codex-Arcana/apps/web/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | src/lib/stores/vault.test.ts[2m > [22m[2mVaultStore[2m > [22m[2mshould parse wiki-links with labels correctly
+[22m[39mReferenceError: indexedDB is not defined
+    at [90m/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/utils/idb.ts:30:25
+    at new Promise (<anonymous>)
+    at persistHandle [90m(/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/utils/idb.ts:29:12[90m)[39m
+    at VaultStore.openDirectory [90m(/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/stores/vault.svelte.ts:82:13[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at [90m/home/espen/proj/Codex-Arcana/apps/web/[39msrc/lib/stores/vault.test.ts:115:5
+    at [90mfile:///home/espen/proj/Codex-Arcana/apps/web/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+ [31m❯[39m src/lib/stores/vault.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 22[2mms[22m[39m
+     [32m✓[39m should initialize with empty state[32m 1[2mms[22m[39m
+[31m     [31m×[31m should load files from directory[39m[32m 10[2mms[22m[39m
+     [32m✓[39m should create new entity[32m 3[2mms[22m[39m
+     [32m✓[39m should update entity and schedule save[32m 3[2mms[22m[39m
+     [32m✓[39m should delete entity[32m 1[2mms[22m[39m
+[31m     [31m×[31m should parse wiki-links with labels correctly[39m[32m 2[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/lib/stores/vault.test.ts[2m > [22mVaultStore[2m > [22mshould load files from directory
+[31m[1mAssertionError[22m: expected 'error' to be 'idle' // Object.is equality[39m
+
+Expected: [32m"idle"[39m
+Received: [31m"error"[39m
+
+[36m [2m❯[22m src/lib/stores/vault.test.ts:[2m52:26[22m[39m
+    [90m 50| [39m    [35mawait[39m vault[33m.[39m[34mopenDirectory[39m()[33m;[39m
+    [90m 51| [39m
+    [90m 52| [39m    [34mexpect[39m(vault[33m.[39mstatus)[33m.[39m[34mtoBe[39m([32m'idle'[39m)[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m 53| [39m    [34mexpect[39m([33mObject[39m[33m.[39m[34mkeys[39m(vault[33m.[39mentities)[33m.[39mlength)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m 54| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/lib/stores/vault.test.ts[2m > [22mVaultStore[2m > [22mshould parse wiki-links with labels correctly
+[31m[1mTypeError[22m: undefined is not iterable (cannot read property Symbol(Symbol.iterator))[39m
+[36m [2m❯[22m src/lib/stores/vault.test.ts:[2m118:33[22m[39m
+    [90m116| [39m
+    [90m117| [39m    [35mconst[39m entity [33m=[39m vault[33m.[39mentities[[32m'test'[39m][33m;[39m
+    [90m118| [39m    [34mexpect[39m(entity[33m?.[39mconnections)[33m.[39m[34mtoContainEqual[39m({
+    [90m   | [39m                                [31m^[39m
+    [90m119| [39m      target[33m:[39m [32m'other'[39m[33m,[39m
+    [90m120| [39m      type[33m:[39m [32m'related_to'[39m[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 16:25:28
+[2m   Duration [22m 1.15s[2m (transform 891ms, setup 0ms, import 1.15s, tests 35ms, environment 4ms)[22m
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /home/espen/proj/Codex-Arcana/apps/web
+npm error workspace web@0.0.1
+npm error location /home/espen/proj/Codex-Arcana/apps/web
+npm error command failed
+npm error command sh -c vitest run

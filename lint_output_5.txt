@@ -1,0 +1,71 @@
+
+> web@0.0.1 lint
+> svelte-check --tsconfig ./tsconfig.json && eslint .
+
+Loading svelte-check in workspace: /home/espen/proj/Codex-Arcana/apps/web
+Getting Svelte diagnostics...
+
+svelte-check found 0 errors and 0 warnings
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/components/EntityDetailPanel.svelte
+  14:5  error  Move function declaration to program root  no-inner-declarations
+  21:5  error  Move function declaration to program root  no-inner-declarations
+  25:5  error  Move function declaration to program root  no-inner-declarations
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/components/GraphView.svelte
+   17:3   error  Move function declaration to program root                                                                            no-inner-declarations
+   25:3   error  Move function declaration to program root                                                                            no-inner-declarations
+  218:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/components/VaultControls.svelte
+  9:5  error  Move function declaration to program root  no-inner-declarations
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/stores/vault.svelte.ts
+    3:45  error  'clearPersistedHandle' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   44:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   52:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   67:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   76:7   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  124:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  159:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  196:7   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  198:7   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  212:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  214:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  221:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/stores/vault.test.ts
+    3:10  error  'SvelteMap' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   20:1   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   22:1   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   53:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  119:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+/home/espen/proj/Codex-Arcana/apps/web/src/lib/utils/fs.ts
+  28:3  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+/home/espen/proj/Codex-Arcana/apps/web/tests/e2e.spec.ts
+    9:14  error  This generator function does not have 'yield'                                                                        require-yield
+   44:77  error  Expected an assignment or function call and instead saw an expression                                                @typescript-eslint/no-unused-expressions
+   55:25  error  Expected an assignment or function call and instead saw an expression                                                @typescript-eslint/no-unused-expressions
+   63:17  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   65:22  error  'e' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   83:26  error  This generator function does not have 'yield'                                                                        require-yield
+   93:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  121:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  177:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  203:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+/home/espen/proj/Codex-Arcana/apps/web/tests/vault.spec.ts
+  1:16  error  'expect' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  6:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+✖ 37 problems (37 errors, 0 warnings)
+
+npm error Lifecycle script `lint` failed with error:
+npm error code 1
+npm error path /home/espen/proj/Codex-Arcana/apps/web
+npm error workspace web@0.0.1
+npm error location /home/espen/proj/Codex-Arcana/apps/web
+npm error command failed
+npm error command sh -c svelte-check --tsconfig ./tsconfig.json && eslint .
