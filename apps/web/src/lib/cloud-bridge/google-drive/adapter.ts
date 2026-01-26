@@ -78,7 +78,7 @@ export class GoogleDriveAdapter implements ICloudAdapter {
   async disconnect(): Promise<void> {
     const token = gapi.client.getToken();
     if (token !== null) {
-      google.accounts.oauth2.revoke(token.access_token, () => {});
+      google.accounts.oauth2.revoke(token.access_token, () => { });
       gapi.client.setToken(null);
       this.accessToken = null;
     }
@@ -115,11 +115,10 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     return fileMap;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async uploadFile(
-    _path: string,
-    _content: string | Blob,
-    _existingId?: string,
+    _path: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _content: string | Blob, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _existingId?: string, // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<RemoteFileMeta> {
     if (!this.accessToken) throw new Error("Not authenticated");
     // Simplified upload logic for MVP
