@@ -141,10 +141,18 @@ class VaultStore {
 
       newEntities[entity.id] = entity;
 
+      const metadataKeywords = Object.values(entity.metadata || {}).flatMap((value) => {
+        if (typeof value === 'string') return [value];
+        if (Array.isArray(value)) {
+          return value.filter((item) => typeof item === 'string') as string[];
+        }
+        return [];
+      });
+
       const keywords = [
         ...(entity.tags || []),
         (metadata as any).lore || '',
-        Object.values(entity.metadata || {}).join(' ')
+        ...metadataKeywords
       ].join(' ');
 
       const searchEntry = {

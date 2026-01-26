@@ -2,6 +2,7 @@ export interface SearchEntry {
   id: string;
   title: string;
   content: string;
+  keywords?: string;
   path: string;
   updatedAt: number;
 }

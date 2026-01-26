@@ -5,6 +5,7 @@
   import { goto } from "$app/navigation";
   import type { SearchResult } from "schema";
   import { marked } from "marked";
+  import DOMPurify from "isomorphic-dompurify";
 
   let inputElement: HTMLInputElement;
   let resultsContainer: HTMLDivElement;
@@ -95,9 +96,10 @@
 
   const highlightText = (text: string, query: string) => {
     if (!query || !text) return text;
-    // Escape regex characters in query
-    const safeQuery = query.replace(/[.*+?^${}()|[\\]/g, "\\$& ");
+    // Escape regex characters in query (canonical)
+    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`(${safeQuery})`, "gi");
+    // Note: We don't sanitize here yet, we sanitize the final HTML
     return text.replace(
       regex,
       '<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-inherit rounded-sm px-0.5">$1</mark>',
@@ -106,10 +108,20 @@
 
   const renderMarkdown = (text: string, query: string) => {
     if (!text) return "";
-    // 1. Highlight first (adds <mark> tags)
+
+    // 1. Highlight matches (injects <mark> tags into raw text)
     const highlighted = highlightText(text, query);
-    // 2. Parse inline markdown (marked preserves HTML tags by default)
-    return marked.parseInline(highlighted);
+
+    // 2. Parse markdown to HTML
+    const rawHtml = marked.parseInline(highlighted) as string;
+
+    // 3. Sanitize the resulting HTML, allowing <mark> tags
+    // we assume marked might return a promise if async, but parseInline is usually sync.
+    // Typescript might complain if marked.async is true, but standard usage is string.
+    return DOMPurify.sanitize(rawHtml, {
+      ADD_TAGS: ["mark"],
+      ADD_ATTR: ["class"],
+    });
   };
 </script>
 
