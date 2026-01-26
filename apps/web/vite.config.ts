@@ -7,6 +7,9 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.{js,ts}"],
   },
   server: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "unsafe-none",
+    },
     fs: {
       // Allow serving files from the workspace root
       allow: [".."],

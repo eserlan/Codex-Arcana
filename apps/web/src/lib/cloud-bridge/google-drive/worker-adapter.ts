@@ -4,7 +4,7 @@ const API_BASE = "https://www.googleapis.com/drive/v3/files";
 const UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3/files";
 
 export class WorkerDriveAdapter implements ICloudAdapter {
-  constructor(private accessToken: string) {}
+  constructor(private accessToken: string, private folderId?: string) {}
 
   async connect(): Promise<string> {
     return "connected-via-token";
@@ -15,6 +15,7 @@ export class WorkerDriveAdapter implements ICloudAdapter {
   }
 
   async listFiles(): Promise<Map<string, RemoteFileMeta>> {
+    if (!this.folderId) throw new Error("WorkerDriveAdapter: folderId is required");
     const url = new URL(API_BASE);
     url.searchParams.append("pageSize", "1000");
     url.searchParams.append(
@@ -23,7 +24,7 @@ export class WorkerDriveAdapter implements ICloudAdapter {
     );
     url.searchParams.append(
       "q",
-      "mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+      `'${this.folderId}' in parents and trashed = false`,
     );
 
     const res = await fetch(url.toString(), {
@@ -55,6 +56,7 @@ export class WorkerDriveAdapter implements ICloudAdapter {
     content: string | Blob,
     existingId?: string,
   ): Promise<RemoteFileMeta> {
+    if (!this.folderId) throw new Error("WorkerDriveAdapter: folderId is required");
     const method = existingId ? "PATCH" : "POST";
     const baseUrl = existingId ? `${UPLOAD_BASE}/${existingId}` : UPLOAD_BASE;
     const url = new URL(baseUrl);
@@ -64,7 +66,7 @@ export class WorkerDriveAdapter implements ICloudAdapter {
       name: path.split("/").pop(),
       mimeType:
         typeof content === "string" ? "text/markdown" : "application/json",
-      parents: existingId ? undefined : ["appDataFolder"], // Or specific folder ID
+      parents: existingId ? undefined : [this.folderId],
     };
 
     const form = new FormData();

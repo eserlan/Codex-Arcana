@@ -56,25 +56,41 @@ export class WorkerBridge {
   }
 
   async startSync() {
+    console.log('WorkerBridge: startSync triggered');
     const config = get(cloudConfig) as CloudConfig;
-    if (!config.enabled) return;
-
-    // Only proceed if already authenticated. We don't want to trigger popups automatically on load.
-    if (!this.gdriveAdapter.isAuthenticated()) {
+    if (!config.enabled) {
+      console.warn('WorkerBridge: Sync skipped - Cloud Bridge not enabled');
       return;
     }
 
-    // Get the raw access token (Note: GoogleDriveAdapter needs to expose this or we cheat a bit)
-    // Since GoogleDriveAdapter encapsulates it, we might need a getter.
-    // For now, let's assume we can get it via gapi
+    if (!this.gdriveAdapter.isAuthenticated()) {
+      console.warn('WorkerBridge: Sync skipped - Not authenticated');
+      return;
+    }
+
     const token = gapi.client.getToken()?.access_token;
+    const folderId = localStorage.getItem('gdrive_folder_id');
+    const rootHandle = vault.rootHandle;
+
+    console.log('WorkerBridge: Initializing sync with:', { 
+      hasToken: !!token, 
+      folderId, 
+      hasRootHandle: !!rootHandle 
+    });
 
     if (token) {
       this.worker.postMessage({
         type: "INIT_SYNC",
-        payload: { accessToken: token },
+        payload: { 
+          accessToken: token,
+          folderId: folderId || undefined,
+          rootHandle: rootHandle
+        },
       });
+      console.log('WorkerBridge: Sent INIT_SYNC and START_SYNC');
       this.worker.postMessage({ type: "START_SYNC" });
+    } else {
+      console.error('WorkerBridge: Failed to get access token from GAPI');
     }
   }
 }

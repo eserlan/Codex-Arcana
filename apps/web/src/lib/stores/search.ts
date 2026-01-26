@@ -77,7 +77,8 @@ function createSearchStore() {
         return s;
       });
       return selected;
-    }
+    },
+    update // Expose for testing/extensions
   };
 }
 

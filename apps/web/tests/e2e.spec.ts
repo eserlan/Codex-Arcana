@@ -16,10 +16,10 @@ const mockFileSystem = {
       new File(
         [
           "---\nid: " +
-            name.replace(".md", "") +
-            "\ntitle: " +
-            name +
-            "\ntype: npc\n---\n# Content",
+          name.replace(".md", "") +
+          "\ntitle: " +
+          name +
+          "\ntype: npc\n---\n# Content",
         ],
         name,
       ),
@@ -41,7 +41,7 @@ test.describe("Vault E2E", () => {
           const request: any = {};
           setTimeout(() => {
             request.result = {
-              createObjectStore: () => {},
+              createObjectStore: () => { },
               objectStoreNames: { contains: () => false },
               transaction: () => ({
                 objectStore: () => ({
@@ -104,10 +104,10 @@ test.describe("Vault E2E", () => {
             new File(
               [
                 "---\nid: " +
-                  name.replace(".md", "") +
-                  "\ntitle: " +
-                  name +
-                  "\ntype: npc\n---\n# Content",
+                name.replace(".md", "") +
+                "\ntitle: " +
+                name +
+                "\ntype: npc\n---\n# Content",
               ],
               name,
             ),
@@ -125,16 +125,15 @@ test.describe("Vault E2E", () => {
   });
 
   test("Initial State (No Vault)", async ({ page }) => {
-    await expect(page.getByText("No Vault Open")).toBeVisible();
+    await expect(page.getByText("NO SIGNAL")).toBeVisible();
     await expect(
-      page.getByText("Open a folder to visualize your vault"),
+      page.getByText("Open a local vault to initiate surveillance."),
     ).toBeVisible();
   });
 
   test("Open Empty Vault", async ({ page }) => {
-    await page.getByRole("button", { name: "Open Vault" }).click();
-    await expect(page.getByText("0 Entities")).toBeVisible();
-    await expect(page.getByText("Your vault is empty")).toBeVisible();
+    await page.getByRole("button", { name: "OPEN VAULT" }).click();
+    await expect(page.getByTestId("entity-count")).toHaveText("0 ENTITIES");
   });
 
   test("Open Populated Vault", async ({ page }) => {
@@ -187,19 +186,25 @@ test.describe("Vault E2E", () => {
     // Actually, initScript runs on load. We need to reload to change the mock behavior effectively or overwrite it.
     await page.reload();
 
-    await page.getByRole("button", { name: "Open Vault" }).click();
+    await page.getByRole("button", { name: "OPEN VAULT" }).click();
 
     // Verify Header Status
-    // Use more specific locator or text to avoid ambiguity
-    await expect(page.locator("text=Visualizing 2 entities")).toBeVisible();
+    await expect(page.getByTestId("entity-count")).toHaveText("2 ENTITIES");
 
-    // Verify Entity Cards
-    await expect(page.getByText("Alice", { exact: true })).toBeVisible();
-    await expect(page.getByText("Bob", { exact: true })).toBeVisible();
+    // Verify Entity Cards via Search (since Graph is Canvas-based)
+    // Open Search Modal
+    await page.keyboard.press("Control+k");
+    await page.keyboard.press("Meta+k");
 
-    // Check for NPC tag
-    const tags = await page.getByText("npc").all();
-    expect(tags.length).toBeGreaterThan(0);
+    await expect(page.getByPlaceholder("Search notes...")).toBeVisible();
+
+    // Type query to populate results
+    await page.getByPlaceholder("Search notes...").fill("Alice");
+
+    await expect(page.getByTestId("search-result").filter({ hasText: "Alice" })).toBeVisible();
+
+    // Close search to reset state if needed
+    await page.keyboard.press("Escape");
   });
 
   test("Graph View Renders with Height", async ({ page }) => {

@@ -13,6 +13,10 @@ export class FileSystemAdapter {
     }
   }
 
+  setRoot(handle: FileSystemDirectoryHandle) {
+    this.root = handle;
+  }
+
   async listAllFiles(): Promise<FileEntry[]> {
     await this.init();
     const files: FileEntry[] = [];

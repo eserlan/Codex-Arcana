@@ -11,6 +11,12 @@
 
 	onMount(() => {
 		vault.init();
+
+		// Expose for E2E testing
+		if (import.meta.env.DEV) {
+			(window as any).searchStore = searchStore;
+			(window as any).vault = vault;
+		}
 	});
 
 	const handleKeydown = (event: KeyboardEvent) => {

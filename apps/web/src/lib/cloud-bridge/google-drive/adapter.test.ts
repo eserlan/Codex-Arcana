@@ -1,4 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("$env/static/public", () => ({
+  VITE_GOOGLE_CLIENT_ID: "fake-client-id"
+}));
+
+// Mock import.meta.env
+(import.meta.env as any).VITE_GOOGLE_CLIENT_ID = "fake-client-id";
+
 import { GoogleDriveAdapter } from "./adapter";
 
 // Mock the global google object
@@ -10,7 +18,10 @@ const mockTokenClient = {
 const mockGoogle = {
   accounts: {
     oauth2: {
-      initTokenClient: vi.fn().mockReturnValue(mockTokenClient),
+      initTokenClient: vi.fn().mockImplementation(() => ({
+        callback: null,
+        requestAccessToken: vi.fn(),
+      })),
       hasGrantedAllScopes: vi.fn().mockReturnValue(true),
     },
   },
@@ -42,10 +53,13 @@ describe("GoogleDriveAdapter Auth", () => {
   it("should request access token when connect is called", async () => {
     const connectPromise = adapter.connect();
 
+    // Get the dynamically created token client from the last call
+    const tokenClient = vi.mocked(mockGoogle.accounts.oauth2.initTokenClient).mock.results[0].value;
+
     // Simulate callback
-    expect(mockTokenClient.requestAccessToken).toHaveBeenCalled();
+    expect(tokenClient.requestAccessToken).toHaveBeenCalled();
     // In connect(), the callback is reassigned on the tokenClient
-    mockTokenClient.callback({ access_token: "fake-token" });
+    tokenClient.callback({ access_token: "fake-token" });
 
     await connectPromise;
     expect(adapter.isAuthenticated()).toBe(true);

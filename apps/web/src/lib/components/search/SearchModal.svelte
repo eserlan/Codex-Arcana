@@ -65,14 +65,25 @@
     }
 
     if (!result.id) {
-      console.error("CRITICAL: Selected a search result with no ID!", result);
-      return;
+      console.warn(
+        "Search result missing ID, falling back to path lookup:",
+        result,
+      );
+      // Fallback: If we have a path, use it as the ID (many entities use path as ID if metadata is missing)
+      if (result.path) {
+        vault.selectedEntityId = result.path.replace(".md", "");
+      } else {
+        console.error(
+          "CRITICAL: Selected a search result with no ID or path!",
+          result,
+        );
+        return;
+      }
+    } else {
+      vault.selectedEntityId = result.id;
     }
 
     searchStore.close();
-
-    // Set selection
-    vault.selectedEntityId = result.id;
 
     // Navigate (optional, but keep for now)
     goto(`?file=${encodeURIComponent(result.path)}`);
@@ -183,6 +194,7 @@
                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
                 : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100'}"
               on:click={(e) => selectResult(result, e)}
+              data-testid="search-result"
             >
               <span class="font-medium truncate">
                 {@html renderMarkdown(result.title, $searchStore.query)}

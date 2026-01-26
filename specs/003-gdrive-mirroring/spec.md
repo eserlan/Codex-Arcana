@@ -64,11 +64,12 @@ As a creator moving from desktop to mobile, I want the app to detect and pull th
 
 - **FR-001**: System MUST provide an opt-in toggle to enable/disable the Google Drive Cloud Bridge.
 - **FR-002**: System MUST use OAuth2 to authenticate with the user's personal Google Drive account.
-- **FR-003**: System MUST store lore data in a dedicated, user-accessible folder within their Google Drive (e.g., `/CodexArcana/`).
-- **FR-004**: System MUST perform background mirroring of the local graph to Google Drive without blocking user interaction.
+- **FR-003**: System MUST automatically manage a dedicated `CodexArcana` folder within the user's Google Drive. If the folder does not exist upon connection, the system MUST create it.
+- **FR-004**: System MUST perform background mirroring of the local graph to the dedicated Google Drive folder without blocking user interaction.
 - **FR-005**: System MUST ensure that data is transmitted directly between the user's device and Google Drive, never passing through a third-party server (Data Sovereignty).
 - **FR-006**: System MUST handle conflict resolution using a "Last-Write-Wins" approach where the version with the latest modification timestamp is preserved.
 - **FR-007**: System MUST sync data at a periodic interval (e.g., every 5 minutes) when local changes are detected.
+- **FR-008**: System MUST implement a `Cross-Origin-Opener-Policy` (COOP) that allows secure communication between the application and the Google OAuth popup.
 
 ### Key Entities _(include if feature involves data)_
 
