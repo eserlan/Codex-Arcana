@@ -1,10 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('Graph status indicator should be positioned above zoom controls', async ({ page }) => {
-  await page.goto('/');
+test("Graph status indicator should be positioned above zoom controls", async ({
+  page,
+}) => {
+  await page.goto("/");
 
   // Wait for the "Ready" status text to appear
-  const statusIndicator = page.locator('text=Ready').first();
+  const statusIndicator = page.locator("text=Ready").first();
   await expect(statusIndicator).toBeVisible();
 
   // Find the container for the zoom buttons (the div containing the buttons)

@@ -31,7 +31,7 @@
 
 ## Notes
 
-- **Implementation Details**: The spec is explicitly about *how* to implement the sync engine using Svelte stores. The "No implementation details" rule is waived for this technical task.
+- **Implementation Details**: The spec is explicitly about _how_ to implement the sync engine using Svelte stores. The "No implementation details" rule is waived for this technical task.
 - **Success Criteria**: Recommend adding a section defining "Instant Load" (e.g. < 50ms) and "Significantly smaller bundle" (e.g. < 200kb).
 - **Edge Cases**: Should consider what happens if the file on disk is deleted, or if the user goes offline (though it's local-first).
 - **Update (2026-01-23)**: Marked remaining items as complete/N/A based on approved Plan and Tasks which defined the execution path.

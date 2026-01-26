@@ -20,6 +20,7 @@ Build reusable, maintainable UI components using modern frameworks with clean co
 ## Core Concepts
 
 ### 1. Component Composition Patterns
+
 **Compound Components**: Related components that work together
 
 ```tsx
@@ -56,6 +57,7 @@ Build reusable, maintainable UI components using modern frameworks with clean co
 ```
 
 ### 2. CSS-in-JS Approaches
+
 | Solution              | Approach               | Best For                          |
 | --------------------- | ---------------------- | --------------------------------- |
 | **Tailwind CSS**      | Utility classes        | Rapid prototyping, design systems |
@@ -65,6 +67,7 @@ Build reusable, maintainable UI components using modern frameworks with clean co
 | **Vanilla Extract**   | Zero-runtime           | Performance-critical apps         |
 
 ### 3. Component API Design
+
 ```tsx
 interface ButtonProps {
   variant?: "primary" | "secondary" | "ghost";
@@ -140,6 +143,7 @@ Button.displayName = "Button";
 ## Framework Patterns
 
 ### React: Compound Components
+
 ```tsx
 import { createContext, useContext, useState, type ReactNode } from "react";
 
@@ -198,6 +202,7 @@ Accordion.Item = function AccordionItem({
 ```
 
 ### Vue 3: Composables
+
 ```vue
 <script setup lang="ts">
 import { ref, computed, provide, inject, type InjectionKey } from "vue";
@@ -225,6 +230,7 @@ const isActive = computed(() => tabs?.activeTab.value === props.id);
 ```
 
 ### Svelte 5: Runes
+
 ```svelte
 <script lang="ts">
   interface Props {
@@ -247,6 +253,7 @@ const isActive = computed(() => tabs?.activeTab.value === props.id);
 ```
 
 ## Best Practices
+
 1. **Single Responsibility**: Each component does one thing well
 2. **Prop Drilling Prevention**: Use context for deeply nested data
 3. **Accessible by Default**: Include ARIA attributes, keyboard support
@@ -254,9 +261,10 @@ const isActive = computed(() => tabs?.activeTab.value === props.id);
 5. **Forward Refs**: Allow parent access to DOM nodes
 6. **Memoization**: Use `React.memo`, `useMemo` for expensive renders
 7. **Error Boundaries**: Wrap components that may fail\n
-7. **Error Boundaries**: Wrap components that may fail
+8. **Error Boundaries**: Wrap components that may fail
 
 ## Common Issues
+
 - **Prop Explosion**: Too many props - consider composition instead
 - **Style Conflicts**: Use scoped styles or CSS Modules
 - **Re-render Cascades**: Profile with React DevTools, memo appropriately
@@ -264,6 +272,7 @@ const isActive = computed(() => tabs?.activeTab.value === props.id);
 - **Bundle Size**: Tree-shake unused component variants
 
 ## Resources
+
 - [React Component Patterns](https://reactpatterns.com/)
 - [Vue Composition API Guide](https://vuejs.org/guide/reusability/composables.html)
 - [Svelte Component Documentation](https://svelte.dev/docs/svelte-components)

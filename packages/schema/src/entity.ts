@@ -1,7 +1,13 @@
-import { z } from 'zod';
-import { ConnectionSchema } from './connection';
+import { z } from "zod";
+import { ConnectionSchema } from "./connection";
 
-export const EntityTypeSchema = z.enum(['npc', 'location', 'item', 'event', 'faction']);
+export const EntityTypeSchema = z.enum([
+  "npc",
+  "location",
+  "item",
+  "event",
+  "faction",
+]);
 
 export const EntitySchema = z.object({
   id: z.string(),
@@ -9,11 +15,14 @@ export const EntitySchema = z.object({
   title: z.string().min(1),
   tags: z.array(z.string()).default([]),
   connections: z.array(ConnectionSchema).default([]),
-  content: z.string().default(''), // Markdown content, default empty
+  content: z.string().default(""), // Markdown content, default empty
+  lore: z.string().optional(), // Extended lore & rich notes
   image: z.string().optional(),
-  metadata: z.object({
-    coordinates: z.object({ x: z.number(), y: z.number() }).optional()
-  }).optional()
+  metadata: z
+    .object({
+      coordinates: z.object({ x: z.number(), y: z.number() }).optional(),
+    })
+    .optional(),
 });
 
 export type Entity = z.infer<typeof EntitySchema>;

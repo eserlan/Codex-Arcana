@@ -1,5 +1,5 @@
-import cytoscape from 'cytoscape';
-export * from './transformer';
+import cytoscape from "cytoscape";
+export * from "./transformer";
 
 export interface GraphOptions {
   container?: HTMLElement;
@@ -15,26 +15,26 @@ export const initGraph = (options: GraphOptions) => {
     elements: options.elements || [],
     style: options.style || [
       {
-        selector: 'node',
+        selector: "node",
         style: {
-          'background-color': '#666',
-          'label': 'data(label)' // Updated to use label
-        }
+          "background-color": "#666",
+          label: "data(label)", // Updated to use label
+        },
       },
       {
-        selector: 'edge',
+        selector: "edge",
         style: {
-          'width': 3,
-          'line-color': '#ccc',
-          'target-arrow-color': '#ccc',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier'
-        }
-      }
+          width: 3,
+          "line-color": "#ccc",
+          "target-arrow-color": "#ccc",
+          "target-arrow-shape": "triangle",
+          "curve-style": "bezier",
+        },
+      },
     ],
     layout: {
-      name: 'cose', // Better default layout
-      animate: false
-    }
+      name: "cose", // Better default layout
+      animate: false,
+    },
   });
 };

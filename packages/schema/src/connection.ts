@@ -1,12 +1,12 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const ConnectionTypeSchema = z.enum([
-  'located_in',
-  'related_to',
-  'knows',
-  'owns',
-  'part_of',
-  'secret_advisor', // From spec example
+  "located_in",
+  "related_to",
+  "knows",
+  "owns",
+  "part_of",
+  "secret_advisor", // From spec example
 ]);
 
 export const ConnectionSchema = z.object({

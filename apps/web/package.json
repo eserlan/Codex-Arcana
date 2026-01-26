@@ -14,9 +14,21 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "dependencies": {
-    "@tiptap/core": "^2.2.0",
-    "@tiptap/pm": "^2.2.0",
-    "@tiptap/starter-kit": "^2.2.0",
+    "@milkdown/core": "^7.3.0",
+    "@milkdown/ctx": "^7.3.0",
+    "@milkdown/plugin-history": "^7.3.0",
+    "@milkdown/plugin-listener": "^7.3.0",
+    "@milkdown/preset-commonmark": "^7.3.0",
+    "@milkdown/preset-gfm": "^7.3.0",
+    "@milkdown/theme-nord": "^7.3.0",
+    "@milkdown/utils": "^7.3.0",
+    "@tiptap/core": "^3.17.1",
+    "@tiptap/extension-table": "^3.17.1",
+    "@tiptap/extension-table-cell": "^3.17.1",
+    "@tiptap/extension-table-header": "^3.17.1",
+    "@tiptap/extension-table-row": "^3.17.1",
+    "@tiptap/pm": "^3.17.1",
+    "@tiptap/starter-kit": "^3.17.1",
     "@types/gapi": "^0.0.47",
     "@types/gapi.auth2": "^0.0.61",
     "@types/gapi.client.drive": "^3.0.15",
@@ -25,9 +37,12 @@
     "graph-engine": "*",
     "idb": "^7.1.1",
     "js-yaml": "^4.1.1",
+    "marked": "^17.0.1",
     "rxdb": "^15.0.0",
     "rxjs": "^7.8.0",
-    "schema": "*"
+    "schema": "*",
+    "svelte-tiptap": "^3.0.1",
+    "tiptap-markdown": "^0.9.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",

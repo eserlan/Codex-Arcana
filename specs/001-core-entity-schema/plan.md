@@ -21,16 +21,16 @@ Implement the foundational "Triangle of Truth" architecture for Codex Arcana. Th
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-*   **Local-First Sovereignty**: ✅ Compliant. Data stored in OPFS via RxDB.
-*   **Relational-First Navigation**: ✅ Compliant. Cytoscape integration is central.
-*   **Sub-100ms Performance**: ✅ Compliant. Using Svelte stores for state and Web Workers for heavy lifting.
-*   **Atomic Worldbuilding (Modularity)**: ✅ Compliant. Using monorepo with distinct packages.
-*   **Pure Functional Core**: ✅ Compliant. Business logic isolated in `packages/schema` and `graph-engine`.
-*   **System-Agnostic Core**: ✅ Compliant. Schema is generic ("Entity").
-*   **Test-First Integrity**: ✅ Compliant. Mandatory Unit, Integration, and Playwright E2E tests.
-*   **Forbidden Patterns**: ✅ Compliant. No telemetry, no external DB.
+- **Local-First Sovereignty**: ✅ Compliant. Data stored in OPFS via RxDB.
+- **Relational-First Navigation**: ✅ Compliant. Cytoscape integration is central.
+- **Sub-100ms Performance**: ✅ Compliant. Using Svelte stores for state and Web Workers for heavy lifting.
+- **Atomic Worldbuilding (Modularity)**: ✅ Compliant. Using monorepo with distinct packages.
+- **Pure Functional Core**: ✅ Compliant. Business logic isolated in `packages/schema` and `graph-engine`.
+- **System-Agnostic Core**: ✅ Compliant. Schema is generic ("Entity").
+- **Test-First Integrity**: ✅ Compliant. Mandatory Unit, Integration, and Playwright E2E tests.
+- **Forbidden Patterns**: ✅ Compliant. No telemetry, no external DB.
 
 ## Project Structure
 
@@ -73,6 +73,6 @@ packages/
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| Monorepo | Enforces strict boundaries between Editor, Graph, and Schema. | Single `src/` folder leads to tight coupling of UI and Logic, violating Modularity principle. |
+| Violation | Why Needed                                                    | Simpler Alternative Rejected Because                                                          |
+| --------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Monorepo  | Enforces strict boundaries between Editor, Graph, and Schema. | Single `src/` folder leads to tight coupling of UI and Logic, violating Modularity principle. |

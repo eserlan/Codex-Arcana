@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Entity } from "schema";
     import { vault } from "$lib/stores/vault.svelte";
+    import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
 
     let { entity, onClose } = $props<{
         entity: Entity | null;
@@ -10,11 +11,15 @@
     let isEditing = $state(false);
     let editTitle = $state("");
     let editImage = $state("");
+    let editContent = $state("");
+    let editLore = $state("");
 
     const startEditing = () => {
         if (!entity) return;
         editTitle = entity.title;
         editImage = entity.image || "";
+        editContent = entity.content || "";
+        editLore = entity.lore || "";
         isEditing = true;
     };
 
@@ -27,24 +32,36 @@
         vault.updateEntity(entity.id, {
             title: editTitle,
             image: editImage || undefined,
+            content: editContent,
+            lore: editLore,
         });
         isEditing = false;
     };
 
-    // Mock stats since schema might not have them yet
-    const stats = [
-        { label: "STR", value: 16 },
-        { label: "DEX", value: 14 },
-        { label: "CON", value: 15 },
-        { label: "INT", value: 12 },
-        { label: "WIS", value: 10 },
-        { label: "CHA", value: 8 },
-    ];
+    const handleContentUpdate = (markdown: string) => {
+        editContent = markdown;
+    };
+
+    const handleLoreUpdate = (markdown: string) => {
+        editLore = markdown;
+    };
+
+    // Lightbox state
+    let showLightbox = $state(false);
+
+    // Active tab
+    let activeTab = $state<"status" | "lore" | "inventory">("status");
+
+    $effect(() => {
+        if (entity && activeTab === "lore" && entity.lore === undefined) {
+            vault.fetchLore(entity.id);
+        }
+    });
 </script>
 
 {#if entity}
     <div
-        class="w-96 bg-[#0c0c0c] border-l border-green-900/50 flex flex-col h-full absolute right-0 top-0 shadow-2xl z-40 font-mono"
+        class="w-1/4 min-w-[400px] bg-[#0c0c0c] border-l border-green-900/50 flex flex-col h-full absolute right-0 top-0 shadow-2xl z-40 font-mono"
     >
         <!-- Header -->
         <div class="p-6 border-b border-green-900/30">
@@ -103,26 +120,27 @@
                     />
                 </div>
             {:else if entity.image}
-                <div
-                    class="mb-4 w-full h-48 rounded border border-green-900/30 overflow-hidden relative group"
+                <button
+                    onclick={() => (showLightbox = true)}
+                    class="mb-4 w-full aspect-square rounded border border-green-900/30 overflow-hidden relative group cursor-pointer hover:border-green-700 transition block"
                 >
                     <img
                         src={entity.image}
                         alt={entity.title}
-                        class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                        class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
                     />
                     <div
-                        class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"
-                    ></div>
-                </div>
+                        class="absolute bottom-2 right-2 bg-black/70 text-green-500 text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition"
+                    >
+                        Click to enlarge
+                    </div>
+                </button>
             {/if}
 
             <div
-                class="flex items-center gap-2 text-xs font-bold tracking-widest text-green-600 uppercase mb-4"
+                class="text-xs font-bold tracking-widest text-green-600 uppercase mb-4"
             >
-                <span>{entity.type}</span>
-                <span class="w-1 h-1 bg-green-600 rounded-full"></span>
-                <span>NEUTRAL GOOD</span>
+                {entity.type}
             </div>
 
             <!-- Status Tabs -->
@@ -130,106 +148,143 @@
                 class="flex gap-6 text-[10px] font-bold tracking-widest text-gray-500 border-b border-green-900/30 pb-2"
             >
                 <button
-                    class="text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
-                    >STATUS</button
+                    class={activeTab === "status"
+                        ? "text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
+                        : "hover:text-gray-300 transition"}
+                    onclick={() => (activeTab = "status")}>STATUS</button
                 >
-                <button class="hover:text-gray-300 transition"
-                    >LORE & NOTES</button
+                <button
+                    class={activeTab === "lore"
+                        ? "text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
+                        : "hover:text-gray-300 transition"}
+                    onclick={() => {
+                        activeTab = "lore";
+                        if (entity && entity.lore === undefined) {
+                            vault.fetchLore(entity.id);
+                        }
+                    }}>LORE & NOTES</button
                 >
-                <button class="hover:text-gray-300 transition">INVENTORY</button
+                <button
+                    class={activeTab === "inventory"
+                        ? "text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
+                        : "hover:text-gray-300 transition"}
+                    onclick={() => (activeTab = "inventory")}>INVENTORY</button
                 >
             </div>
         </div>
 
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-            <!-- Stats Grid -->
-            <div
-                class="grid grid-cols-6 gap-2 bg-green-900/5 p-4 rounded border border-green-900/20"
-            >
-                {#each stats as stat}
-                    <div class="flex flex-col items-center gap-1">
-                        <span class="text-[9px] text-green-600 font-bold"
-                            >{stat.label}</span
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            {#if activeTab === "status"}
+                <div class="space-y-8">
+                    <!-- Chronicle / Content -->
+                    <div>
+                        <h3
+                            class="text-green-500 font-serif italic text-lg mb-3 border-b border-green-900/30 pb-1"
                         >
-                        <span class="text-lg text-gray-200 font-bold"
-                            >{stat.value}</span
-                        >
+                            Chronicle
+                        </h3>
+                        {#if isEditing}
+                            <div class="h-64">
+                                <MarkdownEditor
+                                    content={editContent}
+                                    editable={true}
+                                    onUpdate={handleContentUpdate}
+                                />
+                            </div>
+                        {:else}
+                            <div class="prose-content">
+                                <MarkdownEditor
+                                    content={entity.content ||
+                                        "No content yet."}
+                                    editable={false}
+                                />
+                            </div>
+                        {/if}
                     </div>
-                {/each}
-            </div>
 
-            <!-- Combat Stats -->
-            <div class="grid grid-cols-3 gap-4">
-                <div
-                    class="bg-[#111] p-3 border border-gray-800 flex flex-col items-center"
-                >
-                    <span
-                        class="text-[9px] text-gray-500 uppercase tracking-wider mb-1"
-                        >Armor Class</span
-                    >
-                    <span class="text-xl text-white font-bold">16</span>
-                </div>
-                <div
-                    class="bg-[#111] p-3 border border-gray-800 flex flex-col items-center"
-                >
-                    <span
-                        class="text-[9px] text-gray-500 uppercase tracking-wider mb-1"
-                        >Hit Points</span
-                    >
-                    <span class="text-xl text-white font-bold">54</span>
-                </div>
-                <div
-                    class="bg-[#111] p-3 border border-gray-800 flex flex-col items-center"
-                >
-                    <span
-                        class="text-[9px] text-gray-500 uppercase tracking-wider mb-1"
-                        >Speed</span
-                    >
-                    <span class="text-xl text-white font-bold">30ft</span>
-                </div>
-            </div>
-
-            <!-- Chronicle -->
-            <div>
-                <h3
-                    class="text-green-500 font-serif italic text-lg mb-3 border-b border-green-900/30 pb-1"
-                >
-                    Chronicle
-                </h3>
-                <p class="text-sm text-gray-400 leading-relaxed font-serif">
-                    {entity.content.slice(0, 200)}...
-                </p>
-            </div>
-
-            <!-- Secrets -->
-            <div>
-                <h3
-                    class="text-green-500 font-serif italic text-lg mb-3 border-b border-green-900/30 pb-1"
-                >
-                    Gossip & Secrets
-                </h3>
-                <ul class="space-y-3">
-                    {#each entity.connections as conn}
-                        <li class="flex gap-3 text-sm text-gray-400">
-                            <span class="text-green-500 mt-1">▶</span>
-                            <span
-                                >Connected to <strong class="text-gray-300"
-                                    >{conn.target}</strong
-                                >
-                                via {conn.type}.</span
-                            >
-                        </li>
-                    {/each}
-                    <li class="flex gap-3 text-sm text-gray-400">
-                        <span class="text-green-500 mt-1">▶</span>
-                        <span
-                            >Recent rumors suggest involvement with the Redbrand
-                            Ruffians.</span
+                    <!-- Connections -->
+                    <div>
+                        <h3
+                            class="text-green-500 font-serif italic text-lg mb-3 border-b border-green-900/30 pb-1"
                         >
-                    </li>
-                </ul>
-            </div>
+                            Gossip & Secrets
+                        </h3>
+                        <ul class="space-y-3">
+                            {#each entity.connections as conn}
+                                <li class="flex gap-3 text-sm text-gray-400">
+                                    <span class="text-green-500 mt-1">▶</span>
+                                    <span>
+                                        <strong class="text-gray-300"
+                                            >{conn.label || conn.type}</strong
+                                        >:
+                                        {vault.entities[conn.target]?.title ||
+                                            conn.target}
+                                    </span>
+                                </li>
+                            {/each}
+                            {#if entity.connections.length === 0}
+                                <li class="text-sm text-gray-600 italic">
+                                    No known connections.
+                                </li>
+                            {/if}
+                        </ul>
+                    </div>
+                </div>
+            {:else if activeTab === "lore"}
+                <div class="space-y-4">
+                    <div>
+                        <div
+                            class="flex items-center gap-3 text-xs uppercase tracking-widest text-gray-500 mb-6 font-mono"
+                        >
+                            <span class="text-blue-500">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="w-4 h-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    ></path>
+                                    <polyline points="14 2 14 8 20 8"
+                                    ></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </span>
+                            <span>Lore archive decrypted</span>
+                            <div class="h-px bg-gray-800 flex-1 ml-2"></div>
+                        </div>
+                        {#if isEditing}
+                            <div class="h-96">
+                                <MarkdownEditor
+                                    content={editLore}
+                                    editable={true}
+                                    onUpdate={handleLoreUpdate}
+                                />
+                            </div>
+                        {:else}
+                            <div class="prose-content">
+                                <MarkdownEditor
+                                    content={entity.lore ||
+                                        "No detailed lore available."}
+                                    editable={false}
+                                />
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            {:else if activeTab === "inventory"}
+                <div class="text-gray-500 italic text-sm">
+                    Inventory coming soon...
+                </div>
+            {/if}
         </div>
 
         <!-- Footer Action -->
@@ -268,6 +323,20 @@
             {/if}
         </div>
     </div>
+
+    <!-- Lightbox -->
+    {#if showLightbox && entity.image}
+        <button
+            class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center cursor-zoom-out"
+            onclick={() => (showLightbox = false)}
+        >
+            <img
+                src={entity.image}
+                alt={entity.title}
+                class="max-w-[90vw] max-h-[90vh] object-contain"
+            />
+        </button>
+    {/if}
 {/if}
 
 <style>
@@ -280,5 +349,10 @@
     .custom-scrollbar::-webkit-scrollbar-thumb {
         background: #15803d;
         border-radius: 2px;
+    }
+
+    .prose-content :global(.markdown-editor) {
+        background: transparent;
+        border: none;
     }
 </style>

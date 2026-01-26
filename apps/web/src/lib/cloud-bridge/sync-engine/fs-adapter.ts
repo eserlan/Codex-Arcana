@@ -16,37 +16,41 @@ export class FileSystemAdapter {
   async listAllFiles(): Promise<FileEntry[]> {
     await this.init();
     const files: FileEntry[] = [];
-    if (!this.root) throw new Error('FS not initialized');
+    if (!this.root) throw new Error("FS not initialized");
 
-    await this.scanDirectory(this.root, '', files);
+    await this.scanDirectory(this.root, "", files);
     return files;
   }
 
   private async scanDirectory(
     dirHandle: FileSystemDirectoryHandle,
     parentPath: string,
-    files: FileEntry[]
+    files: FileEntry[],
   ) {
     // @ts-expect-error - Iterating async iterable
     for await (const [name, handle] of dirHandle.entries()) {
       const path = parentPath ? `${parentPath}/${name}` : name;
-      
-      if (handle.kind === 'file') {
+
+      if (handle.kind === "file") {
         const file = await handle.getFile();
         files.push({
           path,
           lastModified: file.lastModified,
           handle: handle as FileSystemFileHandle,
         });
-      } else if (handle.kind === 'directory') {
-        await this.scanDirectory(handle as FileSystemDirectoryHandle, path, files);
+      } else if (handle.kind === "directory") {
+        await this.scanDirectory(
+          handle as FileSystemDirectoryHandle,
+          path,
+          files,
+        );
       }
     }
   }
 
   async readFile(path: string): Promise<string> {
     await this.init();
-    if (!this.root) throw new Error('FS not initialized');
+    if (!this.root) throw new Error("FS not initialized");
 
     const handle = await this.getFileHandle(path);
     const file = await handle.getFile();
@@ -55,7 +59,7 @@ export class FileSystemAdapter {
 
   async writeFile(path: string, content: string): Promise<void> {
     await this.init();
-    if (!this.root) throw new Error('FS not initialized');
+    if (!this.root) throw new Error("FS not initialized");
 
     const handle = await this.getFileHandle(path, true);
     const writable = await handle.createWritable();
@@ -63,10 +67,13 @@ export class FileSystemAdapter {
     await writable.close();
   }
 
-  private async getFileHandle(path: string, create = false): Promise<FileSystemFileHandle> {
-    if (!this.root) throw new Error('FS not initialized');
-    
-    const parts = path.split('/');
+  private async getFileHandle(
+    path: string,
+    create = false,
+  ): Promise<FileSystemFileHandle> {
+    if (!this.root) throw new Error("FS not initialized");
+
+    const parts = path.split("/");
     const fileName = parts.pop()!;
     let currentDir = this.root;
 

@@ -15,6 +15,7 @@ Always prefer `createMutation` from TanStack Query for mutations. This provides:
 - Better UX with automatic state management
 
 ### The Preferred Pattern
+
 Pass `onSuccess` and `onError` as the second argument to `.mutate()` to get maximum context:
 
 ```svelte
@@ -60,28 +61,31 @@ Pass `onSuccess` and `onError` as the second argument to `.mutate()` to get maxi
 ```
 
 ### Why This Pattern?
+
 - **More context**: Access to local variables and state at the call site
 - **Better organization**: Success/error handling is co-located with the action
 - **Flexibility**: Different calls can have different success/error behaviors
 
 ## In TypeScript Files (.ts)
+
 Always use `.execute()` since createMutation requires component context:
 
 ```typescript
 // In a .ts file (e.g., load function, utility)
 const result = await rpc.sessions.createSession.execute({
-	body: { title: 'New Session' },
+  body: { title: "New Session" },
 });
 
 const { data, error } = result;
 if (error) {
-	// Handle error
+  // Handle error
 } else if (data) {
-	// Handle success
+  // Handle success
 }
 ```
 
 ## Exception: When to Use .execute() in Svelte Files
+
 Only use `.execute()` in Svelte files when:
 
 1. You don't need loading states
@@ -89,6 +93,7 @@ Only use `.execute()` in Svelte files when:
 3. You need fine-grained control over async flow
 
 ## Inline Simple Handler Functions
+
 When a handler function only calls `.mutate()`, inline it directly:
 
 ```svelte
@@ -105,11 +110,13 @@ When a handler function only calls `.mutate()`, inline it directly:
 ```
 
 # Styling
+
 For general CSS and Tailwind guidelines, see the `styling` skill.
 
 # shadcn-svelte Best Practices
 
 ## Component Organization
+
 - Use the CLI: `bunx shadcn-svelte@latest add [component]`
 - Each component in its own folder under `$lib/components/ui/` with an `index.ts` export
 - Follow kebab-case for folder names (e.g., `dialog/`, `toggle-group/`)
@@ -117,35 +124,37 @@ For general CSS and Tailwind guidelines, see the `styling` skill.
 - When using $state, $derived, or functions only referenced once in markup, inline them directly
 
 ## Import Patterns
+
 **Namespace imports** (preferred for multi-part components):
 
 ```typescript
-import * as Dialog from '$lib/components/ui/dialog';
-import * as ToggleGroup from '$lib/components/ui/toggle-group';
+import * as Dialog from "$lib/components/ui/dialog";
+import * as ToggleGroup from "$lib/components/ui/toggle-group";
 ```
 
 **Named imports** (for single components):
 
 ```typescript
-import { Button } from '$lib/components/ui/button';
-import { Input } from '$lib/components/ui/input';
+import { Button } from "$lib/components/ui/button";
+import { Input } from "$lib/components/ui/input";
 ```
 
 **Lucide icons** (always use individual imports from `@lucide/svelte`):
 
 ```typescript
 // Good: Individual icon imports
-import Database from '@lucide/svelte/icons/database';
-import MinusIcon from '@lucide/svelte/icons/minus';
-import MoreVerticalIcon from '@lucide/svelte/icons/more-vertical';
+import Database from "@lucide/svelte/icons/database";
+import MinusIcon from "@lucide/svelte/icons/minus";
+import MoreVerticalIcon from "@lucide/svelte/icons/more-vertical";
 
 // Bad: Don't import multiple icons from lucide-svelte
-import { Database, MinusIcon, MoreVerticalIcon } from 'lucide-svelte';
+import { Database, MinusIcon, MoreVerticalIcon } from "lucide-svelte";
 ```
 
 The path uses kebab-case (e.g., `more-vertical`, `minimize-2`), and you can name the import whatever you want (typically PascalCase with optional Icon suffix).
 
 ## Styling and Customization
+
 - Always use the `cn()` utility from `$lib/utils` for combining Tailwind classes
 - Modify component code directly rather than overriding styles with complex CSS
 - Use `tailwind-variants` for component variant systems
@@ -153,6 +162,7 @@ The path uses kebab-case (e.g., `more-vertical`, `minimize-2`), and you can name
 - Leverage CSS variables for theme consistency
 
 ## Component Usage Patterns
+
 Use proper component composition following shadcn-svelte patterns:
 
 ```svelte
@@ -169,6 +179,7 @@ Use proper component composition following shadcn-svelte patterns:
 ```
 
 ## Custom Components
+
 - When extending shadcn components, create wrapper components that maintain the design system
 - Add JSDoc comments for complex component props
 - Ensure custom components follow the same organizational patterns
@@ -177,9 +188,11 @@ Use proper component composition following shadcn-svelte patterns:
 # Self-Contained Component Pattern
 
 ## Prefer Component Composition Over Parent State Management
+
 When building interactive components (especially with dialogs/modals), create self-contained components rather than managing state at the parent level.
 
 ### The Anti-Pattern (Parent State Management)
+
 ```svelte
 <!-- Parent component -->
 <script>
@@ -201,6 +214,7 @@ When building interactive components (especially with dialogs/modals), create se
 ```
 
 ### The Pattern (Self-Contained Components)
+
 ```svelte
 <!-- DeleteItemButton.svelte -->
 <script>
@@ -228,6 +242,7 @@ When building interactive components (especially with dialogs/modals), create se
 ```
 
 ### Why This Pattern Works
+
 - **No parent state pollution**: Parent doesn't need to track which item is being deleted
 - **Better encapsulation**: All delete logic lives in one place
 - **Simpler mental model**: Each row has its own delete button with its own dialog
@@ -236,6 +251,7 @@ When building interactive components (especially with dialogs/modals), create se
 - **Scales better**: Adding new actions doesn't complicate the parent
 
 ### When to Apply This Pattern
+
 - Action buttons in table rows (delete, edit, etc.)
 - Confirmation dialogs for list items
 - Any repeating UI element that needs modal interactions

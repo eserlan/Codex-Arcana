@@ -11,12 +11,15 @@
 	});
 </script>
 
-<div class="app-layout min-h-screen bg-gray-50 flex flex-col">
+<div class="app-layout min-h-screen bg-black flex flex-col">
 	<header
-		class="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm sticky top-0 z-10"
+		class="px-6 py-4 bg-[#0c0c0c] border-b border-green-900/30 flex justify-between items-center sticky top-0 z-10"
 	>
-		<h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-			<span>📚</span> Codex Arcana
+		<h1
+			class="text-xl font-bold text-gray-100 font-mono tracking-wide flex items-center gap-3"
+		>
+			<span class="text-green-500">📚</span>
+			<span>Codex Arcana</span>
 		</h1>
 		<VaultControls />
 	</header>

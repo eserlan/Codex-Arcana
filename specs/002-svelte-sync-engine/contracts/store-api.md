@@ -8,12 +8,12 @@
 ```typescript
 // apps/web/src/lib/stores/vault.ts
 
-import { type Writable } from 'svelte/store';
-import type { Entity } from 'schema'; // Assumed from packages/schema
+import { type Writable } from "svelte/store";
+import type { Entity } from "schema"; // Assumed from packages/schema
 
 export interface VaultState {
   entities: Map<string, Entity>; // ID -> Entity
-  status: 'idle' | 'loading' | 'saving' | 'error';
+  status: "idle" | "loading" | "saving" | "error";
   lastError?: string;
   rootHandle?: FileSystemDirectoryHandle;
 }
@@ -34,13 +34,13 @@ export interface VaultActions {
   /**
    * Create a new entity (file) in the vault.
    */
-  createEntity: (type: Entity['type'], title: string) => Promise<string>; // Returns ID
+  createEntity: (type: Entity["type"], title: string) => Promise<string>; // Returns ID
 
   /**
    * Delete an entity (file).
    */
   deleteEntity: (id: string) => Promise<void>;
-  
+
   /**
    * Force a reload from disk (manual sync).
    */
@@ -61,8 +61,8 @@ export type VaultStore = Writable<VaultState> & VaultActions;
 ```typescript
 // apps/web/src/lib/stores/graph.ts
 
-import { type Readable } from 'svelte/store';
-import type { ElementDefinition } from 'cytoscape';
+import { type Readable } from "svelte/store";
+import type { ElementDefinition } from "cytoscape";
 
 export interface GraphState {
   elements: ElementDefinition[];
