@@ -1,5 +1,5 @@
-import yaml from 'js-yaml';
-import type { Entity, Connection } from 'schema';
+import yaml from "js-yaml";
+import type { Entity, Connection } from "schema";
 
 export interface ParseResult {
   metadata: Partial<Entity>;
@@ -18,13 +18,13 @@ export function parseMarkdown(raw: string): ParseResult {
     try {
       const yamlContent = match[1];
       const parsed = yaml.load(yamlContent) as any;
-      if (typeof parsed === 'object' && parsed !== null) {
+      if (typeof parsed === "object" && parsed !== null) {
         metadata = parsed;
       }
     } catch (e) {
-      console.error('Failed to parse frontmatter', e);
+      console.error("Failed to parse frontmatter", e);
     }
-    content = raw.replace(frontmatterRegex, '').trim();
+    content = raw.replace(frontmatterRegex, "").trim();
   }
 
   // Extract Wiki Links from content: [[Target]] or [[Target|Label]]
@@ -47,9 +47,9 @@ export function extractWikiLinks(content: string): Connection[] {
 
     connections.push({
       target: targetId,
-      type: 'related_to', // Default type for inline links
+      type: "related_to", // Default type for inline links
       label: label || target,
-      strength: 1
+      strength: 1,
     });
   }
 
@@ -57,7 +57,11 @@ export function extractWikiLinks(content: string): Connection[] {
 }
 
 export function sanitizeId(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function stringifyEntity(entity: Entity): string {
@@ -71,5 +75,5 @@ export function stringifyEntity(entity: Entity): string {
   (cleanMetadata as any).connections = entity.connections;
 
   const yamlStr = yaml.dump(cleanMetadata);
-  return `---\n${yamlStr}---\n${content || ''}`;
+  return `---\n${yamlStr}---\n${content || ""}`;
 }

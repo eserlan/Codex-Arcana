@@ -1,17 +1,19 @@
 # Quickstart: Svelte-Native Sync Engine ("The Pulse")
 
 ## Prerequisites
-*   Svelte 5 Environment
-*   Browser with File System Access API support (Chrome/Edge/Desktop Safari)
+
+- Svelte 5 Environment
+- Browser with File System Access API support (Chrome/Edge/Desktop Safari)
 
 ## 1. Initialization
+
 In your root layout (`+layout.svelte`), mount the Vault provider.
 
 ```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { vault } from '$lib/stores/vault';
-  
+
   onMount(async () => {
     // Ideally, check for a stored handle in IndexedDB to auto-reopen
     // For now, we wait for user interaction
@@ -24,13 +26,14 @@ In your root layout (`+layout.svelte`), mount the Vault provider.
 ```
 
 ## 2. Using the Graph
+
 Connect the derived graph store to your Cytoscape component.
 
 ```svelte
 <script lang="ts">
   import { graph } from '$lib/stores/graph';
   import Cytoscape from 'cytoscape';
-  
+
   let container: HTMLElement;
   let cy: Cytoscape.Core;
 
@@ -51,12 +54,13 @@ Connect the derived graph store to your Cytoscape component.
 ```
 
 ## 3. Editing Content
+
 Updates to the vault automatically propagate to the graph.
 
 ```svelte
 <script lang="ts">
   import { vault } from '$lib/stores/vault';
-  
+
   function updateTitle(id: string, newTitle: string) {
     vault.updateEntity(id, { title: newTitle });
     // -> Updates Store -> Triggers Derived Graph -> Writes to File (Debounced)

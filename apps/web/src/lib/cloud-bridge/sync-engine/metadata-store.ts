@@ -1,6 +1,6 @@
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
-export type SyncStatus = 'SYNCED' | 'DIRTY' | 'CONFLICT';
+export type SyncStatus = "SYNCED" | "DIRTY" | "CONFLICT";
 
 export interface SyncMetadata {
   filePath: string;
@@ -15,12 +15,12 @@ interface SyncDB extends DBSchema {
   sync_metadata: {
     key: string; // filePath
     value: SyncMetadata;
-    indexes: { 'by-remote-id': string };
+    indexes: { "by-remote-id": string };
   };
 }
 
-const DB_NAME = 'codex-arcana-sync';
-const STORE_NAME = 'sync_metadata';
+const DB_NAME = "codex-arcana-sync";
+const STORE_NAME = "sync_metadata";
 
 export class MetadataStore {
   private dbPromise: Promise<IDBPDatabase<SyncDB>>;
@@ -28,8 +28,8 @@ export class MetadataStore {
   constructor() {
     this.dbPromise = openDB<SyncDB>(DB_NAME, 1, {
       upgrade(db) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'filePath' });
-        store.createIndex('by-remote-id', 'remoteId');
+        const store = db.createObjectStore(STORE_NAME, { keyPath: "filePath" });
+        store.createIndex("by-remote-id", "remoteId");
       },
     });
   }
@@ -41,7 +41,7 @@ export class MetadataStore {
 
   async getByRemoteId(remoteId: string): Promise<SyncMetadata | undefined> {
     const db = await this.dbPromise;
-    return db.getFromIndex(STORE_NAME, 'by-remote-id', remoteId);
+    return db.getFromIndex(STORE_NAME, "by-remote-id", remoteId);
   }
 
   async getAll(): Promise<SyncMetadata[]> {

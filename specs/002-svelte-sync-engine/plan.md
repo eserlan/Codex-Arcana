@@ -21,7 +21,7 @@ Implement a reactive synchronization pipeline using Svelte Stores to bridge loca
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - [x] **I. Local-First Sovereignty**: Uses OPFS/Local FS. No central DB. (Re-verified: Design uses File System Access API)
 - [x] **II. Relational-First Navigation**: Graph is derived from content. (Re-verified: Derived stores)
@@ -70,5 +70,5 @@ packages/schema/               # Shared types (Entity, Connection)
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| (None)    |            |                                     |
+| --------- | ---------- | ------------------------------------ |
+| (None)    |            |                                      |

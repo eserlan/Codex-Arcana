@@ -32,6 +32,6 @@
 ## Notes
 
 - All clarifications resolved:
-    - Conflict Resolution: Last-Write-Wins (Timestamp based).
-    - Sync Frequency: Periodic (5-minute intervals).
+  - Conflict Resolution: Last-Write-Wins (Timestamp based).
+  - Sync Frequency: Periodic (5-minute intervals).
 - Spec is ready for technical planning (`/speckit.plan`).

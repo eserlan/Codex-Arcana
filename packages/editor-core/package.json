@@ -9,7 +9,9 @@
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
-    "@tiptap/core": "^2.2.0"
+    "@tiptap/core": "^2.2.0",
+    "@tiptap/pm": "^2.2.0",
+    "@tiptap/starter-kit": "^2.2.0"
   },
   "devDependencies": {
     "jsdom": "^27.4.0",

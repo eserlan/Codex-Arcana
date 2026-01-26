@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { fade, fly } from "svelte/transition";
   import { onMount, onDestroy } from "svelte";
   import { initGraph } from "graph-engine";
   import { graph } from "$lib/stores/graph.svelte";
   import { vault } from "$lib/stores/vault.svelte";
+  import { parse } from "marked";
   import type { Core, NodeSingular } from "cytoscape";
 
   let container: HTMLElement;
@@ -13,6 +15,20 @@
   let { selectedId = $bindable(null) } = $props<{
     selectedId: string | null;
   }>();
+
+  // Hover state
+  let hoveredEntityId = $state<string | null>(null);
+  let hoverPosition = $state<{ x: number; y: number } | null>(null);
+  let hoverTimeout: number | undefined;
+  const HOVER_DELAY = 800; // ms
+
+  // Edge editing state
+  let editingEdge = $state<{
+    source: string;
+    target: string;
+    label: string;
+  } | null>(null);
+  let edgeEditInput = $state("");
 
   const toggleConnectMode = () => {
     connectMode = !connectMode;
@@ -54,7 +70,6 @@
         "font-size": 10,
         "text-valign": "bottom",
         "text-margin-y": 8,
-        "text-transform": "uppercase",
         "text-max-width": 80,
         "text-wrap": "wrap",
       },
@@ -97,12 +112,66 @@
       selector: "edge",
       style: {
         width: 1,
-        "line-color": "#14532d", // Dark green line
+        "line-color": "#14532d",
         "target-arrow-color": "#14532d",
         "curve-style": "bezier",
         "target-arrow-shape": "triangle",
         "arrow-scale": 0.6,
         opacity: 0.6,
+        label: "data(label)",
+        "text-rotation": "autorotate",
+        "font-size": 8,
+        "font-family": "Inter, sans-serif",
+        color: "#86efac",
+        "text-background-color": "#000",
+        "text-background-opacity": 0.8,
+        "text-background-padding": "2px",
+        "text-margin-y": -8,
+      },
+    },
+    {
+      selector: "edge:selected",
+      style: {
+        "line-color": "#4ade80",
+        "target-arrow-color": "#4ade80",
+        width: 2,
+        opacity: 1,
+      },
+    },
+    // Type-specific Node Borders
+    {
+      selector: 'node[type="npc"]',
+      style: {
+        "border-color": "#60a5fa", // Blue-400
+        "border-width": 3,
+      },
+    },
+    {
+      selector: 'node[type="location"]',
+      style: {
+        "border-color": "#4ade80", // Green-400
+        "border-width": 3,
+      },
+    },
+    {
+      selector: 'node[type="item"]',
+      style: {
+        "border-color": "#facc15", // Yellow-400
+        "border-width": 3,
+      },
+    },
+    {
+      selector: 'node[type="event"]',
+      style: {
+        "border-color": "#e879f9", // Fuchsia-400
+        "border-width": 3,
+      },
+    },
+    {
+      selector: 'node[type="faction"]',
+      style: {
+        "border-color": "#fb923c", // Orange-400
+        "border-width": 3,
       },
     },
   ];
@@ -113,6 +182,43 @@
         container,
         elements: graph.elements,
         style: SCIFI_GREEN_STYLE,
+      });
+
+      // Hover events
+      cy.on("mouseover", "node", (evt) => {
+        const node = evt.target;
+        clearTimeout(hoverTimeout);
+        hoverTimeout = window.setTimeout(() => {
+          const renderedPos = node.renderedPosition();
+          hoverPosition = {
+            x: renderedPos.x,
+            y: renderedPos.y,
+          };
+          hoveredEntityId = node.id();
+        }, HOVER_DELAY);
+      });
+
+      cy.on("mouseout", "node", () => {
+        clearTimeout(hoverTimeout);
+        hoveredEntityId = null;
+        hoverPosition = null;
+      });
+
+      // Update hover position on drag/pan/zoom to keep it attached (optional but nice)
+      cy.on("position", "node", (evt) => {
+        if (hoveredEntityId === evt.target.id()) {
+          const renderedPos = evt.target.renderedPosition();
+          hoverPosition = { x: renderedPos.x, y: renderedPos.y };
+        }
+      });
+      cy.on("pan zoom", () => {
+        if (hoveredEntityId && cy) {
+          const node = cy.$id(hoveredEntityId);
+          if (node.length > 0) {
+            const renderedPos = node.renderedPosition();
+            hoverPosition = { x: renderedPos.x, y: renderedPos.y };
+          }
+        }
       });
 
       cy.on("tap", "node", (evt) => {
@@ -144,11 +250,29 @@
         }
       });
 
+      // Right-click on edge to edit label
+      cy.on("cxttap", "edge", (evt) => {
+        const edge = evt.target;
+        const sourceId = edge.data("source");
+        const targetId = edge.data("target");
+        const currentLabel = edge.data("label") || "";
+
+        editingEdge = {
+          source: sourceId,
+          target: targetId,
+          label: currentLabel,
+        };
+        edgeEditInput = currentLabel;
+      });
+
       cy.on("tap", (evt) => {
         if (evt.target === cy) {
+          // Only clear selection if we clicked strictly on background, not on node
           if (!connectMode) {
             selectedId = null;
           }
+          // Close edge editor on background tap
+          editingEdge = null;
         }
       });
     }
@@ -158,6 +282,7 @@
     if (cy) {
       cy.destroy();
     }
+    clearTimeout(hoverTimeout);
   });
 
   // Reactive effect to update graph when store changes
@@ -233,6 +358,17 @@
       }
     }
   });
+
+  // Save edge label
+  const saveEdgeLabel = () => {
+    if (editingEdge) {
+      vault.updateConnection(editingEdge.source, editingEdge.target, {
+        label: edgeEditInput || undefined,
+      });
+      editingEdge = null;
+    }
+  };
+
   // Derived state for breadcrumbs
   let selectedEntity = $derived(selectedId ? vault.entities[selectedId] : null);
   let parentEntity = $derived(
@@ -241,6 +377,11 @@
           e.connections.some((c) => c.target === selectedId),
         )
       : null,
+  );
+
+  // Derived state for tooltip
+  let hoveredEntity = $derived(
+    hoveredEntityId ? vault.entities[hoveredEntityId] : null,
   );
 </script>
 
@@ -366,6 +507,46 @@
     bind:this={container}
   ></div>
 
+  <!-- Hover Tooltip -->
+  {#if hoveredEntityId && hoverPosition && hoveredEntity}
+    <div
+      class="absolute z-50 pointer-events-none"
+      style="top: {hoverPosition.y}px; left: {hoverPosition.x}px; transform: translate(-50%, -115%);"
+      transition:fade={{ duration: 150 }}
+    >
+      <div
+        class="bg-black/95 border border-green-500/50 shadow-[0_0_20px_rgba(21,128,61,0.6)] p-4 rounded-sm max-w-[400px] min-w-[200px]"
+        in:fly={{ y: 10, duration: 200 }}
+      >
+        <div
+          class="text-xs font-bold text-green-400 tracking-wider uppercase mb-2 border-b border-green-900/50 pb-1 flex justify-between"
+        >
+          <span>{hoveredEntity.title}</span>
+          <span class="text-[10px] text-green-700">{hoveredEntity.type}</span>
+        </div>
+        <div
+          class="text-sm text-green-100/90 font-mono leading-relaxed prose prose-invert prose-p:my-1 prose-headings:text-green-400 prose-headings:text-xs prose-strong:text-green-300 prose-em:text-green-200"
+        >
+          {@html hoveredEntity.content
+            ? parse(hoveredEntity.content)
+            : '<span class="italic text-green-900">No data available</span>'}
+        </div>
+
+        <!-- Decorative corner bits -->
+        <div
+          class="absolute -top-px -left-px w-2 h-2 border-t border-l border-green-400"
+        ></div>
+        <div
+          class="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-green-400"
+        ></div>
+      </div>
+      <!-- Arrow/Stem -->
+      <div
+        class="absolute left-1/2 -translate-x-1/2 bottom-[-6px] w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-green-500/50"
+      ></div>
+    </div>
+  {/if}
+
   <!-- Mini-map Decoration (Static Mock) -->
   <div
     class="absolute bottom-6 right-6 z-20 w-48 h-32 bg-black/80 backdrop-blur border border-green-900/50 rounded-lg p-2 hidden md:block"
@@ -404,6 +585,58 @@
           > SELECT TARGET TO LINK
         </div>
       {/if}
+    </div>
+  {/if}
+
+  <!-- Edge Edit Modal -->
+  {#if editingEdge}
+    <div
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30"
+    >
+      <div
+        class="bg-black/95 border border-green-900/50 shadow-2xl p-4 min-w-[280px]"
+      >
+        <div
+          class="text-[10px] font-mono text-green-600 uppercase tracking-widest mb-3"
+        >
+          Edit Connection
+        </div>
+        <input
+          type="text"
+          bind:value={edgeEditInput}
+          placeholder="Enter description..."
+          class="w-full bg-black/50 border border-green-900/50 text-green-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-green-500"
+          onkeydown={(e) => {
+            if (e.key === "Enter") saveEdgeLabel();
+            if (e.key === "Escape") editingEdge = null;
+          }}
+        />
+        <div class="flex gap-2 mt-3">
+          <button
+            class="flex-1 px-3 py-1.5 text-xs font-mono uppercase bg-green-900/20 border border-green-900/50 text-green-500 hover:bg-green-900/40 transition"
+            onclick={saveEdgeLabel}
+          >
+            Save
+          </button>
+          <button
+            class="flex-1 px-3 py-1.5 text-xs font-mono uppercase bg-black/50 border border-green-900/50 text-green-700 hover:text-green-500 transition"
+            onclick={() => (editingEdge = null)}
+          >
+            Cancel
+          </button>
+        </div>
+        <button
+          class="w-full mt-2 px-3 py-1.5 text-xs font-mono uppercase bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-900/40 hover:text-red-400 transition"
+          onclick={() => {
+            if (editingEdge) {
+              vault.removeConnection(editingEdge.source, editingEdge.target);
+              editingEdge = null;
+            }
+          }}
+        >
+          Delete Connection
+        </button>
+      </div>
     </div>
   {/if}
 </div>

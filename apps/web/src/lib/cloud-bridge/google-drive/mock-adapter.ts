@@ -1,9 +1,9 @@
-import type { ICloudAdapter, RemoteFileMeta } from '../index';
+import type { ICloudAdapter, RemoteFileMeta } from "../index";
 
 export class MockDriveAdapter implements ICloudAdapter {
   private connected = false;
   private files: Map<string, RemoteFileMeta> = new Map();
-  private userEmail = 'mock-user@example.com';
+  private userEmail = "mock-user@example.com";
 
   constructor(initialFiles: Record<string, RemoteFileMeta> = {}) {
     for (const [path, meta] of Object.entries(initialFiles)) {
@@ -25,15 +25,20 @@ export class MockDriveAdapter implements ICloudAdapter {
     return new Map(this.files);
   }
 
-  async uploadFile(path: string, content: string | Blob, existingId?: string): Promise<RemoteFileMeta> {
+  async uploadFile(
+    path: string,
+    content: string | Blob,
+    existingId?: string,
+  ): Promise<RemoteFileMeta> {
     this.checkConnected();
     const id = existingId || `mock-file-${Date.now()}`;
     const meta: RemoteFileMeta = {
       id,
-      name: path.split('/').pop() || path,
-      mimeType: typeof content === 'string' ? 'text/markdown' : 'application/json',
+      name: path.split("/").pop() || path,
+      mimeType:
+        typeof content === "string" ? "text/markdown" : "application/json",
       modifiedTime: new Date().toISOString(),
-      parents: ['mock-folder-id'],
+      parents: ["mock-folder-id"],
     };
     this.files.set(path, meta);
     return meta;
@@ -57,7 +62,7 @@ export class MockDriveAdapter implements ICloudAdapter {
 
   private checkConnected() {
     if (!this.connected) {
-      throw new Error('MockDriveAdapter not connected');
+      throw new Error("MockDriveAdapter not connected");
     }
   }
 

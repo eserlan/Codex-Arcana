@@ -5,7 +5,7 @@
 
 export interface CloudConfig {
   enabled: boolean;
-  provider: 'gdrive';
+  provider: "gdrive";
   connectedEmail?: string;
   lastSyncTimestamp?: number;
   syncInterval: number; // milliseconds
@@ -43,7 +43,11 @@ export interface ICloudAdapter {
    * @param parentId Optional parent folder ID
    * @returns New Remote Metadata
    */
-  uploadFile(path: string, content: string | Blob, existingId?: string): Promise<RemoteFileMeta>;
+  uploadFile(
+    path: string,
+    content: string | Blob,
+    existingId?: string,
+  ): Promise<RemoteFileMeta>;
 
   /**
    * Download a file.
@@ -66,7 +70,7 @@ export interface RemoteFileMeta {
   parents: string[];
 }
 
-export type SyncStatus = 'IDLE' | 'SCANNING' | 'SYNCING' | 'ERROR';
+export type SyncStatus = "IDLE" | "SCANNING" | "SYNCING" | "ERROR";
 
 export interface SyncState {
   status: SyncStatus;

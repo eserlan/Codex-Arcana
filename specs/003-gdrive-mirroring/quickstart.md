@@ -10,12 +10,12 @@
     - Create a new project "Codex Arcana".
     - Enable **Google Drive API**.
     - Configure **OAuth Consent Screen**:
-        - User Type: External (or Internal for testing).
-        - Scopes: `.../auth/drive.file`.
+      - User Type: External (or Internal for testing).
+      - Scopes: `.../auth/drive.file`.
     - Create **Credentials**:
-        - Type: **OAuth Client ID**.
-        - Application Type: **Web application**.
-        - Authorized JavaScript origins: `http://localhost:5173` (and production URL).
+      - Type: **OAuth Client ID**.
+      - Application Type: **Web application**.
+      - Authorized JavaScript origins: `http://localhost:5173` (and production URL).
 
 2.  **Environment Variables**:
     - Create/Edit `.env` in `apps/web`:
@@ -26,6 +26,7 @@
 ## Enabling the Feature
 
 1.  **Start the App**:
+
     ```bash
     npm run dev
     ```
@@ -47,6 +48,6 @@
 
 ## Troubleshooting
 
--   **Popup Blocked**: Ensure browser allows popups for localhost.
--   **403/401 Errors**: Token might be expired. Toggle off/on to re-authenticate.
--   **"Verified App" Warning**: Since the app is unverified by Google, you may see a warning screen. Click "Advanced" -> "Go to (unsafe)" for development.
+- **Popup Blocked**: Ensure browser allows popups for localhost.
+- **403/401 Errors**: Token might be expired. Toggle off/on to re-authenticate.
+- **"Verified App" Warning**: Since the app is unverified by Google, you may see a warning screen. Click "Advanced" -> "Go to (unsafe)" for development.

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GoogleDriveAdapter } from './adapter';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { GoogleDriveAdapter } from "./adapter";
 
 // Mock the global google object
 const mockTokenClient = {
@@ -24,10 +24,10 @@ const mockGapi = {
   },
 };
 
-vi.stubGlobal('google', mockGoogle);
-vi.stubGlobal('gapi', mockGapi);
+vi.stubGlobal("google", mockGoogle);
+vi.stubGlobal("gapi", mockGapi);
 
-describe('GoogleDriveAdapter Auth', () => {
+describe("GoogleDriveAdapter Auth", () => {
   let adapter: GoogleDriveAdapter;
 
   beforeEach(() => {
@@ -35,17 +35,17 @@ describe('GoogleDriveAdapter Auth', () => {
     adapter = new GoogleDriveAdapter();
   });
 
-  it('should initialize token client on construction or connect', () => {
+  it("should initialize token client on construction or connect", () => {
     expect(mockGoogle.accounts.oauth2.initTokenClient).toHaveBeenCalled();
   });
 
-  it('should request access token when connect is called', async () => {
+  it("should request access token when connect is called", async () => {
     const connectPromise = adapter.connect();
-    
+
     // Simulate callback
     expect(mockTokenClient.requestAccessToken).toHaveBeenCalled();
     // In connect(), the callback is reassigned on the tokenClient
-    mockTokenClient.callback({ access_token: 'fake-token' });
+    mockTokenClient.callback({ access_token: "fake-token" });
 
     await connectPromise;
     expect(adapter.isAuthenticated()).toBe(true);

@@ -2,10 +2,10 @@
 
 **Feature Branch**: `003-gdrive-mirroring`  
 **Created**: 2026-01-23  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: User description: "Optional background mirroring that anchors local-first lore to your personal Google Drive for seamless cross-device access. > Maintain total data sovereignty with an opt-in cloud bridge that preserves your world’s graph without ever touching a third-party server."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Secure Cloud Link (Priority: P1)
 
@@ -58,7 +58,7 @@ As a creator moving from desktop to mobile, I want the app to detect and pull th
 - **Authentication Expiry**: How does the system prompt the user to re-authenticate when the Google OAuth token expires?
 - **Simultaneous Edits**: How does the system resolve conflicts if the same lore entry is edited on two devices simultaneously? The system follows a "Last-Write-Wins" strategy based on the modification timestamp.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -70,12 +70,12 @@ As a creator moving from desktop to mobile, I want the app to detect and pull th
 - **FR-006**: System MUST handle conflict resolution using a "Last-Write-Wins" approach where the version with the latest modification timestamp is preserved.
 - **FR-007**: System MUST sync data at a periodic interval (e.g., every 5 minutes) when local changes are detected.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Cloud Bridge Configuration**: Stores user preference for sync (enabled/disabled), linked account identifier, and last sync timestamp.
 - **World Graph Snapshot**: The serialized version of the lore data being mirrored to the cloud.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

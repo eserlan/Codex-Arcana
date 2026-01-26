@@ -12,28 +12,29 @@ The Google Drive Cloud Bridge provides an opt-in, background synchronization mec
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x, Node.js 20+ (dev), Browser Runtime
-**Primary Dependencies**: 
+**Primary Dependencies**:
+
 - `googleapis` or `gapi-script` [NEEDS CLARIFICATION: Best library for browser-side only OAuth2 + Drive v3?]
 - Svelte 4/5 (Frontend)
 - `idb` or similar for tracking sync state locally
-**Storage**: 
+  **Storage**:
 - Local: OPFS (Origin Private File System) / IndexedDB (Metadata)
 - Remote: Google Drive (App Data folder or User selected folder)
-**Testing**: Vitest (Unit/Integration), Playwright/Cypress (E2E) [NEEDS CLARIFICATION: Project E2E framework?]
-**Target Platform**: Modern Web Browsers (Chrome, Firefox, Safari, Edge) - PWA
-**Project Type**: Web Application (SvelteKit)
-**Performance Goals**: Sync operations must not block the main thread; UI must remain responsive (<100ms interactions).
-**Constraints**: 
+  **Testing**: Vitest (Unit/Integration), Playwright/Cypress (E2E) [NEEDS CLARIFICATION: Project E2E framework?]
+  **Target Platform**: Modern Web Browsers (Chrome, Firefox, Safari, Edge) - PWA
+  **Project Type**: Web Application (SvelteKit)
+  **Performance Goals**: Sync operations must not block the main thread; UI must remain responsive (<100ms interactions).
+  **Constraints**:
 - Must work Offline (queue changes).
 - No backend proxy allowed (Client-side OAuth2).
 - Strict Data Sovereignty (User's own credentials/storage).
-**Scale/Scope**: Syncing hundreds to thousands of small Markdown/JSON files.
+  **Scale/Scope**: Syncing hundreds to thousands of small Markdown/JSON files.
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-- **Local-First Sovereignty**: [PASS] Feature is an *extension* of local-first, mirroring to user's storage. Primary source remains local OPFS.
+- **Local-First Sovereignty**: [PASS] Feature is an _extension_ of local-first, mirroring to user's storage. Primary source remains local OPFS.
 - **Relational-First Navigation**: [N/A] Syncs the graph data, doesn't change navigation.
 - **The Sub-100ms Performance Mandate**: [PASS] Sync must occur in a Web Worker to avoid main thread blocking.
 - **Atomic Worldbuilding**: [PASS] Sync logic should be a standalone module/worker.
@@ -41,8 +42,8 @@ The Google Drive Cloud Bridge provides an opt-in, background synchronization mec
 - **Pure Functional Core**: [PASS] Sync logic (diffing, conflict resolution) should be pure; I/O isolated in worker.
 - **Verifiable Reality**: [PASS] Will include tests for sync logic and mock GDrive API.
 - **Test-First PWA Integrity**: [PASS] Offline handling is a core requirement.
-- **Forbidden Patterns**: 
-    - "No Phone Home": [EXCEPTION] Syncs to *User's* drive, not *our* server. Compliant with intent of sovereignty.
+- **Forbidden Patterns**:
+  - "No Phone Home": [EXCEPTION] Syncs to _User's_ drive, not _our_ server. Compliant with intent of sovereignty.
 
 ## Project Structure
 
@@ -81,5 +82,5 @@ apps/web/
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| N/A       |            |                                     |
+| --------- | ---------- | ------------------------------------ |
+| N/A       |            |                                      |

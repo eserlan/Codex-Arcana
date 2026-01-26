@@ -16,7 +16,7 @@
     "eslint-plugin-svelte": "^3.14.0",
     "prettier": "latest",
     "svelte-eslint-parser": "^1.4.1",
-    "turbo": "latest",
+    "turbo": "^2.7.6",
     "typescript": "latest"
   },
   "workspaces": [

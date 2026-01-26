@@ -1,5 +1,5 @@
-import { writable } from 'svelte/store';
-import type { SyncStats, SyncState } from '$lib/cloud-bridge';
+import { writable } from "svelte/store";
+import type { SyncStats, SyncState } from "$lib/cloud-bridge";
 
 const initialStats: SyncStats = {
   filesUploaded: 0,
@@ -9,7 +9,7 @@ const initialStats: SyncStats = {
 };
 
 const initialState: SyncState = {
-  status: 'IDLE',
+  status: "IDLE",
   stats: initialStats,
 };
 
@@ -18,8 +18,10 @@ function createSyncStatsStore() {
 
   return {
     subscribe,
-    setStatus: (status: SyncState['status']) => update((s) => ({ ...s, status })),
-    setError: (error: string) => update((s) => ({ ...s, status: 'ERROR', lastError: error })),
+    setStatus: (status: SyncState["status"]) =>
+      update((s) => ({ ...s, status })),
+    setError: (error: string) =>
+      update((s) => ({ ...s, status: "ERROR", lastError: error })),
     updateStats: (partialStats: Partial<SyncStats>) =>
       update((s) => ({
         ...s,

@@ -3,6 +3,7 @@
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or pnpm
 
@@ -17,6 +18,7 @@
 ### Running the App
 
 Start the development server:
+
 ```bash
 npm run dev
 # or
@@ -35,6 +37,7 @@ Open [http://localhost:5173](http://localhost:5173) to view the application.
 ### CI/CD
 
 This project uses **GitHub Actions** for continuous integration. Every push and pull request to the `main` branch triggers:
+
 1.  **Dependency Installation**: Ensuring the environment is reproducible.
 2.  **Linting**: Verifying code style and potential errors.
 3.  **Testing**: Running unit and integration tests across all packages.

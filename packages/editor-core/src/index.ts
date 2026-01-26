@@ -1,11 +1,11 @@
-import { Extension, InputRule } from '@tiptap/core';
+import { Extension, InputRule } from "@tiptap/core";
 
 export interface WikiLinkOptions {
   onLinkCreated?: (linkText: string) => void;
 }
 
 export const WikiLink = Extension.create<WikiLinkOptions>({
-  name: 'wikiLink',
+  name: "wikiLink",
 
   addOptions() {
     return {
@@ -24,7 +24,7 @@ export const WikiLink = Extension.create<WikiLinkOptions>({
             this.options.onLinkCreated(linkText);
           }
 
-          // We don't necessarily want to change the text here 
+          // We don't necessarily want to change the text here
           // yet, just detect the creation of a potential link
           return null;
         },

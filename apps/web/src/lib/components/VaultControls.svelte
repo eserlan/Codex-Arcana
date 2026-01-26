@@ -18,49 +18,51 @@
     };
 </script>
 
-<div class="flex flex-col gap-2">
-    <div class="flex gap-2 items-center">
-        <div class="text-sm text-gray-500 mr-2">
+<div class="flex flex-col gap-2 font-mono">
+    <div class="flex gap-3 items-center">
+        <div class="text-xs text-gray-500 tracking-wider uppercase">
             {#if vault.status === "loading"}
-                <span class="animate-pulse">Loading...</span>
+                <span class="animate-pulse text-green-500">LOADING...</span>
             {:else if vault.status === "saving"}
-                <span class="text-yellow-600">Saving...</span>
+                <span class="text-amber-500">SAVING...</span>
             {:else if vault.status === "error"}
                 <span
-                    class="text-red-500 font-bold text-xs bg-red-900/20 px-2 py-1 rounded border border-red-900/50"
+                    class="text-red-400 font-bold text-xs bg-red-900/20 px-2 py-1 rounded border border-red-900/50"
                 >
-                    {vault.errorMessage || "Error"}
+                    {vault.errorMessage || "ERROR"}
                 </span>
             {:else if vault.allEntities.length > 0 || vault.rootHandle}
-                {vault.allEntities.length} Entities
+                <span class="text-green-600"
+                    >{vault.allEntities.length} ENTITIES</span
+                >
             {:else}
-                No Vault Open
+                <span class="text-gray-600">NO VAULT</span>
             {/if}
         </div>
 
         {#if !vault.rootHandle}
             <button
-                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm font-medium"
+                class="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-black rounded text-xs font-bold tracking-widest transition"
                 onclick={() => vault.openDirectory()}
             >
-                Open Vault
+                OPEN VAULT
             </button>
         {:else if !vault.isAuthorized}
             <button
-                class="px-3 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 transition text-sm font-medium"
+                class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-black rounded text-xs font-bold tracking-widest transition"
                 onclick={() => vault.requestPermission()}
             >
-                Grant Access
+                GRANT ACCESS
             </button>
         {:else}
             <button
-                class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm font-medium"
+                class="px-4 py-1.5 border border-green-900 text-green-600 hover:text-green-400 hover:border-green-700 rounded text-xs font-bold tracking-widest transition"
                 onclick={() => (showForm = !showForm)}
             >
-                {showForm ? "Cancel" : "+ New Entry"}
+                {showForm ? "CANCEL" : "+ NEW ENTRY"}
             </button>
             <button
-                class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition text-sm"
+                class="px-2 py-1.5 border border-green-900/50 text-green-700 hover:text-green-500 hover:border-green-700 rounded text-sm transition"
                 onclick={() => vault.refresh()}
                 title="Reload from disk"
             >
@@ -75,16 +77,16 @@
                 e.preventDefault();
                 handleCreate();
             }}
-            class="flex gap-2 p-2 bg-gray-50 rounded border border-gray-200 shadow-inner"
+            class="flex gap-2 p-3 bg-black/50 rounded border border-green-900/30"
         >
             <input
                 bind:value={newTitle}
                 placeholder="Entry Title..."
-                class="px-2 py-1 text-sm border rounded flex-1 focus:ring-1 focus:ring-blue-500 outline-none"
+                class="px-3 py-1.5 text-xs bg-black/50 border border-green-800 text-gray-100 rounded flex-1 focus:outline-none focus:border-green-500 placeholder-green-900/50"
             />
             <select
                 bind:value={newType}
-                class="px-2 py-1 text-sm border rounded bg-white outline-none"
+                class="px-2 py-1.5 text-xs bg-black border border-green-800 text-gray-300 rounded focus:outline-none focus:border-green-500"
             >
                 <option value="npc">NPC</option>
                 <option value="location">Location</option>
@@ -94,10 +96,10 @@
             </select>
             <button
                 type="submit"
-                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
+                class="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-black rounded text-xs font-bold tracking-widest disabled:opacity-50 transition"
                 disabled={!newTitle.trim()}
             >
-                Add
+                ADD
             </button>
         </form>
     {/if}
