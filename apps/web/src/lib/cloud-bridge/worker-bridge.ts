@@ -76,7 +76,8 @@ export class WorkerBridge {
     }
 
     // Check gapi token directly
-    const tokenObj = typeof gapi !== 'undefined' ? gapi.client?.getToken() : null;
+    const tokenObj =
+      typeof gapi !== "undefined" && gapi.client ? gapi.client.getToken() : null;
     const token = tokenObj?.access_token;
 
     console.log("[WorkerBridge] GAPI Token Status:", {

@@ -42,7 +42,7 @@ export class SyncEngine {
     const plan: SyncPlan = { uploads: [], downloads: [], deletes: [] };
     const localMap = new Map(localFiles.map((f) => [f.path, f]));
     const metadataMap = new Map(metadataList.map((m) => [m.filePath, m]));
-    const SKEW_MS = 2000;
+    const SKEW_MS = 5000;
 
     // 1. Process Local Files
     for (const local of localFiles) {
@@ -124,21 +124,40 @@ export class SyncEngine {
     const CONCURRENCY = 5;
     const metadataUpdates: SyncMetadata[] = [];
 
-    // Helper for parallel execution
-    const runParallel = async <T>(items: T[], fn: (item: T) => Promise<void>) => {
+
+    // Helper for parallel execution with error aggregation
+    const runParallel = async <T>(
+      items: T[],
+      fn: (item: T) => Promise<void>,
+    ) => {
       const iterator = items.entries();
+      const errors: { item: T; error: unknown }[] = [];
+
       const worker = async () => {
         for (const [, item] of iterator) {
           try {
             await fn(item);
           } catch (err) {
             console.error("Sync error for item:", item, err);
-            // Continue with other items despite error
+            errors.push({ item, error: err });
           }
         }
       };
-      const workers = Array.from({ length: Math.min(items.length, CONCURRENCY) }, worker);
+
+      const workers = Array.from(
+        { length: Math.min(items.length, CONCURRENCY) },
+        worker,
+      );
       await Promise.all(workers);
+
+      if (errors.length > 0) {
+        const firstError = errors[0]?.error;
+        const msg =
+          firstError instanceof Error ? firstError.message : String(firstError);
+        throw new Error(
+          `Sync failed for ${errors.length} items. First error: ${msg}`,
+        );
+      }
     };
 
     // Execute uploads

@@ -1,6 +1,4 @@
 <script lang="ts">
-    /* eslint-disable no-undef */
-    /* global gapi */
     import { cloudConfig } from "$stores/cloud-config";
     import { syncStats } from "$stores/sync-stats";
     import { GoogleDriveAdapter } from "$lib/cloud-bridge/google-drive/adapter";
@@ -65,12 +63,13 @@
     $effect(() => {
         const checkToken = () => {
             hasToken =
-                typeof gapi !== "undefined" &&
-                !!gapi.client?.getToken()?.access_token;
+                typeof window !== "undefined" &&
+                typeof window.gapi !== "undefined" &&
+                !!window.gapi.client?.getToken()?.access_token;
         };
 
         checkToken();
-        const interval = setInterval(checkToken, 1000);
+        const interval = setInterval(checkToken, 5000);
         return () => clearInterval(interval);
     });
 
