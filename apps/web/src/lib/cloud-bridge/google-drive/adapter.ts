@@ -6,6 +6,13 @@ const getGoogleConfig = () => ({
   DISCOVERY_DOC: "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
 });
 
+const TOKEN_STORAGE_KEY = "codex-arcana-gdrive-token";
+
+interface CachedToken {
+  access_token: string;
+  expires_at: number; // timestamp
+}
+
 export class GoogleDriveAdapter implements ICloudAdapter {
   private tokenClient!: google.accounts.oauth2.TokenClient;
   private accessToken: string | null = null;
@@ -50,7 +57,46 @@ export class GoogleDriveAdapter implements ICloudAdapter {
         discoveryDocs: [getGoogleConfig().DISCOVERY_DOC],
       });
       this.gapiInited = true;
+
+      // Try to restore cached token
+      this.restoreCachedToken();
     }
+  }
+
+  private restoreCachedToken(): boolean {
+    try {
+      const cached = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!cached) return false;
+
+      const tokenData: CachedToken = JSON.parse(cached);
+
+      // Check if token is still valid (with 5 min buffer)
+      if (tokenData.expires_at < Date.now() + 5 * 60 * 1000) {
+        console.log("[GDriveAdapter] Cached token expired, removing");
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        return false;
+      }
+
+      console.log("[GDriveAdapter] Restoring cached token");
+      this.accessToken = tokenData.access_token;
+
+      if (gapi.client) {
+        gapi.client.setToken({ access_token: tokenData.access_token });
+      }
+      return true;
+    } catch (e) {
+      console.warn("[GDriveAdapter] Failed to restore cached token:", e);
+      return false;
+    }
+  }
+
+  private cacheToken(accessToken: string, expiresIn: number) {
+    const tokenData: CachedToken = {
+      access_token: accessToken,
+      expires_at: Date.now() + expiresIn * 1000,
+    };
+    localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenData));
+    console.log("[GDriveAdapter] Token cached, expires in", expiresIn, "seconds");
   }
 
   async connect(): Promise<string> {
@@ -69,14 +115,19 @@ export class GoogleDriveAdapter implements ICloudAdapter {
           reject(resp);
           return;
         }
-                  this.accessToken = resp.access_token;
-                  
-                  // Explicitly set the token in gapi so it's globally available to workerBridge
-                  if (typeof gapi !== 'undefined' && gapi.client) {
-                    gapi.client.setToken(resp);
-                  }
-        
-                  try {          // 1. Get user info
+        this.accessToken = resp.access_token;
+
+        // Cache token for persistence across page refreshes
+        // expires_in is typically 3600 seconds (1 hour)
+        const expiresIn = Number(resp.expires_in) || 3600;
+        this.cacheToken(resp.access_token, expiresIn);
+
+        // Explicitly set the token in gapi so it's globally available to workerBridge
+        if (typeof gapi !== 'undefined' && gapi.client) {
+          gapi.client.setToken(resp);
+        }
+
+        try {          // 1. Get user info
           const about = await gapi.client.drive.about.get({
             fields: "user(emailAddress)",
           });
@@ -87,7 +138,7 @@ export class GoogleDriveAdapter implements ICloudAdapter {
           if (!folderId) {
             folderId = await this.createFolder("CodexArcana");
           }
-          
+
           // Store folder ID in localStorage scoped to the current user
           const storageKey = `gdrive_folder_id:${email}`;
           localStorage.setItem(storageKey, folderId);
@@ -113,7 +164,7 @@ export class GoogleDriveAdapter implements ICloudAdapter {
       fields: "files(id)",
     });
     const files = response.result.files || [];
-    
+
     if (files.length === 0) return null;
     if (files.length === 1) return files[0].id!;
 
@@ -146,18 +197,19 @@ export class GoogleDriveAdapter implements ICloudAdapter {
       google.accounts.oauth2.revoke(token.access_token, () => { });
       gapi.client.setToken(null);
       this.accessToken = null;
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem('gdrive_folder_id');
     }
   }
 
   async listFiles(): Promise<Map<string, RemoteFileMeta>> {
     if (!this.accessToken) throw new Error("Not authenticated");
-    
+
     // Get the email from GAPI to build the key
     const about = await gapi.client.drive.about.get({ fields: 'user(emailAddress)' });
     const email = about.result.user?.emailAddress;
     const storageKey = `gdrive_folder_id:${email}`;
-    
+
     const folderId = localStorage.getItem(storageKey);
     if (!folderId) throw new Error("No sync folder found. Reconnect requested.");
 
