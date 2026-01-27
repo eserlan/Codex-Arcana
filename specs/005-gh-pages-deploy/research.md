@@ -7,8 +7,8 @@
 - **Rationale**: GitHub Pages only supports static file hosting. `adapter-static` is the official tool for generating a static site from a SvelteKit project.
 
 ### 2. SPA Routing Strategy
-- **Decision**: Set `fallback: '404.html'` in the adapter configuration and enable `strict: false` if needed.
-- **Rationale**: Since GitHub Pages doesn't support server-side routing, navigating directly to a sub-route (e.g., `/NPCs`) would normally cause a 404. Using `404.html` as a fallback ensures that GitHub Pages serves the main SPA entry point for all unknown routes, allowing the client-side router to take over.
+- **Decision**: Set `fallback: 'index.html'` in the adapter configuration (enabling `strict: false` if needed), and use the build script to copy `index.html` to `404.html`.
+- **Rationale**: Since GitHub Pages doesn't support server-side routing, navigating directly to a sub-route (e.g., `/NPCs`) would normally cause a 404. Configuring the SPA fallback to `index.html` and then copying it to `404.html` ensures that GitHub Pages serves the main SPA entry point for all unknown routes, allowing the client-side router to take over while still conforming to GitHub Pages' use of `404.html`.
 
 ### 3. Base Path Handling
 - **Decision**: Configure `paths.base` in `svelte.config.js` to `/Codex-Arcana` (or the specific repository name).
