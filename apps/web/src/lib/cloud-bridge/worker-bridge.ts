@@ -54,6 +54,7 @@ export class WorkerBridge {
               filesUploaded: payload.uploads,
               filesDownloaded: payload.downloads,
             });
+            cloudConfig.updateLastSync(Date.now());
             break;
           case "SYNC_ERROR":
             syncStats.setError(payload);
