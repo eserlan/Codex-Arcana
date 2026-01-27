@@ -40,7 +40,9 @@
     let isFlashing = $state(false);
 
     const handleSync = () => {
+        console.log("[CloudStatus] SYNC NOW clicked - starting sync");
         isFlashing = true;
+        syncStats.setStatus("SYNCING"); // Immediately show syncing state
         setTimeout(() => (isFlashing = false), 600);
         workerBridge.startSync();
     };
@@ -55,14 +57,20 @@
     let isConnected = $derived(
         $cloudConfig.enabled && $cloudConfig.connectedEmail,
     );
-    let isConfigured = $derived(adapter?.isConfigured());
+    let isConfigured = $derived(
+        adapter?.isConfigured() ||
+            (typeof window !== "undefined" &&
+                (window as any).TEST_FORCE_CONFIGURED),
+    );
 </script>
 
 <div class="relative font-mono cloud-status-container">
     <button
         class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition-all group relative {showMenu
             ? 'z-[60] border-green-500 bg-green-900/10'
-            : 'z-10'} {isFlashing ? 'ring-2 ring-green-500 ring-opacity-50 scale-95' : ''}"
+            : 'z-10'} {isFlashing
+            ? 'ring-2 ring-green-500 ring-opacity-50 scale-95'
+            : ''}"
         onclick={() => (showMenu = !showMenu)}
         title={isConnected
             ? `Connected as ${$cloudConfig.connectedEmail}`
@@ -70,17 +78,24 @@
         data-testid="cloud-status-button"
     >
         {#if isFlashing}
-            <div class="absolute inset-0 bg-green-500/20 rounded animate-ping pointer-events-none"></div>
+            <div
+                class="absolute inset-0 bg-green-500/20 rounded animate-ping pointer-events-none"
+            ></div>
         {/if}
         <span
             class="text-lg transition-all {isConnected
                 ? 'text-green-500'
-                : 'text-green-900 group-hover:text-green-700'} {isSyncing ? 'animate-pulse' : ''}"
+                : 'text-green-900 group-hover:text-green-700'} {isSyncing
+                ? 'animate-pulse'
+                : ''}"
         >
             {isSyncing ? "⚡" : "☁"}
         </span>
         {#if isSyncing}
-            <span class="text-[8px] text-green-500 font-bold ml-1 hidden xs:inline animate-pulse">SYNCING</span>
+            <span
+                class="text-[8px] text-green-500 font-bold ml-1 hidden xs:inline animate-pulse"
+                >SYNCING</span
+            >
         {/if}
         {#if isConnected && !isSyncing}
             <span
@@ -184,7 +199,9 @@
                                 <span
                                     class={status === "ERROR"
                                         ? "text-red-400"
-                                        : "text-green-500 font-bold"}>{status}</span>
+                                        : "text-green-500 font-bold"}
+                                    >{status}</span
+                                >
                             </div>
                             {#if $syncStats.stats}
                                 <div
@@ -220,12 +237,16 @@
 
                         <div class="flex gap-2">
                             <button
-                                class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2 {isFlashing
+                                    ? 'scale-95 ring-2 ring-green-400'
+                                    : ''}"
                                 onclick={handleSync}
                                 disabled={isSyncing || !$cloudConfig.enabled}
                             >
                                 {#if isSyncing}
-                                    <span class="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                                    <span
+                                        class="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"
+                                    ></span>
                                     SYNCING...
                                 {:else}
                                     SYNC NOW

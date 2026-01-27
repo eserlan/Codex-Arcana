@@ -20,7 +20,9 @@
 
 <div class="flex flex-col gap-2 font-mono">
     <div class="flex gap-1.5 md:gap-3 items-center">
-        <div class="text-[10px] md:text-xs text-gray-500 tracking-wider uppercase hidden sm:block">
+        <div
+            class="text-[10px] md:text-xs text-gray-500 tracking-wider uppercase hidden sm:block"
+        >
             {#if vault.status === "loading"}
                 <span class="animate-pulse text-green-500">LOADING...</span>
             {:else if vault.status === "saving"}
@@ -71,7 +73,7 @@
             <button
                 class="px-2 py-1.5 border border-green-900/50 text-amber-700 hover:text-amber-500 hover:border-amber-700 rounded text-[10px] transition hidden xs:block"
                 onclick={() => vault.rebuildIndex()}
-                title="Rebuild Cache"
+                title="Clear cache and re-index all vault files. Use if search seems out of sync."
             >
                 REBUILD
             </button>
