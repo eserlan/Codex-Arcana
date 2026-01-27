@@ -114,13 +114,15 @@
             ></div>
         {/if}
         <span
-            class="text-lg transition-all {isConnected
+            class="transition-all flex items-center justify-center {isConnected
                 ? 'text-green-500'
-                : 'text-green-900 group-hover:text-green-700'} {isSyncing
-                ? 'animate-pulse'
-                : ''}"
+                : 'text-green-900 group-hover:text-green-700'}"
         >
-            {isSyncing ? "⚡" : "☁"}
+            <span
+                class="w-5 h-5 {isSyncing
+                    ? 'icon-[lucide--zap] animate-pulse'
+                    : 'icon-[lucide--cloud]'}"
+            ></span>
         </span>
         {#if isSyncing}
             <span

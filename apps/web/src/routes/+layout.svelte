@@ -43,26 +43,17 @@
 			<h1
 				class="text-lg md:text-xl font-bold text-gray-100 font-mono tracking-wide flex items-center gap-2 md:gap-3 shrink-0"
 			>
-				<span class="text-green-500">📚</span>
+				<span class="icon-[lucide--book-open] text-green-500 w-5 h-5"
+				></span>
 				<span class="hidden sm:inline">Codex Arcana</span>
 				<span class="sm:hidden text-green-500">CA</span>
 			</h1>
 
 			<div class="flex-1 order-3 md:order-2 w-full md:max-w-xl md:px-4">
 				<div class="relative group">
-					<svg
-						class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-900 group-focus-within:text-green-500 transition-colors"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-						/>
-					</svg>
+					<span
+						class="absolute left-3 top-1/2 -translate-y-1/2 icon-[heroicons--magnifying-glass] w-4 h-4 text-green-900 group-focus-within:text-green-500 transition-colors"
+					></span>
 					<input
 						type="text"
 						placeholder="Search (Cmd+K)..."

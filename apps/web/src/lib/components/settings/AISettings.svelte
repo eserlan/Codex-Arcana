@@ -76,10 +76,14 @@
                     />
                     <button
                         type="button"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-200"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-200 flex items-center justify-center"
                         onclick={() => (showKey = !showKey)}
                     >
-                        {showKey ? "👁️" : "👁️‍🗨️"}
+                        <span
+                            class={showKey
+                                ? "icon-[lucide--eye-off] w-4 h-4"
+                                : "icon-[lucide--eye] w-4 h-4"}
+                        ></span>
                     </button>
                 </div>
             </div>
@@ -108,7 +112,8 @@
             class="p-3 bg-purple-900/10 border border-purple-900/30 rounded flex items-center justify-between"
         >
             <div class="flex items-center gap-2">
-                <span class="text-purple-400">✨</span>
+                <span class="text-purple-400 icon-[heroicons--sparkles] w-4 h-4"
+                ></span>
                 <span class="text-xs text-purple-100">Oracle is Active</span>
             </div>
             <span class="text-[10px] text-purple-500 font-mono"

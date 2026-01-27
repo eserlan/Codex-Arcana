@@ -369,18 +369,7 @@
         title="Zoom In"
         aria-label="Zoom In"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          ><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-          ></path></svg
-        >
+        <span class="icon-[lucide--zoom-in] w-4 h-4"></span>
       </button>
       <button
         class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
@@ -388,18 +377,7 @@
         title="Zoom Out"
         aria-label="Zoom Out"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          ><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
-          ></path></svg
-        >
+        <span class="icon-[lucide--zoom-out] w-4 h-4"></span>
       </button>
 
       <!-- Connect Mode Toggle -->
@@ -410,20 +388,7 @@
         onclick={toggleConnectMode}
         title="Connect Mode (C)"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-          ></path>
-        </svg>
+        <span class="icon-[lucide--link] w-4 h-4"></span>
       </button>
     </div>
   </div>

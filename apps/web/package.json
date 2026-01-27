@@ -48,7 +48,11 @@
     "tiptap-markdown": "^0.9.0"
   },
   "devDependencies": {
+    "@iconify-json/carbon": "^1.2.18",
     "@iconify-json/heroicons": "^1.2.3",
+    "@iconify-json/lucide": "^1.2.87",
+    "@iconify-json/mdi": "^1.2.3",
+    "@iconify-json/ph": "^1.2.2",
     "@iconify/tailwind4": "^1.2.1",
     "@playwright/test": "^1.58.0",
     "@sveltejs/adapter-static": "^3.0.10",

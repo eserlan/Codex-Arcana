@@ -87,22 +87,11 @@
 
                 <button
                     onclick={onClose}
-                    class="text-green-700 hover:text-green-500 transition"
+                    class="text-green-700 hover:text-green-500 transition flex items-center justify-center p-1"
                     aria-label="Close panel"
                     title="Close"
                 >
-                    <svg
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        ><path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        ></path></svg
-                    >
+                    <span class="icon-[heroicons--x-mark] w-6 h-6"></span>
                 </button>
             </div>
 
@@ -214,8 +203,12 @@
                         </h3>
                         <ul class="space-y-3">
                             {#each entity.connections as conn}
-                                <li class="flex gap-3 text-sm text-gray-400">
-                                    <span class="text-green-500 mt-1">▶</span>
+                                <li
+                                    class="flex gap-3 text-sm text-gray-400 items-start"
+                                >
+                                    <span
+                                        class="text-green-500 mt-1 icon-[lucide--chevron-right] w-3 h-3 shrink-0"
+                                    ></span>
                                     <span>
                                         <strong class="text-gray-300"
                                             >{conn.label || conn.type}</strong
@@ -239,27 +232,9 @@
                         <div
                             class="flex items-center gap-3 text-xs uppercase tracking-widest text-gray-500 mb-6 font-mono"
                         >
-                            <span class="text-blue-500">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-4 h-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <path
-                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                                    ></path>
-                                    <polyline points="14 2 14 8 20 8"
-                                    ></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                </svg>
-                            </span>
+                            <span
+                                class="text-blue-500 icon-[lucide--file-text] w-4 h-4"
+                            ></span>
                             <span>Lore archive decrypted</span>
                             <div class="h-px bg-gray-800 flex-1 ml-2"></div>
                         </div>
