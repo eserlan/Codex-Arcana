@@ -6,6 +6,7 @@
   import { vault } from "$lib/stores/vault.svelte";
   import { parse } from "marked";
   import type { Core, NodeSingular } from "cytoscape";
+  import { SCIFI_GREEN_STYLE } from "$lib/themes/graph-theme";
 
   let container: HTMLElement;
   let cy: Core | undefined = $state();
@@ -54,129 +55,6 @@
       toggleConnectMode();
     }
   };
-
-  // Green Sci-Fi Theme ("Green Ops")
-  const SCIFI_GREEN_STYLE = [
-    {
-      selector: "node",
-      style: {
-        "background-color": "#022c22", // Very dark green
-        "border-width": 1,
-        "border-color": "#15803d", // Green-700
-        width: 32,
-        height: 32,
-        shape: "round-rectangle",
-        label: "data(label)",
-        color: "#86efac", // Green-300
-        "font-family": "Inter, sans-serif",
-        "font-size": 10,
-        "text-valign": "bottom",
-        "text-margin-y": 8,
-        "text-max-width": 80,
-        "text-wrap": "wrap",
-      },
-    },
-    {
-      selector: "node[image]",
-      style: {
-        "background-image": "data(image)",
-        "background-fit": "cover",
-        "background-clip": "node",
-        width: 48,
-        height: 48,
-        "border-width": 2,
-        "border-color": "#4ade80", // Brighter border for images
-      },
-    },
-    {
-      selector: "node:selected",
-      style: {
-        "background-color": "#14532d", // Green-900
-        "border-color": "#4ade80", // Green-400
-        "border-width": 2,
-        color: "#fff",
-        "text-outline-color": "#000",
-        "text-outline-width": 2,
-        "overlay-color": "#22d3ee",
-        "overlay-padding": 8,
-        "overlay-opacity": 0.3,
-      },
-    },
-    {
-      selector: ".selected-source",
-      style: {
-        "border-width": 2,
-        "border-color": "#facc15", // Yellow for source
-        "background-color": "#422006",
-      },
-    },
-    {
-      selector: "edge",
-      style: {
-        width: 1,
-        "line-color": "#14532d",
-        "target-arrow-color": "#14532d",
-        "curve-style": "bezier",
-        "target-arrow-shape": "triangle",
-        "arrow-scale": 0.6,
-        opacity: 0.6,
-        label: "data(label)",
-        "text-rotation": "autorotate",
-        "font-size": 8,
-        "font-family": "Inter, sans-serif",
-        color: "#86efac",
-        "text-background-color": "#000",
-        "text-background-opacity": 0.8,
-        "text-background-padding": "2px",
-        "text-margin-y": -8,
-      },
-    },
-    {
-      selector: "edge:selected",
-      style: {
-        "line-color": "#4ade80",
-        "target-arrow-color": "#4ade80",
-        width: 2,
-        opacity: 1,
-      },
-    },
-    // Type-specific Node Borders
-    {
-      selector: 'node[type="npc"]',
-      style: {
-        "border-color": "#60a5fa", // Blue-400
-        "border-width": 3,
-      },
-    },
-    {
-      selector: 'node[type="location"]',
-      style: {
-        "border-color": "#4ade80", // Green-400
-        "border-width": 3,
-      },
-    },
-    {
-      selector: 'node[type="item"]',
-      style: {
-        "border-color": "#facc15", // Yellow-400
-        "border-width": 3,
-      },
-    },
-    {
-      selector: 'node[type="event"]',
-      style: {
-        "border-color": "#e879f9", // Fuchsia-400
-        "border-width": 3,
-      },
-    },
-    {
-      selector: 'node[type="faction"]',
-      style: {
-        "border-color": "#fb923c", // Orange-400
-        "border-width": 3,
-      },
-    },
-  ];
 
   onMount(() => {
     if (container) {
@@ -311,10 +189,7 @@
 
   $effect(() => {
     if (cy && graph.elements) {
-      console.log(
-        "GraphView Effect Triggered. Elements:",
-        graph.elements.length,
-      );
+      // console.log("GraphView Effect Triggered. Elements:", graph.elements.length);
 
       try {
         cy.resize(); // Ensure viewport is up to date
@@ -328,7 +203,6 @@
           (el) => !targetIds.has(el.id()),
         );
         if (removedElements.length > 0) {
-          console.log("Removing elements:", removedElements.length);
           cy.remove(removedElements);
         }
 
@@ -338,25 +212,28 @@
         );
 
         if (newElements.length > 0) {
-          console.log("Adding new elements:", newElements.length);
           cy.add(newElements);
         }
 
-        // 3. Update existing elements (labels, etc)
+        // 3. Update existing elements (labels, etc) - Data Sync only
         graph.elements.forEach((el) => {
           if (currentIds.has(el.data.id)) {
-            cy?.$id(el.data.id).data(el.data);
+            const node = cy?.$id(el.data.id);
+            if (node) {
+               // Only update if data actually changed to avoid style recalc? 
+               // Cytoscape handles this reasonably well, but we can be explicit if needed.
+               // For now, blind update is cheap enough compared to layout.
+               node.data(el.data);
+            }
           }
         });
 
-        // 4. Force layout and fit if changes occurred OR if first load with elements
-        const shouldRunLayout =
-          newElements.length > 0 ||
-          removedElements.length > 0 ||
-          (!initialLoaded && graph.elements.length > 0);
+        // 4. Force layout ONLY if structural changes occurred OR if first load
+        const structuralChange = newElements.length > 0 || removedElements.length > 0;
+        const shouldRunLayout = structuralChange || (!initialLoaded && graph.elements.length > 0);
 
         if (shouldRunLayout) {
-          console.log("Running layout/fit. Initial:", !initialLoaded);
+          // console.log("Running layout/fit. Initial:", !initialLoaded, "Structural:", structuralChange);
 
           const layout = cy.layout({
             name: "cose",
@@ -365,11 +242,16 @@
             duration: 800,
             padding: 50,
             componentSpacing: 100,
+            // Randomize only on first load to let cose find a good shape. 
+            // On updates, keep existing positions as starting point.
+            randomize: !initialLoaded, 
           });
 
           layout.one("layoutstop", () => {
-            cy?.fit(undefined, 50);
-            initialLoaded = true;
+             if (!initialLoaded) {
+                 cy?.fit(undefined, 50);
+                 initialLoaded = true;
+             }
           });
 
           layout.run();

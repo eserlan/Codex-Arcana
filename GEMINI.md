@@ -8,13 +8,18 @@ Auto-generated from all feature plans. Last updated: 2026-01-26
 - OPFS (Origin Private File System) / IndexedDB (Metadata) (003-gdrive-mirroring)
 - FlexSearch (004-fuzzy-search)
 - @sveltejs/adapter-static (005-gh-pages-deploy)
+- IndexedDB Caching (007-scalability-hardening)
 
 ## Project Structure
 
 ```text
-backend/
-frontend/
-tests/
+apps/
+  web/          # SvelteKit application
+packages/
+  editor-core/  # Markdown editing logic
+  graph-engine/ # Visualization logic
+  schema/       # Shared data models
+specs/          # Feature specifications
 ```
 
 ## Commands

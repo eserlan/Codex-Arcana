@@ -26,7 +26,6 @@ vi.mock("../utils/idb", () => ({
 
 // Mock global window.showDirectoryPicker
 global.window = global.window || {};
-// @ts-expect-error - Mocking global
 global.window.showDirectoryPicker = vi.fn();
 
 describe("VaultStore", () => {
@@ -55,7 +54,6 @@ Content`);
 
     // Mock directory picker
     const mockHandle = {};
-    // @ts-expect-error - Mocking global
     (window.showDirectoryPicker as any).mockResolvedValue(mockHandle);
 
     await vault.openDirectory();
@@ -135,8 +133,7 @@ id: test
 ---
 Link to [[Other|The Label]]`);
 
-    // @ts-expect-error - Mocking global
-    window.showDirectoryPicker.mockResolvedValue({});
+    (window.showDirectoryPicker as any).mockResolvedValue({});
     await vault.openDirectory();
 
     const entity = vault.entities["test"];

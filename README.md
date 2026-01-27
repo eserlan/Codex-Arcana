@@ -50,12 +50,12 @@ This project uses **GitHub Actions** for continuous integration. Every push and 
 - **Build System**: [Turborepo](https://turbo.build/repo)
 - **Runtime**: Node.js
 - **State Management**: Svelte Stores (Frontend)
-- **Local-first database**: [RxDB](https://rxdb.info/) with OPFS
+- **Local-first database**: Native File System Access API with OPFS
 - **Graph Visualization**: [Cytoscape.js](https://js.cytoscape.org/)
 - **Rich Text Editor**: [Tiptap](https://tiptap.dev/)
 
 ### Features
 
-- Local-first storage (OPFS/RxDB)
+- Local-first storage (OPFS)
 - Bidirectional text-to-graph sync
 - Offline capability
