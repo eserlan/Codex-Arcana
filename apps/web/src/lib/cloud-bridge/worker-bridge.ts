@@ -61,18 +61,30 @@ export class WorkerBridge {
   }
 
   async startSync() {
-    console.log("[WorkerBridge] startSync() called");
+    console.group("[WorkerBridge] startSync");
     const config = get(cloudConfig) as CloudConfig;
+    console.log("[WorkerBridge] Config:", config);
 
     if (!config.enabled) {
-      console.warn("[WorkerBridge] Sync aborted: config.enabled is false");
+      console.warn("Sync aborted: config.enabled is false");
+      console.groupEnd();
       return;
     }
 
-    // Check gapi token directly instead of adapter instance (which may not share auth state)
-    const token = typeof gapi !== 'undefined' ? gapi.client?.getToken()?.access_token : null;
+    // Check gapi token directly
+    const tokenObj = typeof gapi !== 'undefined' ? gapi.client?.getToken() : null;
+    const token = tokenObj?.access_token;
+
+    console.log("[WorkerBridge] GAPI Token Status:", {
+      defined: typeof gapi !== 'undefined',
+      hasClient: typeof gapi !== 'undefined' && !!gapi.client,
+      tokenObj: tokenObj ? "PRESENT" : "NULL",
+      accessToken: token ? "PRESENT (hidden)" : "MISSING"
+    });
+
     if (!token) {
-      console.warn("[WorkerBridge] Sync aborted: no gapi access token");
+      console.warn("Sync aborted: no gapi access token found");
+      console.groupEnd();
       return;
     }
 
@@ -81,15 +93,14 @@ export class WorkerBridge {
     const folderId = localStorage.getItem(storageKey);
     const rootHandle = vault.rootHandle;
 
-    console.log("[WorkerBridge] Sync state:", {
-      hasToken: !!token,
+    console.log("[WorkerBridge] Sync Parameters:", {
       email,
       folderId,
       hasRootHandle: !!rootHandle,
     });
 
 
-    console.log("[WorkerBridge] Posting INIT_SYNC + START_SYNC to worker");
+    console.log("Posting INIT_SYNC + START_SYNC to worker...");
     // Send single initialization + start command to avoid race condition
     this.worker.postMessage({
       type: "INIT_SYNC",
@@ -97,9 +108,11 @@ export class WorkerBridge {
         accessToken: token,
         folderId: folderId || undefined,
         rootHandle: rootHandle
-      },
+      }
     });
+
     this.worker.postMessage({ type: "START_SYNC" });
+    console.groupEnd();
   }
 }
 

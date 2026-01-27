@@ -42,11 +42,15 @@
     let isFlashing = $state(false);
 
     const handleSync = () => {
-        console.log("[CloudStatus] SYNC NOW clicked - starting sync");
+        console.group("[CloudStatus] SYNC NOW Clicked");
         isFlashing = true;
-        syncStats.setStatus("SYNCING"); // Immediately show syncing state
-        setTimeout(() => (isFlashing = false), 600);
+        // set immediately to provide feedback
+        syncStats.setStatus("SYNCING");
+        console.log("[CloudStatus] UI: setStatus('SYNCING')");
+        console.log("[CloudStatus] Calling workerBridge.startSync()...");
         workerBridge.startSync();
+        setTimeout(() => (isFlashing = false), 500);
+        console.groupEnd();
     };
 
     const toggleSync = (e: Event) => {
