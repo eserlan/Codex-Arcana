@@ -14,24 +14,24 @@
     message.entityId ? vault.entities[message.entityId] : null,
   );
 
-  let isSavedToChronicle = $state(false);
-  let isSavedToLore = $state(false);
+  let isSaved = $state(false);
+  const LORE_THRESHOLD = 200;
+  let isLore = $derived(message.content.length >= LORE_THRESHOLD);
 
   const copyToChronicle = () => {
     if (!message.entityId || !message.content) return;
     vault.selectedEntityId = message.entityId;
     vault.activeDetailTab = "status";
     vault.updateEntity(message.entityId, { content: message.content });
-    isSavedToChronicle = true;
+    isSaved = true;
   };
 
   const copyToLore = () => {
     if (!message.entityId || !message.content) return;
     vault.selectedEntityId = message.entityId;
     vault.activeDetailTab = "lore";
-    // We update the 'lore' field specifically
     vault.updateEntity(message.entityId, { lore: message.content });
-    isSavedToLore = true;
+    isSaved = true;
   };
 </script>
 
@@ -54,34 +54,29 @@
         {@html html}
       </div>
 
-      {#if targetEntity && message.content.length > 20}
+      {#if targetEntity && message.content.length > 20 && !isSaved}
         <div
-          class="mt-3 pt-3 border-t border-zinc-800 flex flex-wrap gap-2 justify-end"
+          class="mt-3 pt-3 border-t border-zinc-800 flex justify-end"
+          transition:fade
         >
-          {#if !isSavedToChronicle}
-            <div transition:fade>
-              <button
-                onclick={copyToChronicle}
-                class="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold tracking-widest transition-all bg-purple-900/20 text-purple-400 border border-purple-800/30 hover:bg-purple-600 hover:text-black hover:border-purple-600"
-                title="Save to primary Chronicle"
-              >
-                <span class="icon-[lucide--copy-plus] w-3 h-3"></span>
-                COPY TO CHRONICLE
-              </button>
-            </div>
-          {/if}
-
-          {#if !isSavedToLore}
-            <div transition:fade>
-              <button
-                onclick={copyToLore}
-                class="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold tracking-widest transition-all bg-blue-900/20 text-blue-400 border border-blue-800/30 hover:bg-blue-600 hover:text-black hover:border-blue-600"
-                title="Save to detailed Lore & Notes"
-              >
-                <span class="icon-[lucide--scroll-text] w-3 h-3"></span>
-                COPY TO LORE
-              </button>
-            </div>
+          {#if !isLore}
+            <button
+              onclick={copyToChronicle}
+              class="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold tracking-widest transition-all bg-purple-900/20 text-purple-400 border border-purple-800/30 hover:bg-purple-600 hover:text-black hover:border-purple-600"
+              title="Save to primary Chronicle"
+            >
+              <span class="icon-[lucide--copy-plus] w-3 h-3"></span>
+              COPY TO CHRONICLE
+            </button>
+          {:else}
+            <button
+              onclick={copyToLore}
+              class="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold tracking-widest transition-all bg-blue-900/20 text-blue-400 border border-blue-800/30 hover:bg-blue-600 hover:text-black hover:border-blue-600"
+              title="Save to detailed Lore & Notes"
+            >
+              <span class="icon-[lucide--scroll-text] w-3 h-3"></span>
+              COPY TO LORE
+            </button>
           {/if}
         </div>
       {/if}

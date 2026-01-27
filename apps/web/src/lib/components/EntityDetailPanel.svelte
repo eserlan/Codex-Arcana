@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Entity } from "schema";
+    import type { Entity, Connection } from "schema";
     import { fly } from "svelte/transition";
     import { vault } from "$lib/stores/vault.svelte";
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
@@ -58,6 +58,32 @@
         ) {
             vault.fetchLore(entity.id);
         }
+    });
+
+    let allConnections = $derived.by(() => {
+        if (!entity) return [];
+
+        // Outbound: From this entity to others
+        const outbound = entity.connections.map((c: Connection) => ({
+            ...c,
+            isOutbound: true,
+            displayTitle: vault.entities[c.target]?.title || c.target,
+            targetId: c.target,
+        }));
+
+        // Inbound: From other entities to this one
+        const inbound = vault.allEntities.flatMap((e) =>
+            e.connections
+                .filter((c: Connection) => c.target === entity.id)
+                .map((c: Connection) => ({
+                    ...c,
+                    isOutbound: false,
+                    displayTitle: e.title,
+                    targetId: e.id,
+                })),
+        );
+
+        return [...outbound, ...inbound];
     });
 </script>
 
@@ -205,23 +231,31 @@
                             Gossip & Secrets
                         </h3>
                         <ul class="space-y-3">
-                            {#each entity.connections as conn}
+                            {#each allConnections as conn}
                                 <li
-                                    class="flex gap-3 text-sm text-gray-400 items-start"
+                                    class="flex gap-3 text-sm text-gray-400 items-start group"
                                 >
                                     <span
                                         class="text-green-500 mt-1 icon-[lucide--chevron-right] w-3 h-3 shrink-0"
                                     ></span>
-                                    <span>
-                                        <strong class="text-gray-300"
-                                            >{conn.label || conn.type}</strong
-                                        >:
-                                        {vault.entities[conn.target]?.title ||
-                                            conn.target}
-                                    </span>
+                                    <div class="flex-1 min-w-0">
+                                        <button
+                                            onclick={() =>
+                                                (vault.selectedEntityId =
+                                                    conn.targetId)}
+                                            class="text-left hover:text-green-400 transition"
+                                        >
+                                            <strong
+                                                class="text-gray-300 group-hover:text-green-400 transition"
+                                                >{conn.label ||
+                                                    conn.type}</strong
+                                            >:
+                                            {conn.displayTitle}
+                                        </button>
+                                    </div>
                                 </li>
                             {/each}
-                            {#if entity.connections.length === 0}
+                            {#if allConnections.length === 0}
                                 <li class="text-sm text-gray-600 italic">
                                     No known connections.
                                 </li>
