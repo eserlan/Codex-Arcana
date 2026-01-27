@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { vault } from "./vault.svelte";
 import * as fsUtils from "../utils/fs";
+import * as idbUtils from "../utils/idb";
 
 // Mock dependencies
 vi.mock("../utils/fs", () => ({
@@ -70,6 +71,49 @@ Content`)
     const entity = vault.entities["test"];
     expect(entity).toBeDefined();
     expect(entity?.title).toBe("Test Node");
+  });
+
+  it("should load from cache if lastModified matches", async () => {
+    const filePath = "cached.md";
+    const lastModified = 999999;
+    const cachedEntity = {
+        id: "cached-id",
+        title: "Cached Title",
+        type: "npc",
+        content: "Cached Content",
+        tags: [],
+        connections: [],
+        metadata: {}
+    };
+
+    // Mock IDB hit
+    vi.mocked(idbUtils.getCachedFile).mockResolvedValue({
+        path: filePath,
+        lastModified: lastModified,
+        entity: cachedEntity
+    });
+
+    const mockFileHandle = {
+        getFile: vi.fn().mockResolvedValue({
+            lastModified: lastModified,
+            text: vi.fn() // Should NOT be called
+        })
+    };
+    
+    const mockFiles = [{ handle: mockFileHandle, path: [filePath] }];
+    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
+    vault.rootHandle = {} as any;
+    vault.isAuthorized = true;
+
+    await vault.loadFiles();
+
+    expect(mockFileHandle.getFile).toHaveBeenCalled();
+    // Verify text() was never called (proving it skipped parsing)
+    const fileObj = await mockFileHandle.getFile();
+    expect(fileObj.text).not.toHaveBeenCalled();
+    
+    expect(vault.entities["cached-id"]).toBeDefined();
+    expect(vault.entities["cached-id"]?.title).toBe("Cached Title");
   });
 
   it("should create new entity", async () => {
