@@ -70,7 +70,14 @@
 
         checkToken();
         const interval = setInterval(checkToken, 5000);
-        return () => clearInterval(interval);
+
+        const onFocus = () => checkToken();
+        window.addEventListener("focus", onFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("focus", onFocus);
+        };
     });
 
     let status = $derived($syncStats.status);

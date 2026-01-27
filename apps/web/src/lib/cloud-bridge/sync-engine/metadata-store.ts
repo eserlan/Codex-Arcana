@@ -59,10 +59,11 @@ export class MetadataStore {
     const db = await this.dbPromise;
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    await Promise.all([
-      ...items.map(item => store.put(item)),
-      tx.done
-    ]);
+
+    for (const item of items) {
+      await store.put(item);
+    }
+    await tx.done;
   }
 
   async delete(filePath: string): Promise<void> {

@@ -132,11 +132,21 @@ export class SyncEngine {
     ) => {
       const iterator = items.entries();
       const errors: { item: T; error: unknown }[] = [];
+      const BATCH_SIZE = 10;
 
       const worker = async () => {
         for (const [, item] of iterator) {
           try {
             await fn(item);
+
+
+            // Periodically save metadata to prevent total loss on crash
+            if (metadataUpdates.length >= BATCH_SIZE) {
+              // Clone and clear the array to process this batch
+              const batch = [...metadataUpdates];
+              metadataUpdates.length = 0;
+              await this.metadataStore.bulkPut(batch);
+            }
           } catch (err) {
             console.error("Sync error for item:", item, err);
             errors.push({ item, error: err });
@@ -149,6 +159,13 @@ export class SyncEngine {
         worker,
       );
       await Promise.all(workers);
+
+      // Flush remaining metadata
+      if (metadataUpdates.length > 0) {
+        const batch = [...metadataUpdates];
+        metadataUpdates.length = 0;
+        await this.metadataStore.bulkPut(batch);
+      }
 
       if (errors.length > 0) {
         const firstError = errors[0]?.error;
@@ -194,11 +211,7 @@ export class SyncEngine {
       });
     }
 
-    // Batch update metadata
-    if (metadataUpdates.length > 0) {
-      console.log(`[SyncEngine] Updating metadata for ${metadataUpdates.length} files...`);
-      await this.metadataStore.bulkPut(metadataUpdates);
-    }
+
   }
 
   private async updateMetadata(
