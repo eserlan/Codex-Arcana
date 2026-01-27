@@ -104,14 +104,35 @@
       >
         {#if oracle.messages.length === 0}
           <div
-            class="h-full flex items-center justify-center text-center p-6 text-purple-900/30"
+            class="h-full flex flex-col items-center justify-center text-center p-8 space-y-6"
           >
-            <div class="flex flex-col items-center gap-3">
+            <div class="relative">
+              <div
+                class="absolute inset-0 bg-purple-500/20 blur-xl rounded-full animate-pulse"
+              ></div>
               <span
-                class="icon-[heroicons--chat-bubble-left-right] w-10 h-10 opacity-20"
+                class="icon-[heroicons--sparkles] w-12 h-12 text-purple-500 relative z-10 opacity-50"
               ></span>
-              <p class="text-[10px] font-mono tracking-widest">
-                AWAITING QUERY...
+            </div>
+
+            <div class="space-y-2">
+              <h4
+                class="text-purple-100 font-bold uppercase tracking-[0.2em] text-[10px]"
+              >
+                The Archives are Open
+              </h4>
+              <p class="text-xs text-purple-400/60 leading-relaxed font-mono">
+                Greetings, Seeker. I am the Oracle, the keeper of your recorded
+                lore. Ask of the robber, the mayor, or the shadows beyond the
+                village... I shall consult the echoes of your vault.
+              </p>
+            </div>
+
+            <div class="pt-4">
+              <p
+                class="text-[9px] text-purple-900/40 uppercase tracking-widest animate-bounce"
+              >
+                Awaiting your query...
               </p>
             </div>
           </div>
