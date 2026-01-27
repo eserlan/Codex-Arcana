@@ -39,7 +39,28 @@ export class WorkerBridge {
   }
 
   private setupListeners() {
-    // ... same ...
+    this.worker.onmessage = (event) => {
+      const { type, payload } = event.data;
+      
+      // Since this is a class-based bridge, we'll import the store directly
+      // but we need to handle the store update carefully.
+      import("$stores/sync-stats").then(({ syncStats }) => {
+        switch (type) {
+          case "SYNC_STATUS":
+            syncStats.setStatus(payload);
+            break;
+          case "SYNC_COMPLETE":
+            syncStats.updateStats({
+              filesUploaded: payload.uploads,
+              filesDownloaded: payload.downloads,
+            });
+            break;
+          case "SYNC_ERROR":
+            syncStats.setError(payload);
+            break;
+        }
+      });
+    };
   }
 
   async startSync() {

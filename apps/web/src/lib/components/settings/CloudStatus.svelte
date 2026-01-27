@@ -37,7 +37,11 @@
         }
     };
 
+    let isFlashing = $state(false);
+
     const handleSync = () => {
+        isFlashing = true;
+        setTimeout(() => (isFlashing = false), 600);
         workerBridge.startSync();
     };
 
@@ -56,21 +60,24 @@
 
 <div class="relative font-mono cloud-status-container">
     <button
-        class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition group relative {showMenu
+        class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition-all group relative {showMenu
             ? 'z-[60] border-green-500 bg-green-900/10'
-            : 'z-10'}"
+            : 'z-10'} {isFlashing ? 'ring-2 ring-green-500 ring-opacity-50 scale-95' : ''}"
         onclick={() => (showMenu = !showMenu)}
         title={isConnected
             ? `Connected as ${$cloudConfig.connectedEmail}`
             : "Cloud Sync Settings"}
         data-testid="cloud-status-button"
     >
+        {#if isFlashing}
+            <div class="absolute inset-0 bg-green-500/20 rounded animate-ping pointer-events-none"></div>
+        {/if}
         <span
-            class="text-lg {isConnected
+            class="text-lg transition-all {isConnected
                 ? 'text-green-500'
-                : 'text-green-900 group-hover:text-green-700'}"
+                : 'text-green-900 group-hover:text-green-700'} {isSyncing ? 'animate-pulse' : ''}"
         >
-            {isSyncing ? "●" : "☁"}
+            {isSyncing ? "⚡" : "☁"}
         </span>
         {#if isConnected && !isSyncing}
             <span
@@ -174,8 +181,7 @@
                                 <span
                                     class={status === "ERROR"
                                         ? "text-red-400"
-                                        : "text-green-500"}>{status}</span
-                                >
+                                        : "text-green-500 font-bold"}>{status}</span>
                             </div>
                             {#if $syncStats.stats}
                                 <div
@@ -185,7 +191,7 @@
                                         <div class="text-gray-600 uppercase">
                                             Uploaded
                                         </div>
-                                        <div class="text-gray-300">
+                                        <div class="text-green-900/80">
                                             {$syncStats.stats.filesUploaded}
                                         </div>
                                     </div>
@@ -193,7 +199,7 @@
                                         <div class="text-gray-600 uppercase">
                                             Downloaded
                                         </div>
-                                        <div class="text-gray-300">
+                                        <div class="text-green-900/80">
                                             {$syncStats.stats.filesDownloaded}
                                         </div>
                                     </div>
@@ -211,11 +217,16 @@
 
                         <div class="flex gap-2">
                             <button
-                                class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded transition disabled:opacity-50"
+                                class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 onclick={handleSync}
                                 disabled={isSyncing || !$cloudConfig.enabled}
                             >
-                                SYNC NOW
+                                {#if isSyncing}
+                                    <span class="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                                    SYNCING...
+                                {:else}
+                                    SYNC NOW
+                                {/if}
                             </button>
                             <button
                                 class="px-3 py-2 border border-red-900/50 text-red-900 hover:text-red-500 hover:border-red-500 rounded transition"
