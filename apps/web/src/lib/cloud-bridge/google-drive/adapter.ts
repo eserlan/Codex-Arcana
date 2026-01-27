@@ -19,9 +19,12 @@ export class GoogleDriveAdapter implements ICloudAdapter {
   private gapiInited = false;
   private gisInited = false;
 
+  private gapiInitPromise: Promise<void> | null = null;
+  private gisInitPromise: Promise<void> | null = null;
+
   constructor() {
-    this.initGis();
-    this.initGapi();
+    this.getGis();
+    this.getGapi();
   }
 
   private async waitForScript(check: () => boolean, timeout = 10000): Promise<boolean> {
@@ -33,58 +36,69 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     return true;
   }
 
-  private async initGis() {
-    // Wait for google.accounts to be loaded
-    const loaded = await this.waitForScript(() => typeof google !== "undefined" && !!google.accounts);
-    if (!loaded) {
-      console.warn("Google Identity Services script failed to load");
-      return;
-    }
+  private getGis(): Promise<void> {
+    if (this.gisInitPromise) return this.gisInitPromise;
+    this.gisInitPromise = (async () => {
 
-    if (typeof google !== "undefined" && google.accounts) {
-      const { CLIENT_ID, SCOPES } = getGoogleConfig();
-      if (!CLIENT_ID) {
-        console.warn("VITE_GOOGLE_CLIENT_ID is missing. Google Drive integration disabled.");
+
+      // Wait for google.accounts to be loaded
+      const loaded = await this.waitForScript(() => typeof google !== "undefined" && !!google.accounts);
+      if (!loaded) {
+        console.warn("Google Identity Services script failed to load");
         return;
       }
-      this.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (resp: google.accounts.oauth2.TokenResponse) => {
-          if (resp.error) {
-            throw resp;
-          }
-          this.accessToken = resp.access_token;
-        },
-      });
-      this.gisInited = true;
-    }
+
+      if (typeof google !== "undefined" && google.accounts) {
+        const { CLIENT_ID, SCOPES } = getGoogleConfig();
+        if (!CLIENT_ID) {
+          console.warn("VITE_GOOGLE_CLIENT_ID is missing. Google Drive integration disabled.");
+          return;
+        }
+        this.tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: (resp: google.accounts.oauth2.TokenResponse) => {
+            if (resp.error) {
+              throw resp;
+            }
+            this.accessToken = resp.access_token;
+          },
+        });
+        this.gisInited = true;
+      }
+    })();
+    return this.gisInitPromise;
   }
 
   isConfigured(): boolean {
     return !!getGoogleConfig().CLIENT_ID;
   }
 
-  private async initGapi() {
-    // Wait for gapi to be loaded
-    const loaded = await this.waitForScript(() => typeof gapi !== "undefined");
-    if (!loaded) {
-      console.warn("Google API script failed to load");
-      return;
-    }
+  private getGapi(): Promise<void> {
+    if (this.gapiInitPromise) return this.gapiInitPromise;
+    this.gapiInitPromise = (async () => {
+      // Wait for gapi to be loaded
+      const loaded = await this.waitForScript(() => typeof gapi !== "undefined");
+      if (!loaded) {
+        console.warn("Google API script failed to load");
+        return;
+      }
 
-    if (typeof gapi !== "undefined") {
-      await new Promise<void>((resolve) => gapi.load("client", resolve));
-      await gapi.client.init({
-        discoveryDocs: [getGoogleConfig().DISCOVERY_DOC],
-      });
-      this.gapiInited = true;
+      if (typeof gapi !== "undefined") {
+        await new Promise<void>((resolve) => gapi.load("client", resolve));
+        await gapi.client.init({
+          discoveryDocs: [getGoogleConfig().DISCOVERY_DOC],
+        });
+        this.gapiInited = true;
 
-      // Try to restore cached token
-      this.restoreCachedToken();
-    }
+        // Try to restore cached token
+        this.restoreCachedToken();
+      }
+    })();
+    return this.gapiInitPromise;
   }
 
+  // Method needed for restoration access
   private restoreCachedToken(): boolean {
     try {
       const cached = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -123,8 +137,8 @@ export class GoogleDriveAdapter implements ICloudAdapter {
   }
 
   async connect(): Promise<string> {
-    if (!this.gisInited) this.initGis();
-    if (!this.gapiInited) await this.initGapi();
+    if (!this.gisInited) await this.getGis();
+    if (!this.gapiInited) await this.getGapi();
 
     return new Promise((resolve, reject) => {
       if (!this.tokenClient) {
