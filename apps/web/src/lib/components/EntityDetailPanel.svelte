@@ -245,12 +245,20 @@
                                                     conn.targetId)}
                                             class="text-left hover:text-green-400 transition"
                                         >
-                                            <strong
-                                                class="text-gray-300 group-hover:text-green-400 transition"
-                                                >{conn.label ||
-                                                    conn.type}</strong
-                                            >:
-                                            {conn.displayTitle}
+                                            {#if conn.isOutbound}
+                                                <strong
+                                                    class="text-gray-300 group-hover:text-green-400 transition"
+                                                    >{conn.label ||
+                                                        conn.type}</strong
+                                                >:
+                                                {conn.displayTitle}
+                                            {:else}
+                                                <strong
+                                                    class="text-gray-300 group-hover:text-green-400 transition"
+                                                    >{conn.displayTitle}</strong
+                                                >:
+                                                {conn.label || conn.type}
+                                            {/if}
                                         </button>
                                     </div>
                                 </li>
