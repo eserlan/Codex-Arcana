@@ -288,23 +288,6 @@
                                 Unlink
                             </button>
                         </div>
-
-                        <!-- DEBUG INFO -->
-                        <div
-                            class="mt-4 pt-2 border-t border-gray-800 text-[10px] font-mono text-gray-500 break-all"
-                        >
-                            <div>Debug State:</div>
-                            <div>hasToken: {hasToken}</div>
-                            <div>enabled: {$cloudConfig.enabled}</div>
-                            <div>syncing: {isSyncing}</div>
-                            <div>
-                                gapi: {typeof gapi !== "undefined"
-                                    ? gapi.client
-                                        ? "ready"
-                                        : "no-client"
-                                    : "undefined"}
-                            </div>
-                        </div>
                     </div>
                 {/if}
             </div>
