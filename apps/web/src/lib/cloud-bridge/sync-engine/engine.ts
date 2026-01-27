@@ -42,24 +42,60 @@ export class SyncEngine {
     const plan: SyncPlan = { uploads: [], downloads: [], deletes: [] };
     const localMap = new Map(localFiles.map((f) => [f.path, f]));
     const metadataMap = new Map(metadataList.map((m) => [m.filePath, m]));
+    const SKEW_MS = 2000;
 
-    // 1. Process Local Files (New or Modified)
+    // 1. Process Local Files
     for (const local of localFiles) {
       const remote = remoteFiles.get(local.path);
+      const meta = metadataMap.get(local.path);
 
       if (!remote) {
         // New Local File -> Upload
+        // But wait, if we have metadata saying we synced it, but remote is gone...
+        // imply remote delete? For now, re-upload (safety first).
         plan.uploads.push(local);
       } else {
-        // Both exist - include remoteId for update
-        const decision = resolveConflict(
-          local.lastModified,
-          remote.modifiedTime,
-        );
-        if (decision === "UPLOAD") {
+        // Both exist. Check for changes against BASE (metadata)
+
+        let localChanged = true;
+        let remoteChanged = true;
+
+        if (meta) {
+          // Check if local matches what we last saw
+          if (Math.abs(local.lastModified - meta.localModified) < SKEW_MS) {
+            localChanged = false;
+          }
+          // Check if remote matches what we last saw
+          // Note: remote.modifiedTime is string, meta.remoteModified is string
+          if (remote.modifiedTime === meta.remoteModified) {
+            remoteChanged = false;
+          }
+        } else {
+          // No metadata = treat both as new/unknown -> fall back to timestamp war
+          // This happens on first sync or after index clear
+        }
+
+        if (!localChanged && !remoteChanged) {
+          // Nothing to do
+          continue;
+        }
+
+        if (localChanged && !remoteChanged) {
           plan.uploads.push({ ...local, remoteId: remote.id });
-        } else if (decision === "DOWNLOAD") {
+        } else if (!localChanged && remoteChanged) {
           plan.downloads.push(remote);
+        } else {
+          // Both changed (or no metadata) -> Conflict or First Sync
+          // Use timestamp resolution
+          const decision = resolveConflict(
+            local.lastModified,
+            remote.modifiedTime,
+          );
+          if (decision === "UPLOAD") {
+            plan.uploads.push({ ...local, remoteId: remote.id });
+          } else if (decision === "DOWNLOAD") {
+            plan.downloads.push(remote);
+          }
         }
       }
     }
@@ -68,16 +104,14 @@ export class SyncEngine {
     for (const [path, remote] of remoteFiles) {
       if (!localMap.has(path)) {
         // Exists remote, missing local.
-        // Check metadata to see if we deleted it locally
         const meta = metadataMap.get(path);
         if (meta) {
-          // We knew about it, so it must have been deleted locally -> Delete Remote
-          // plan.deletes.push(path) // Optional: For now, let's play safe and re-download (restore)
-          // or assume it's a new remote file if we don't implement full delete sync yet.
-          // Decision: Treat as Remote New -> Download
+          // We saw it before, but it's gone locally.
+          // Be conservative: Re-download (Restore).
+          // A smarter engine would track local deletes.
           plan.downloads.push(remote);
         } else {
-          // Never saw it before -> Download
+          // Never saw it -> New Remote
           plan.downloads.push(remote);
         }
       }
