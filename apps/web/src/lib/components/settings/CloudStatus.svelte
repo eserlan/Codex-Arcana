@@ -259,19 +259,23 @@
 
                         <div class="flex gap-2">
                             <button
-                                class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2 {isFlashing
+                                class="flex-1 px-3 py-2 text-black font-bold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2 {isFlashing
                                     ? 'scale-95 ring-2 ring-green-400'
-                                    : ''}"
-                                onclick={handleSync}
+                                    : ''} {!hasToken
+                                    ? 'bg-amber-500 hover:bg-amber-400'
+                                    : 'bg-green-600 hover:bg-green-500'}"
+                                onclick={!hasToken ? handleLogin : handleSync}
                                 disabled={isSyncing ||
                                     !$cloudConfig.enabled ||
-                                    !hasToken}
+                                    isLoading}
                             >
-                                {#if isSyncing}
+                                {#if isSyncing || isLoading}
                                     <span
                                         class="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"
                                     ></span>
-                                    SYNCING...
+                                    {isSyncing ? "SYNCING..." : "CONNECTING..."}
+                                {:else if !hasToken}
+                                    RECONNECT
                                 {:else}
                                     SYNC NOW
                                 {/if}
