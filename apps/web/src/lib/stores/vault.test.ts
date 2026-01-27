@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, waitFor } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { vault } from "./vault.svelte";
 import * as fsUtils from "../utils/fs";
 
