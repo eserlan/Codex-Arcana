@@ -34,7 +34,7 @@
   ></div>
 
   <div
-    class="fixed bottom-0 right-0 w-full md:bottom-20 md:right-6 md:w-96 h-[80vh] md:h-[500px] bg-black/95 border-t md:border border-purple-900/50 rounded-t-xl md:rounded-lg shadow-2xl flex flex-col z-50 overflow-hidden"
+    class="fixed bottom-0 left-0 w-full md:bottom-44 md:left-6 md:w-96 h-[80vh] md:h-[500px] bg-black/95 border-t md:border border-purple-900/50 rounded-t-xl md:rounded-lg shadow-2xl flex flex-col z-50 overflow-hidden"
     transition:fly={{ y: 50, duration: 300 }}
   >
     <!-- Header -->
@@ -184,7 +184,7 @@
 <!-- Toggle Button -->
 {#if !oracle.isOpen}
   <button
-    class="fixed bottom-6 right-6 md:bottom-20 md:right-6 w-14 h-14 bg-purple-900/10 border border-purple-500/30 rounded-full flex items-center justify-center text-purple-400 hover:bg-purple-900/30 hover:text-purple-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)] z-50 group overflow-hidden"
+    class="fixed bottom-6 right-6 md:bottom-28 md:left-6 w-14 h-14 bg-purple-900/10 border border-purple-500/30 rounded-full flex items-center justify-center text-purple-400 hover:bg-purple-900/30 hover:text-purple-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)] z-50 group overflow-hidden"
     onclick={() => oracle.toggle()}
     transition:fade
     title="Open Lore Oracle"
