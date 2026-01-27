@@ -69,9 +69,12 @@
         "Search result missing ID, falling back to path lookup:",
         result,
       );
-      // Fallback: If we have a path, use it as the ID (many entities use path as ID if metadata is missing)
+      // Fallback: If we have a path, derive an ID from the basename without the .md extension
       if (result.path) {
-        vault.selectedEntityId = result.path.replace(".md", "");
+        const pathSegments = result.path.split("/");
+        const basename = pathSegments[pathSegments.length - 1] || result.path;
+        const derivedId = basename.replace(/\.md$/, "");
+        vault.selectedEntityId = derivedId;
       } else {
         console.error(
           "CRITICAL: Selected a search result with no ID or path!",

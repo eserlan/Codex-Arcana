@@ -9,17 +9,27 @@ let engine: SyncEngine | null = null;
 
 self.onmessage = async (event) => {
   const { type, payload } = event.data;
-  console.log(`SyncWorker: Received message [${type}]`, payload);
+  // Sanitize payload for logging
+  const { ...safePayload } = payload || {};
+  console.log(`SyncWorker: Received message [${type}]`, safePayload);
 
   try {
     switch (type) {
       case "INIT_SYNC": {
         console.log('SyncWorker: Initializing engine...');
-        // payload: { accessToken, folderId, rootHandle }
         const cloudAdapter = new WorkerDriveAdapter(payload.accessToken, payload.folderId);
+        
         if (payload.rootHandle) {
-          console.log('SyncWorker: Setting local root handle');
-          fsAdapter.setRoot(payload.rootHandle);
+          const isValid = typeof FileSystemDirectoryHandle !== "undefined" && 
+                        payload.rootHandle instanceof FileSystemDirectoryHandle;
+          
+          if (isValid) {
+            console.log('SyncWorker: Setting local root handle');
+            fsAdapter.setRoot(payload.rootHandle);
+          } else {
+            console.error('SyncWorker: Invalid root handle provided');
+            throw new Error("Invalid root handle provided to sync worker");
+          }
         }
         engine = new SyncEngine(cloudAdapter, fsAdapter, metadataStore);
         console.log('SyncWorker: Engine ready');

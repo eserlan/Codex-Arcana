@@ -88,13 +88,14 @@ export class GoogleDriveAdapter implements ICloudAdapter {
             folderId = await this.createFolder("CodexArcana");
           }
           
-          // Store folder ID in localStorage for the worker to use later
-          localStorage.setItem('gdrive_folder_id', folderId);
+          // Store folder ID in localStorage scoped to the current user
+          const storageKey = `gdrive_folder_id:${email}`;
+          localStorage.setItem(storageKey, folderId);
 
           resolve(email);
         } catch (e) {
-          console.warn("Failed to complete GDrive setup", e);
-          resolve("connected-user");
+          console.error("Failed to complete GDrive setup", e);
+          reject(e instanceof Error ? e : new Error("Failed to complete GDrive setup"));
         }
       };
 
@@ -111,8 +112,13 @@ export class GoogleDriveAdapter implements ICloudAdapter {
       q: "name = 'CodexArcana' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
       fields: "files(id)",
     });
-    const files = response.result.files;
-    return files && files.length > 0 ? files[0].id! : null;
+    const files = response.result.files || [];
+    
+    if (files.length === 0) return null;
+    if (files.length === 1) return files[0].id!;
+
+    console.warn(`Multiple "CodexArcana" folders found (${files.length}). Using the first one found.`);
+    return files[0].id!;
   }
 
   private async createFolder(name: string): Promise<string> {
@@ -146,7 +152,13 @@ export class GoogleDriveAdapter implements ICloudAdapter {
 
   async listFiles(): Promise<Map<string, RemoteFileMeta>> {
     if (!this.accessToken) throw new Error("Not authenticated");
-    const folderId = localStorage.getItem('gdrive_folder_id');
+    
+    // Get the email from GAPI to build the key
+    const about = await gapi.client.drive.about.get({ fields: 'user(emailAddress)' });
+    const email = about.result.user?.emailAddress;
+    const storageKey = `gdrive_folder_id:${email}`;
+    
+    const folderId = localStorage.getItem(storageKey);
     if (!folderId) throw new Error("No sync folder found. Reconnect requested.");
 
     const response = await gapi.client.drive.files.list({
