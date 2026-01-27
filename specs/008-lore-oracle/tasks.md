@@ -1,21 +1,24 @@
-# Tasks: Lore Oracle
+# Tasks: Lore Oracle (Cloud)
 
 - [ ] **Infrastructure: Dependencies** <!-- id: 1 -->
-    - [ ] Install `@mlc-ai/web-llm` in `apps/web`. <!-- id: 1.1 -->
-    - [ ] Update `vite.config.ts` if needed for worker/wasm compatibility. <!-- id: 1.2 -->
+    - [ ] Uninstall `@mlc-ai/web-llm` (if installed). <!-- id: 1.1 -->
+    - [ ] Install `@google/generative-ai` in `apps/web`. <!-- id: 1.2 -->
 
-- [ ] **Core: AI Service** <!-- id: 2 -->
-    - [ ] Create `apps/web/src/lib/services/ai.ts` to manage WebLLM engine initialization and chat completions. <!-- id: 2.1 -->
-    - [ ] Implement `apps/web/src/lib/stores/oracle.svelte.ts` for reactive state (messages, isLoading, modelProgress). <!-- id: 2.2 -->
+- [ ] **Core: Settings Management** <!-- id: 2 -->
+    - [ ] Update `apps/web/src/lib/utils/idb.ts` (or settings store) to handle `ai_api_key`. <!-- id: 2.1 -->
+    - [ ] Create `apps/web/src/lib/components/settings/AISettings.svelte` for key entry. <!-- id: 2.2 -->
 
-- [ ] **Core: RAG Integration** <!-- id: 3 -->
-    - [ ] Implement `augmentPrompt(query: string)` function in `ai.ts` that calls `searchService` and retrieves note content. <!-- id: 3.1 -->
+- [ ] **Core: AI Service** <!-- id: 3 -->
+    - [ ] Create/Update `apps/web/src/lib/services/ai.ts` to use Gemini API. <!-- id: 3.1 -->
+    - [ ] Implement `apps/web/src/lib/stores/oracle.svelte.ts` for chat state. <!-- id: 3.2 -->
 
-- [ ] **UI: Oracle Interface** <!-- id: 4 -->
-    - [ ] Create `apps/web/src/lib/components/oracle/OracleWindow.svelte` (floating panel). <!-- id: 4.1 -->
-    - [ ] Create `apps/web/src/lib/components/oracle/ChatMessage.svelte`. <!-- id: 4.2 -->
-    - [ ] Integrate `OracleWindow` into `+layout.svelte` or `+page.svelte`. <!-- id: 4.3 -->
+- [ ] **Core: RAG Integration** <!-- id: 4 -->
+    - [ ] Implement `retrieveContext` in `ai.ts` using `searchService`. <!-- id: 4.1 -->
 
-- [ ] **Quality Assurance** <!-- id: 5 -->
-    - [ ] **Offline Functionality Verification**: Ensure model loads from cache after first run without network. <!-- id: 5.1 -->
-    - [ ] Verify `npm run lint` passes. <!-- id: 5.2 -->
+- [ ] **UI: Oracle Interface** <!-- id: 5 -->
+    - [ ] Update `OracleWindow.svelte` to show "Configure API Key" if missing. <!-- id: 5.1 -->
+    - [ ] Integrate `AISettings` into the main settings modal or Oracle window. <!-- id: 5.2 -->
+
+- [ ] **Quality Assurance** <!-- id: 6 -->
+    - [ ] **Privacy Verification**: Verify NO requests are made unless key is present. <!-- id: 6.1 -->
+    - [ ] Lint & Test. <!-- id: 6.2 -->

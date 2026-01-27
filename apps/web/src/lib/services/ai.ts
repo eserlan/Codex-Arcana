@@ -1,34 +1,26 @@
-import { CreateMLCEngine, type MLCEngine, type InitProgressCallback } from "@mlc-ai/web-llm";
+import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
 import { searchService } from "./search";
 import { vault } from "../stores/vault.svelte";
 
-const SELECTED_MODEL = "Llama-3-8B-Instruct-q4f32_1-MLC";
+const MODEL_NAME = "gemini-1.5-flash";
 
 export class AIService {
-  private engine: MLCEngine | null = null;
-  private initializationPromise: Promise<void> | null = null;
+  private genAI: GoogleGenerativeAI | null = null;
+  private model: GenerativeModel | null = null;
 
-  async init(onProgress?: InitProgressCallback) {
-    if (this.engine) return;
-    if (this.initializationPromise) return this.initializationPromise;
-
-    this.initializationPromise = (async () => {
-      try {
-        this.engine = await CreateMLCEngine(
-          SELECTED_MODEL,
-          { initProgressCallback: onProgress }
-        );
-      } catch (err) {
-        console.error("Failed to init WebLLM", err);
-        throw err;
-      }
-    })();
-
-    return this.initializationPromise;
+  init(apiKey: string) {
+    if (this.genAI) return;
+    this.genAI = new GoogleGenerativeAI(apiKey);
+    this.model = this.genAI.getGenerativeModel({ model: MODEL_NAME });
   }
 
-  async generateResponse(query: string, onUpdate: (partial: string) => void) {
-    if (!this.engine) throw new Error("AI Engine not initialized");
+  async generateResponse(apiKey: string, query: string, onUpdate: (partial: string) => void) {
+    // Re-init if key changed or first time
+    if (!this.genAI) {
+        this.init(apiKey);
+    }
+
+    if (!this.model) throw new Error("AI Model not initialized");
 
     const context = await this.retrieveContext(query);
     const systemPrompt = `You are the Lore Oracle, an expert on the user's personal world. 
@@ -39,29 +31,27 @@ export class AIService {
     ${context}
     `;
 
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: query }
-    ];
+    try {
+        const result = await this.model.generateContentStream([
+            systemPrompt,
+            query
+        ]);
 
-    const chunks = await this.engine.chat.completions.create({
-      messages: messages as any,
-      stream: true,
-    });
-
-    let fullResponse = "";
-    for await (const chunk of chunks) {
-      const delta = chunk.choices[0]?.delta.content || "";
-      fullResponse += delta;
-      onUpdate(fullResponse);
+        let fullText = "";
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            fullText += chunkText;
+            onUpdate(fullText);
+        }
+    } catch (err) {
+        console.error("Gemini API Error:", err);
+        throw err;
     }
-
-    return fullResponse;
   }
 
   private async retrieveContext(query: string): Promise<string> {
     // Search for relevant files
-    const results = await searchService.search(query, { limit: 3 });
+    const results = await searchService.search(query, { limit: 5 });
     
     // Fetch content from VaultStore
     const contents = results.map(result => {

@@ -1,4 +1,5 @@
 import { aiService } from "../services/ai";
+import { getDB } from "../utils/idb";
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -9,26 +10,21 @@ class OracleStore {
   messages = $state<ChatMessage[]>([]);
   isOpen = $state(false);
   isLoading = $state(false);
-  progress = $state<string | null>(null);
+  apiKey = $state<string | null>(null);
   
   async init() {
-    this.isLoading = true;
-    this.progress = "Initializing AI...";
-    try {
-      await aiService.init((report) => {
-        this.progress = report.text;
-      });
-      this.progress = null;
-    } catch (err) {
-      this.progress = "Failed to load model.";
-      console.error(err);
-    } finally {
-      this.isLoading = false;
-    }
+    const db = await getDB();
+    this.apiKey = (await db.get("settings", "ai_api_key")) || null;
+  }
+
+  async setKey(key: string) {
+    const db = await getDB();
+    await db.put("settings", key, "ai_api_key");
+    this.apiKey = key;
   }
 
   async ask(query: string) {
-    if (!query.trim()) return;
+    if (!query.trim() || !this.apiKey) return;
 
     this.messages = [...this.messages, { role: "user", content: query }];
     this.isLoading = true;
@@ -38,18 +34,14 @@ class OracleStore {
     this.messages = [...this.messages, { role: "assistant", content: "" }];
 
     try {
-      if (!aiService["engine"]) {
-          await this.init();
-      }
-
-      await aiService.generateResponse(query, (partial) => {
+      await aiService.generateResponse(this.apiKey, query, (partial) => {
         // Update the last message
         const newHistory = [...this.messages];
         newHistory[assistantMsgIndex] = { role: "assistant", content: partial };
         this.messages = newHistory;
       });
     } catch {
-      this.messages = [...this.messages, { role: "system", content: "Error generating response." }];
+      this.messages = [...this.messages, { role: "system", content: "Error generating response. Check your API Key." }];
     } finally {
       this.isLoading = false;
     }
@@ -57,6 +49,9 @@ class OracleStore {
 
   toggle() {
     this.isOpen = !this.isOpen;
+    if (this.isOpen && this.apiKey === null) {
+        this.init();
+    }
   }
 }
 
