@@ -31,16 +31,16 @@ export class FileSystemAdapter {
     parentPath: string,
     files: FileEntry[],
   ) {
-    // @ts-expect-error - Iterating async iterable
     for await (const [name, handle] of dirHandle.entries()) {
       const path = parentPath ? `${parentPath}/${name}` : name;
 
       if (handle.kind === "file") {
-        const file = await handle.getFile();
+        const fileHandle = handle as FileSystemFileHandle;
+        const file = await fileHandle.getFile();
         files.push({
           path,
           lastModified: file.lastModified,
-          handle: handle as FileSystemFileHandle,
+          handle: fileHandle,
         });
       } else if (handle.kind === "directory") {
         await this.scanDirectory(

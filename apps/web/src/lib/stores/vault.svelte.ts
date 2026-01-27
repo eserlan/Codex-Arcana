@@ -1,11 +1,14 @@
 import { parseMarkdown, stringifyEntity, sanitizeId } from "../utils/markdown";
 import { walkDirectory, readFile, writeFile } from "../utils/fs";
 import { getPersistedHandle, persistHandle } from "../utils/idb";
+import { KeyedTaskQueue } from "../utils/queue";
 import type { Entity } from "schema";
 import { searchService } from "../services/search";
 
+type LocalEntity = Entity & { _fsHandle?: FileSystemHandle };
+
 class VaultStore {
-  entities = $state<Record<string, Entity>>({});
+  entities = $state<Record<string, LocalEntity>>({});
   status = $state<"idle" | "loading" | "saving" | "error">("idle");
   errorMessage = $state<string | null>(null);
   selectedEntityId = $state<string | null>(null);
@@ -20,7 +23,7 @@ class VaultStore {
   // ...
   isAuthorized = $state(false);
 
-  private saveTimers = new Map<string, NodeJS.Timeout>();
+  private saveQueue = new KeyedTaskQueue();
 
   constructor() {
     // Initialization happens via init() called from the root component
@@ -43,7 +46,6 @@ class VaultStore {
   }
 
   async verifyPermission(handle: FileSystemDirectoryHandle): Promise<boolean> {
-    // @ts-expect-error - queryPermission might not be in all TS types yet
     const state = await handle.queryPermission({ mode: "readwrite" });
     if (state === "granted") return true;
     return false;
@@ -51,7 +53,6 @@ class VaultStore {
 
   async requestPermission() {
     if (!this.rootHandle) return;
-    // @ts-expect-error - File System API types
     const state = await this.rootHandle.requestPermission({
       mode: "readwrite",
     });
@@ -68,7 +69,6 @@ class VaultStore {
   async openDirectory() {
     this.errorMessage = null;
 
-    // @ts-expect-error - File System API types
     if (typeof window.showDirectoryPicker === "undefined") {
       this.status = "error";
       this.errorMessage =
@@ -78,7 +78,6 @@ class VaultStore {
 
     try {
       this.status = "loading";
-      // @ts-expect-error - File System API types
       const handle = await window.showDirectoryPicker({
         mode: "readwrite",
       });
@@ -101,76 +100,84 @@ class VaultStore {
   async loadFiles() {
     if (!this.rootHandle) return;
 
+    this.status = "loading";
     const files = await walkDirectory(this.rootHandle);
-    const newEntities: Record<string, Entity> = {};
+    const newEntities: Record<string, LocalEntity> = {};
 
     // Clear index before reloading
     await searchService.clear();
 
-    for (const file of files) {
-      const text = await readFile(file.handle);
-      const { metadata, content, wikiLinks } = parseMarkdown(text);
+    // Process files in parallel chunks to avoid overwhelming the system while staying fast
+    const CHUNK_SIZE = 20;
+    for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+      const chunk = files.slice(i, i + CHUNK_SIZE);
+      
+      await Promise.all(chunk.map(async (file) => {
+        try {
+          const text = await readFile(file.handle);
+          const { metadata, content, wikiLinks } = parseMarkdown(text);
 
-      let id = metadata.id;
-      if (!id) {
-        id = sanitizeId(file.path[file.path.length - 1].replace(".md", ""));
-      }
+          let id = metadata.id;
+          if (!id) {
+            id = sanitizeId(file.path[file.path.length - 1].replace(".md", ""));
+          }
 
-      const connections = [...(metadata.connections || []), ...wikiLinks];
+          const connections = [...(metadata.connections || []), ...wikiLinks];
 
-      const entity: Entity = {
-        id: id!,
-        type: metadata.type || "npc",
-        title: metadata.title || id!,
-        tags: metadata.tags || [],
-        connections,
-        content: content,
-        image: metadata.image,
-        metadata: {
-          ...metadata.metadata,
-        } as any,
-        // @ts-expect-error - File System API types
-        _fsHandle: file.handle,
-        _path: file.path,
-      };
+          const entity: LocalEntity = {
+            id: id!,
+            type: metadata.type || "npc",
+            title: metadata.title || id!,
+            tags: metadata.tags || [],
+            connections,
+            content: content,
+            image: metadata.image,
+            metadata: metadata.metadata,
+            _fsHandle: file.handle,
+            _path: file.path,
+          };
 
-      if (!entity.id || entity.id === 'undefined') {
-        console.error('CRITICAL: Attempted to index entity with invalid ID!', { title: entity.title, id: entity.id, path: entity._path });
-        continue;
-      }
+          if (!entity.id || entity.id === 'undefined') {
+            console.error('CRITICAL: Attempted to index entity with invalid ID!', { title: entity.title, id: entity.id, path: entity._path });
+            return;
+          }
 
-      newEntities[entity.id] = entity;
+          newEntities[entity.id] = entity;
 
-      const metadataKeywords = Object.values(entity.metadata || {}).flatMap((value) => {
-        if (typeof value === 'string') return [value];
-        if (Array.isArray(value)) {
-          return value.filter((item) => typeof item === 'string') as string[];
+          const metadataValues = Object.values(entity.metadata || {});
+          const metadataKeywords = metadataValues.flatMap((value) => {
+            if (typeof value === 'string') return [value];
+            if (Array.isArray(value)) {
+              return value.filter((item): item is string => typeof item === 'string');
+            }
+            return [];
+          });
+
+          const keywords = [
+            ...(entity.tags || []),
+            metadata.lore || '',
+            ...metadataKeywords
+          ].join(' ');
+
+          const searchEntry = {
+            id: entity.id,
+            title: entity.title,
+            content: entity.content,
+            path: Array.isArray(entity._path) ? entity._path.join('/') : entity._path as string,
+            keywords,
+            updatedAt: Date.now()
+          };
+
+          // Index the entity
+          await searchService.index(searchEntry);
+        } catch (err) {
+          console.error(`Failed to process file ${file.path.join('/')}:`, err);
         }
-        return [];
-      });
-
-      const keywords = [
-        ...(entity.tags || []),
-        (metadata as any).lore || '',
-        ...metadataKeywords
-      ].join(' ');
-
-      const searchEntry = {
-        id: entity.id,
-        title: entity.title,
-        content: entity.content,
-        path: Array.isArray(entity._path) ? entity._path.join('/') : entity._path as string,
-        keywords,
-        updatedAt: Date.now()
-      };
-
-      console.log('Indexing entity:', searchEntry.id, searchEntry.title);
-
-      // Index the entity
-      await searchService.index(searchEntry);
+      }));
     }
 
     this.entities = newEntities;
+    this.status = "idle";
   }
 
   updateEntity(id: string, updates: Partial<Entity>) {
@@ -184,43 +191,30 @@ class VaultStore {
   }
 
   scheduleSave(entity: Entity) {
-    if (this.saveTimers.has(entity.id)) {
-      clearTimeout(this.saveTimers.get(entity.id)!);
-    }
-
-    const timer = setTimeout(() => {
-      this.saveToDisk(entity);
-      this.saveTimers.delete(entity.id);
-    }, 1000);
-
-    this.saveTimers.set(entity.id, timer);
+    this.status = "saving";
+    this.saveQueue.enqueue(entity.id, async () => {
+      await this.saveToDisk(entity);
+      this.status = "idle";
+    }).catch(err => {
+        console.error("Save failed for", entity.title, err);
+        this.status = "error";
+    });
   }
 
   async saveToDisk(entity: Entity) {
-    // @ts-expect-error - File System API types
-    const handle = entity._fsHandle as FileSystemFileHandle;
+    const handle = (entity as LocalEntity)._fsHandle as FileSystemFileHandle;
     if (handle) {
-      this.status = "saving";
-      try {
-        const content = stringifyEntity(entity);
-        await writeFile(handle, content);
+      const content = stringifyEntity(entity);
+      await writeFile(handle, content);
 
-        // Update index
-        await searchService.index({
-          id: entity.id,
-          title: entity.title,
-          content: entity.content,
-          path: Array.isArray(entity._path) ? entity._path.join('/') : entity._path as string,
-          updatedAt: Date.now()
-        });
-      } catch (err) {
-        console.error("Failed to save", err);
-        this.status = "error";
-      } finally {
-        if (this.saveTimers.size === 0) {
-          this.status = "idle";
-        }
-      }
+      // Update index
+      await searchService.index({
+        id: entity.id,
+        title: entity.title,
+        content: entity.content,
+        path: Array.isArray(entity._path) ? entity._path.join('/') : entity._path as string,
+        updatedAt: Date.now()
+      });
     }
   }
 
@@ -237,7 +231,7 @@ class VaultStore {
       create: true,
     });
 
-    const newEntity: Entity = {
+    const newEntity: LocalEntity = {
       id,
       type,
       title,
@@ -245,7 +239,6 @@ class VaultStore {
       tags: [],
       connections: [],
       metadata: {},
-      // @ts-expect-error - File System API types
       _fsHandle: handle,
       _path: [filename],
     };
@@ -270,7 +263,6 @@ class VaultStore {
     const entity = this.entities[id];
     if (!entity) return;
 
-    // @ts-expect-error - File System API types
     const handle = entity._fsHandle as FileSystemFileHandle;
     const path = entity._path as string[];
 
@@ -278,8 +270,7 @@ class VaultStore {
       if (path && path.length === 1) {
         await this.rootHandle.removeEntry(path[0]);
       } else {
-        // @ts-expect-error - File System API types
-        if (handle.remove) await handle.remove();
+        if (handle.remove) await handle.remove(); // .remove() is a non-standard convenience in some impls, but our type allows removeEntry on dir
       }
     }
 
@@ -363,7 +354,6 @@ class VaultStore {
     const entity = this.entities[id];
     if (!entity) return;
 
-    // @ts-expect-error - File System API types
     const handle = entity._fsHandle as FileSystemFileHandle;
     if (!handle) return;
 

@@ -10,7 +10,7 @@ Implement a reactive synchronization pipeline using Svelte Stores to bridge loca
 ## Technical Context
 
 **Language/Version**: TypeScript 5.0+
-**Primary Dependencies**: Svelte 5 (or 4, TBD), Cytoscape.js, RxDB (optional, spec mentions "RxDB + OPFS"), File System Access API
+**Primary Dependencies**: Svelte 5 (or 4, TBD), Cytoscape.js, File System Access API. (RxDB removed in favor of native FS).
 **Storage**: Local File System (OPFS) via File System Access API
 **Testing**: Vitest (Unit/Integration), Playwright (E2E - implied by "Headless browser" requirement in Constitution)
 **Target Platform**: Web (PWA), Local-First

@@ -39,20 +39,20 @@ export async function walkDirectory(
   path: string[] = [],
 ): Promise<FileEntry[]> {
   const entries: FileEntry[] = [];
-  // @ts-expect-error - TS might not have full FS types yet depending on config
   for await (const [name, handle] of dirHandle.entries()) {
+    const currentPath = [...path, name];
     if (handle.kind === "file") {
       if (name.endsWith(".md")) {
         entries.push({
           handle: handle as FileSystemFileHandle,
-          path: [...path, name],
+          path: currentPath,
         });
       }
     } else if (handle.kind === "directory") {
       // Recursion
       const subEntries = await walkDirectory(
         handle as FileSystemDirectoryHandle,
-        [...path, name],
+        currentPath,
       );
       entries.push(...subEntries);
     }
