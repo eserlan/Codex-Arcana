@@ -26,6 +26,7 @@ export class AIService {
     try {
       const context = await this.retrieveContext(query);
       console.log(`[AIService] Final RAG Context length: ${context.length}`);
+      console.log(`[AIService] FULL CONTEXT:\n${context}`);
 
       const systemPrompt = `You are the Lore Oracle, an expert on the user's personal world. 
 Answer the question based ONLY on the provided context if possible. 
@@ -86,7 +87,14 @@ ${context}
     const contents = Array.from(contextIds)
       .map(id => {
         const entity = vault.entities[id];
-        if (!entity || !entity.content) return null;
+        if (!entity) {
+          console.warn(`[AIService] Entity not found in vault for ID: "${id}"`);
+          return null;
+        }
+        if (!entity.content) {
+          console.warn(`[AIService] Entity "${entity.title}" (ID: ${id}) has no content!`);
+          return null;
+        }
 
         const isActive = id === activeId;
         const prefix = isActive ? "[ACTIVE FILE] " : "";
