@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai"
 import { searchService } from "./search";
 import { vault } from "../stores/vault.svelte";
 
-const MODEL_NAME = "gemini-3-flash";
+const MODEL_NAME = "gemini-3-flash-preview";
 
 export class AIService {
   private genAI: GoogleGenerativeAI | null = null;
@@ -25,6 +25,7 @@ export class AIService {
 
     try {
       const context = await this.retrieveContext(query);
+
       const systemPrompt = `You are the Lore Oracle, an expert on the user's personal world. 
 Answer the question based ONLY on the provided context if possible. 
 If the answer is not in the context, but is a general greeting or unrelated to lore, respond politely as the Oracle.
@@ -56,7 +57,20 @@ ${context}
 
   private async retrieveContext(query: string): Promise<string> {
     // 1. Get search results for relevance
-    const results = await searchService.search(query, { limit: 5 });
+    let results = await searchService.search(query, { limit: 5 });
+
+    // 1b. Fallback 1: if no results, try extracting keywords
+    if (results.length === 0) {
+      const keywords = query
+        .toLowerCase()
+        .replace(/[^\w\s']/g, '') // Keep apostrophes for names/questions
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !['the', 'and', 'was', 'for', 'who', 'how', 'did', 'his', 'her', 'they', 'with', 'from'].includes(w));
+
+      if (keywords.length > 0) {
+        results = await searchService.search(keywords.join(' '), { limit: 5 });
+      }
+    }
 
     // 2. Identify the active entity to prioritize it
     const activeId = vault.selectedEntityId;
@@ -70,16 +84,21 @@ ${context}
         const entity = vault.entities[id];
         if (!entity || !entity.content) return null;
 
-        // Mark the active file clearly for the AI
         const isActive = id === activeId;
         const prefix = isActive ? "[ACTIVE FILE] " : "";
-
-        // Limit content per file to ~10k characters
         const truncated = entity.content.slice(0, 10000);
 
         return `--- ${prefix}File: ${entity.title} ---\n${truncated}`;
       })
       .filter((c): c is string => c !== null);
+
+    // 4. Fallback 2: If we still have almost no context, provide a list of all known entity titles
+    if (contents.length === 0 || (contents.length === 1 && !results.length)) {
+      const allTitles = Object.values(vault.entities).map(e => e.title).join(", ");
+      if (allTitles) {
+        contents.push(`--- Available Records ---\nYou have records on the following subjects: ${allTitles}. None of these specifically matched the current query details, but they are the only lore available.`);
+      }
+    }
 
     return contents.join("\n\n");
   }
