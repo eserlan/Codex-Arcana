@@ -46,7 +46,7 @@ description: "Task list template for feature implementation"
 
 - [x] T001 Create cloud-bridge library structure in apps/web/src/lib/cloud-bridge/
 - [x] T002 Install dependencies (`idb`, `@types/gapi`, `@types/gapi.auth2`, `@types/gapi.client.drive`) in apps/web/package.json
-- [x] T003 [P] Configure environment variables (`VITE_GOOGLE_CLIENT_ID`) in apps/web/.env and create .env.example
+- [x] T003 [P] Configure environment variables (`VITE_GOOGLE_CLIENT_ID` only, no API Key required) in apps/web/.env and create .env.example
 
 ---
 

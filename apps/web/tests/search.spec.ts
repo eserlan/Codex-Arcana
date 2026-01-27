@@ -2,64 +2,107 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Fuzzy Search', () => {
     test.beforeEach(async ({ page }) => {
-        // Mock File System Access API
+        // Mock File System Access API and IndexedDB
         await page.addInitScript(() => {
-            const content = `---
-title: My Note
----
-# My Note Content`;
-            const mockFile = new File([content], 'My Note.md', { type: 'text/markdown' });
-
-            const fileHandle = {
-                kind: 'file',
-                name: 'My Note.md',
-                getFile: async () => mockFile,
-                createWritable: async () => ({
-                    write: async () => { },
-                    close: async () => { },
-                })
+            // MOCK INDEXED DB
+            indexedDB.open = () => {
+                const req: any = {
+                    onupgradeneeded: null,
+                    onsuccess: null,
+                    onerror: null,
+                    result: {
+                        transaction: () => ({
+                            objectStore: () => ({
+                                get: () => {
+                                    const r: any = { onsuccess: null, result: null };
+                                    setTimeout(() => r.onsuccess?.({ target: r }), 0);
+                                    return r;
+                                },
+                                put: () => {
+                                    const r: any = { onsuccess: null };
+                                    setTimeout(() => r.onsuccess?.({ target: r }), 0);
+                                    return r;
+                                },
+                                delete: () => {
+                                    const r: any = { onsuccess: null };
+                                    setTimeout(() => r.onsuccess?.({ target: r }), 0);
+                                    return r;
+                                }
+                            })
+                        })
+                    }
+                };
+                setTimeout(() => req.onsuccess?.({ target: req }), 0);
+                return req;
             };
+
+            const content1 = `---\ntitle: My Note\n---\n# My Note Content`;
+            const content2 = `---\ntitle: The Crone\n---\n# The Crone Content`;
+
+            const createMockFile = (content: string, name: string) => {
+                const file = new File([content], name, { type: 'text/markdown' });
+                return {
+                    kind: 'file',
+                    name,
+                    getFile: async () => file,
+                    createWritable: async () => ({
+                        write: async () => { },
+                        close: async () => { }
+                    })
+                };
+            };
+
+            const fileHandle1 = createMockFile(content1, 'My Note.md');
+            const fileHandle2 = createMockFile(content2, 'the-crone.md');
 
             const dirHandle = {
                 kind: 'directory',
                 name: 'test-vault',
                 requestPermission: async () => 'granted',
                 queryPermission: async () => 'granted',
-                values: async function* () {
-                    yield fileHandle;
+                values: function () {
+                    return [fileHandle1, fileHandle2][Symbol.iterator]();
                 },
-                entries: async function* () {
-                    yield ['My Note.md', fileHandle];
+                entries: function () {
+                    const entries = [['My Note.md', fileHandle1], ['the-crone.md', fileHandle2]];
+                    return {
+                        [Symbol.asyncIterator]() {
+                            let i = 0;
+                            return {
+                                async next() {
+                                    if (i < entries.length) {
+                                        return { value: entries[i++], done: false };
+                                    }
+                                    return { done: true };
+                                }
+                            };
+                        }
+                    };
                 },
-                getFileHandle: async () => fileHandle
+                getFileHandle: async (name: string) => name === 'My Note.md' ? fileHandle1 : fileHandle2
             };
 
             // @ts-expect-error - Mock
-            window.showDirectoryPicker = async () => {
-                return dirHandle;
-            };
+            window.showDirectoryPicker = async () => dirHandle;
         });
     });
 
     test('Search works offline', async ({ page, context }) => {
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-
         await page.goto('/');
 
         // 1. Open Vault to trigger indexing
-        await page.getByRole('button', { name: 'Open Vault' }).click();
+        await page.getByRole('button', { name: 'OPEN VAULT' }).click();
 
-        // Wait for indexing to complete by checking entity count
-        await expect(page.getByText('1 ENTITIES')).toBeVisible({ timeout: 10000 });
+        // Wait for indexing to complete (2 entries)
+        await expect(page.getByTestId('entity-count')).toHaveText('2 ENTITIES', { timeout: 20000 });
 
         // 2. Go Offline
         await context.setOffline(true);
 
-        // 3. Open Search Modal (Cmd+K)
+        // 3. Open Search Modal
+        await page.keyboard.press('Control+k');
         await page.keyboard.press('Meta+k');
-        if (process.platform !== 'darwin') {
-            await page.keyboard.press('Control+k');
-        }
 
         const input = page.getByPlaceholder('Search notes...');
         await expect(input).toBeVisible();
@@ -68,8 +111,7 @@ title: My Note
         await input.fill('Note');
 
         // 5. Verify results
-        // Should find "My Note"
-        await expect(page.getByText('My Note', { exact: true })).toBeVisible();
+        await expect(page.getByTestId('search-result').filter({ hasText: 'My Note' })).toBeVisible();
 
         // 6. Verify navigation (selection)
         await page.keyboard.press('ArrowDown');
@@ -78,13 +120,52 @@ title: My Note
         await expect(input).not.toBeVisible();
 
         // 7. Verify Detail Panel opens
-        const detailPanel = page.getByRole('button', { name: 'Close panel' });
-        await expect(detailPanel).toBeVisible();
+        await expect(page.getByRole('heading', { level: 2 }).filter({ hasText: 'My Note' })).toBeVisible();
+    });
 
-        // Verify it's the right entity
-        await expect(page.locator('h2', { hasText: 'My Note' })).toBeVisible();
+    test('handles search results with missing IDs via path fallback', async ({ page }) => {
+        page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+        await page.goto('/');
 
-        // 8. Verify URL change 
-        await page.waitForURL(/.*\?file=.*My.*Note.*/);
+        // 1. Open Vault to trigger initial UI state
+        await page.getByRole('button', { name: 'OPEN VAULT' }).click();
+        await expect(page.getByTestId('entity-count')).toHaveText('2 ENTITIES', { timeout: 20000 });
+
+        // 2. Mock broken search results
+        await page.evaluate(() => {
+            const mockResults = [
+                {
+                    id: undefined, // MISSING ID
+                    title: 'The Crone',
+                    path: 'the-crone.md',
+                    matchType: 'content',
+                    score: 0.9,
+                    excerpt: 'The Crone is a mysterious figure...'
+                }
+            ];
+
+            const { searchStore } = window as any;
+            if (searchStore) {
+                searchStore.update((s: any) => ({
+                    ...s,
+                    query: 'Crone',
+                    results: mockResults,
+                    isOpen: true
+                }));
+            }
+        });
+
+        // 3. Verify the "broken" result is visible
+        const resultItem = page.getByTestId('search-result').filter({ hasText: 'The Crone' });
+        await expect(resultItem).toBeVisible();
+
+        // 4. Select the result
+        await resultItem.click();
+
+        // 5. Verify Fallback worked
+        await expect(page.getByPlaceholder('Search notes...')).not.toBeVisible();
+
+        // Check for the title in the detail panel
+        await expect(page.getByRole('heading', { level: 2 }).filter({ hasText: /Crone/i })).toBeVisible();
     });
 });

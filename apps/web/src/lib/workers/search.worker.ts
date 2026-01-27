@@ -3,36 +3,7 @@
 import FlexSearch from 'flexsearch';
 import type { SearchEntry, SearchResult, SearchOptions } from 'schema';
 
-// Inlined extraction logic to avoid module issues in worker
-interface SearchDocument {
-  id: string;
-  title: string;
-  content: string;
-  path: string;
-  keywords?: string;
-}
-
-function extractIdAndDoc(item: any): { id: string | undefined; doc: SearchDocument | undefined } {
-  let id: string | undefined;
-  let doc: SearchDocument | undefined;
-
-  if (typeof item === 'object' && item !== null) {
-    id = item.id ?? item.key ?? item.i;
-    doc = item.doc ?? item.d;
-
-    if ((id === undefined || id === null) && doc?.id) {
-      id = doc.id;
-    }
-  } else if (typeof item === 'string' || typeof item === 'number') {
-    id = String(item);
-  }
-
-  if (id === 'undefined' || id === 'null') {
-    id = undefined;
-  }
-
-  return { id, doc };
-}
+import { extractIdAndDoc } from '../utils/search-utils';
 
 
 
@@ -107,10 +78,10 @@ const search = async (query: string, options: SearchOptions = {}): Promise<Searc
 
     for (let i = 0; i < fieldResult.result.length; i++) {
       const item = fieldResult.result[i];
-      console.log(`[Worker] Item type: ${typeof item}, Keys: ${item && typeof item === 'object' ? Object.keys(item).join(',') : 'N/A'}`);
       const { id, doc: entry } = extractIdAndDoc(item);
 
-      if (!id || id === 'undefined') {
+      if (!id) {
+        console.warn(`[Worker] Skipping result with missing ID:`, { field, index: i, itemKeys: Object.keys(item) });
         continue;
       }
 

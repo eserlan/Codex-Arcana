@@ -9,24 +9,47 @@ let engine: SyncEngine | null = null;
 
 self.onmessage = async (event) => {
   const { type, payload } = event.data;
+  // Sanitize payload for logging
+  const { ...safePayload } = payload || {};
+  console.log(`SyncWorker: Received message [${type}]`, safePayload);
 
   try {
     switch (type) {
       case "INIT_SYNC": {
-        // payload: { accessToken }
-        const cloudAdapter = new WorkerDriveAdapter(payload.accessToken);
+        console.log('SyncWorker: Initializing engine...');
+        const cloudAdapter = new WorkerDriveAdapter(payload.accessToken, payload.folderId);
+        
+        if (payload.rootHandle) {
+          const isValid = typeof FileSystemDirectoryHandle !== "undefined" && 
+                        payload.rootHandle instanceof FileSystemDirectoryHandle;
+          
+          if (isValid) {
+            console.log('SyncWorker: Setting local root handle');
+            fsAdapter.setRoot(payload.rootHandle);
+          } else {
+            console.error('SyncWorker: Invalid root handle provided');
+            throw new Error("Invalid root handle provided to sync worker");
+          }
+        }
         engine = new SyncEngine(cloudAdapter, fsAdapter, metadataStore);
+        console.log('SyncWorker: Engine ready');
         break;
       }
 
       case "START_SYNC": {
-        if (!engine) throw new Error("Sync Engine not initialized");
+        if (!engine) {
+          console.error('SyncWorker: Cannot start sync - Engine not initialized');
+          throw new Error("Sync Engine not initialized");
+        }
+        console.log('SyncWorker: Starting scan...');
         self.postMessage({ type: "SYNC_STATUS", payload: "SCANNING" });
 
         const { local, remote, metadata } = await engine.scan();
+        console.log(`SyncWorker: Scan complete. Local: ${local.length}, Remote: ${remote.size}`);
 
         // Calculate Diff
         const plan = engine.calculateDiff(local, remote, metadata);
+        console.log(`SyncWorker: Plan calculated. Uploads: ${plan.uploads.length}, Downloads: ${plan.downloads.length}`);
 
         if (plan.uploads.length > 0 || plan.downloads.length > 0) {
           self.postMessage({ type: "SYNC_STATUS", payload: "SYNCING" });

@@ -32,7 +32,7 @@
                     {vault.errorMessage || "ERROR"}
                 </span>
             {:else if vault.allEntities.length > 0 || vault.rootHandle}
-                <span class="text-green-600"
+                <span class="text-green-600" data-testid="entity-count"
                     >{vault.allEntities.length} ENTITIES</span
                 >
             {:else}

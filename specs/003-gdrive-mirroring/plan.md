@@ -14,19 +14,21 @@ The Google Drive Cloud Bridge provides an opt-in, background synchronization mec
 **Language/Version**: TypeScript 5.x, Node.js 20+ (dev), Browser Runtime
 **Primary Dependencies**:
 
-- `googleapis` or `gapi-script` [NEEDS CLARIFICATION: Best library for browser-side only OAuth2 + Drive v3?]
+- Google Identity Services (GIS) for OAuth2
+- `gapi-script` or raw GDrive API v3 via `fetch`
 - Svelte 4/5 (Frontend)
 - `idb` or similar for tracking sync state locally
   **Storage**:
 - Local: OPFS (Origin Private File System) / IndexedDB (Metadata)
 - Remote: Google Drive (App Data folder or User selected folder)
-  **Testing**: Vitest (Unit/Integration), Playwright/Cypress (E2E) [NEEDS CLARIFICATION: Project E2E framework?]
+  **Testing**: Vitest (Unit/Integration), Playwright (E2E)
   **Target Platform**: Modern Web Browsers (Chrome, Firefox, Safari, Edge) - PWA
   **Project Type**: Web Application (SvelteKit)
   **Performance Goals**: Sync operations must not block the main thread; UI must remain responsive (<100ms interactions).
   **Constraints**:
 - Must work Offline (queue changes).
 - No backend proxy allowed (Client-side OAuth2).
+- No Google API Key required (uses OAuth2 Client ID + Bearer Token).
 - Strict Data Sovereignty (User's own credentials/storage).
   **Scale/Scope**: Syncing hundreds to thousands of small Markdown/JSON files.
 

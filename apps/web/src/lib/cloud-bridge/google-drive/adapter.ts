@@ -1,9 +1,10 @@
 import type { ICloudAdapter, RemoteFileMeta } from "../index";
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const SCOPES = "https://www.googleapis.com/auth/drive.file";
-const DISCOVERY_DOC =
-  "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
+const getGoogleConfig = () => ({
+  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  SCOPES: "https://www.googleapis.com/auth/drive.file",
+  DISCOVERY_DOC: "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+});
 
 export class GoogleDriveAdapter implements ICloudAdapter {
   private tokenClient!: google.accounts.oauth2.TokenClient;
@@ -18,6 +19,11 @@ export class GoogleDriveAdapter implements ICloudAdapter {
 
   private initGis() {
     if (typeof google !== "undefined" && google.accounts) {
+      const { CLIENT_ID, SCOPES } = getGoogleConfig();
+      if (!CLIENT_ID) {
+        console.warn("VITE_GOOGLE_CLIENT_ID is missing. Google Drive integration disabled.");
+        return;
+      }
       this.tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
@@ -32,12 +38,16 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     }
   }
 
+  isConfigured(): boolean {
+    return !!getGoogleConfig().CLIENT_ID;
+  }
+
   private async initGapi() {
     // Wait for gapi to be loaded
     if (typeof gapi !== "undefined") {
       await new Promise<void>((resolve) => gapi.load("client", resolve));
       await gapi.client.init({
-        discoveryDocs: [DISCOVERY_DOC],
+        discoveryDocs: [getGoogleConfig().DISCOVERY_DOC],
       });
       this.gapiInited = true;
     }
@@ -48,6 +58,10 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     if (!this.gapiInited) await this.initGapi();
 
     return new Promise((resolve, reject) => {
+      if (!this.tokenClient) {
+        reject(new Error("Google Identity Services not initialized (missing Client ID?)"));
+        return;
+      }
       (this.tokenClient as any).callback = async (
         resp: google.accounts.oauth2.TokenResponse,
       ) => {
@@ -55,14 +69,36 @@ export class GoogleDriveAdapter implements ICloudAdapter {
           reject(resp);
           return;
         }
-        this.accessToken = resp.access_token;
-        // User info is not directly available in implicit flow without extra call
-        // For now return a placeholder or fetch profile if needed
-        resolve("user@google-drive-connected");
+                  this.accessToken = resp.access_token;
+                  
+                  // Explicitly set the token in gapi so it's globally available to workerBridge
+                  if (typeof gapi !== 'undefined' && gapi.client) {
+                    gapi.client.setToken(resp);
+                  }
+        
+                  try {          // 1. Get user info
+          const about = await gapi.client.drive.about.get({
+            fields: "user(emailAddress)",
+          });
+          const email = about.result.user?.emailAddress || "connected-user";
+
+          // 2. Ensure CodexArcana folder exists
+          let folderId = await this.getFolderId();
+          if (!folderId) {
+            folderId = await this.createFolder("CodexArcana");
+          }
+          
+          // Store folder ID in localStorage scoped to the current user
+          const storageKey = `gdrive_folder_id:${email}`;
+          localStorage.setItem(storageKey, folderId);
+
+          resolve(email);
+        } catch (e) {
+          console.error("Failed to complete GDrive setup", e);
+          reject(e instanceof Error ? e : new Error("Failed to complete GDrive setup"));
+        }
       };
 
-      // Prompt if no token or check if we can silently get it?
-      // Implicit flow always triggers callback
       if (gapi.client.getToken() === null) {
         this.tokenClient.requestAccessToken({ prompt: "consent" });
       } else {
@@ -71,8 +107,37 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     });
   }
 
+  private async getFolderId(): Promise<string | null> {
+    const response = await gapi.client.drive.files.list({
+      q: "name = 'CodexArcana' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+      fields: "files(id)",
+    });
+    const files = response.result.files || [];
+    
+    if (files.length === 0) return null;
+    if (files.length === 1) return files[0].id!;
+
+    console.warn(`Multiple "CodexArcana" folders found (${files.length}). Using the first one found.`);
+    return files[0].id!;
+  }
+
+  private async createFolder(name: string): Promise<string> {
+    const response = await gapi.client.drive.files.create({
+      resource: {
+        name: name,
+        mimeType: "application/vnd.google-apps.folder",
+      },
+      fields: "id",
+    });
+    return response.result.id!;
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken || gapi.client.getToken()?.access_token || null;
+  }
+
   isAuthenticated(): boolean {
-    return !!this.accessToken;
+    return !!this.getAccessToken();
   }
 
   async disconnect(): Promise<void> {
@@ -81,16 +146,25 @@ export class GoogleDriveAdapter implements ICloudAdapter {
       google.accounts.oauth2.revoke(token.access_token, () => { });
       gapi.client.setToken(null);
       this.accessToken = null;
+      localStorage.removeItem('gdrive_folder_id');
     }
   }
 
   async listFiles(): Promise<Map<string, RemoteFileMeta>> {
     if (!this.accessToken) throw new Error("Not authenticated");
+    
+    // Get the email from GAPI to build the key
+    const about = await gapi.client.drive.about.get({ fields: 'user(emailAddress)' });
+    const email = about.result.user?.emailAddress;
+    const storageKey = `gdrive_folder_id:${email}`;
+    
+    const folderId = localStorage.getItem(storageKey);
+    if (!folderId) throw new Error("No sync folder found. Reconnect requested.");
 
     const response = await gapi.client.drive.files.list({
       pageSize: 1000,
       fields: "files(id, name, mimeType, modifiedTime, parents, appProperties)",
-      q: "mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+      q: `'${folderId}' in parents and trashed = false`,
     });
 
     const fileMap = new Map<string, RemoteFileMeta>();
@@ -98,9 +172,6 @@ export class GoogleDriveAdapter implements ICloudAdapter {
 
     if (files && files.length > 0) {
       for (const file of files) {
-        // Assume flat structure for now or match specific folder
-        // For real impl, we need to map paths properly.
-        // Here we just use name as path for simplicity in MVP
         if (file.name && file.id) {
           fileMap.set(file.name, {
             id: file.id,
