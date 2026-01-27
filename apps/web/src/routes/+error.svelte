@@ -1,5 +1,6 @@
 <script>
     import { page } from "$app/stores";
+    import { base } from "$app/paths";
 </script>
 
 <div
@@ -10,7 +11,7 @@
         {$page.error?.message || "Unknown error"}
     </p>
     <a
-        href="/"
+        href="{base}/"
         class="mt-8 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
     >
         Return Home

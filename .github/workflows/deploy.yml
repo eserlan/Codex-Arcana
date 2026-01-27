@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build_site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          NODE_ENV: production
+        run: npm run build --workspace=apps/web
+
+      - name: Upload Artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # this should match the `pages` option in your adapter-static config
+          path: 'apps/web/build/'
+
+  deploy:
+    needs: build_site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
