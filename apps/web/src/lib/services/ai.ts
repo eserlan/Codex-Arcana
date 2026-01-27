@@ -1,46 +1,54 @@
-import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
+import { GoogleGenerativeAI, type GenerativeModel, type ChatSession } from "@google/generative-ai";
 import { searchService } from "./search";
 import { vault } from "../stores/vault.svelte";
 
-const MODEL_NAME = "gemini-1.5-flash";
+const MODEL_NAME = "gemini-3-flash-preview";
 
 export class AIService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: GenerativeModel | null = null;
   private currentApiKey: string | null = null;
+  private chatSession: ChatSession | null = null;
+  private sentEntityIds = new Set<string>();
 
   init(apiKey: string) {
     if (this.genAI && this.model && this.currentApiKey === apiKey) return;
 
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: MODEL_NAME });
+    this.model = this.genAI.getGenerativeModel({
+      model: MODEL_NAME,
+      systemInstruction: "You are the Lore Oracle, an expert on the user's personal world. Answer based on the provided context. If sparse, be helpful. If unrelated to lore, be polite. If missing, say 'I cannot find that in your records.'"
+    });
     this.currentApiKey = apiKey;
+    this.chatSession = null; // Reset session on re-init
   }
 
-  async generateResponse(apiKey: string, query: string, onUpdate: (partial: string) => void) {
-    // Re-init if key changed or first time
+  async generateResponse(apiKey: string, query: string, history: any[], onUpdate: (partial: string) => void) {
     this.init(apiKey);
-
     if (!this.model) throw new Error("AI Model not initialized");
 
+    // Reset session if history is empty
+    if (history.length === 0 || !this.chatSession) {
+      this.chatSession = this.model.startChat({
+        history: history.map(m => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }]
+        }))
+      });
+      this.sentEntityIds.clear();
+    }
+
     try {
-      const context = await this.retrieveContext(query);
-      console.log(`[AIService] Final RAG Context length: ${context.length}`);
+      const { content: context, ids: newIds } = await this.retrieveContext(query, this.sentEntityIds);
 
-      const systemPrompt = `You are the Lore Oracle, an expert on the user's personal world. 
-Answer the question based on the provided context. 
-If the information is sparse, use what is available to be as helpful as possible.
-If the question is a greeting or general, respond politely as the Oracle.
-Only if the query is specifically about lore and there is absolutely ZERO relevant information in the context, say "I cannot find that in your records."
+      // Add newly sent entities to our tracking set
+      newIds.forEach(id => this.sentEntityIds.add(id));
 
-Context:
-${context}
-`;
+      const finalQuery = context
+        ? `[NEW LORE CONTEXT]\n${context}\n\n[USER QUERY]\n${query}`
+        : query;
 
-      const result = await this.model.generateContentStream([
-        systemPrompt,
-        query
-      ]);
+      const result = await this.chatSession.sendMessageStream(finalQuery);
 
       let fullText = "";
       for await (const chunk of result.stream) {
@@ -57,7 +65,7 @@ ${context}
     }
   }
 
-  private async retrieveContext(query: string): Promise<string> {
+  private async retrieveContext(query: string, excludeIds: Set<string>): Promise<{ content: string; ids: string[] }> {
     // 1. Get search results for relevance
     let results = await searchService.search(query, { limit: 5 });
 
@@ -65,7 +73,7 @@ ${context}
     if (results.length === 0) {
       const keywords = query
         .toLowerCase()
-        .replace(/[^\w\s']/g, '') // Keep apostrophes for names/questions
+        .replace(/[^\w\s']/g, '')
         .split(/\s+/)
         .filter(w => w.length > 2 && !['the', 'and', 'was', 'for', 'who', 'how', 'did', 'his', 'her', 'they', 'with', 'from'].includes(w));
 
@@ -78,18 +86,22 @@ ${context}
     const activeId = vault.selectedEntityId;
 
     // 3. Build context from both search results and active entity
-    const contextIds = new Set(results.map(r => r.id));
-    if (activeId) contextIds.add(activeId);
+    const potentialIds = new Set(results.map(r => r.id));
+    if (activeId) potentialIds.add(activeId);
 
-    const contents = Array.from(contextIds)
+    // 4. Filter for NEW IDs only
+    const newIds: string[] = [];
+    const contents = Array.from(potentialIds)
       .map(id => {
+        if (excludeIds.has(id)) return null; // Skip already sent
+
         const entity = vault.entities[id];
         if (!entity) return null;
 
-        // Use body content, but fallback to lore field if body is empty
         const mainContent = entity.content?.trim() || entity.lore?.trim();
         if (!mainContent) return null;
 
+        newIds.push(id);
         const isActive = id === activeId;
         const prefix = isActive ? "[ACTIVE FILE] " : "";
         const truncated = mainContent.slice(0, 10000);
@@ -98,15 +110,18 @@ ${context}
       })
       .filter((c): c is string => c !== null);
 
-    // 4. Fallback 2: If we still have almost no context, provide a list of all known entity titles
-    if (contents.length === 0 || (contents.length === 1 && !results.length)) {
+    // 5. Fallback: If we still have NO lore context at all for this turn, provide titles if nothing ever sent
+    if (contents.length === 0 && excludeIds.size === 0) {
       const allTitles = Object.values(vault.entities).map(e => e.title).join(", ");
       if (allTitles) {
-        contents.push(`--- Available Records ---\nYou have records on the following subjects: ${allTitles}. None of these specifically matched the current query details, but they are the only lore available.`);
+        contents.push(`--- Available Records ---\nYou have records on the following subjects: ${allTitles}. None specifically matched, but they are available.`);
       }
     }
 
-    return contents.join("\n\n");
+    return {
+      content: contents.join("\n\n"),
+      ids: newIds
+    };
   }
 }
 

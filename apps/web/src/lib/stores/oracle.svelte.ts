@@ -43,7 +43,9 @@ class OracleStore {
     this.messages = [...this.messages, { role: "assistant", content: "" }];
 
     try {
-      await aiService.generateResponse(this.apiKey, query, (partial) => {
+      // Pass history (all messages before the current turn) to the AI service
+      const history = this.messages.slice(0, -2);
+      await aiService.generateResponse(this.apiKey, query, history, (partial) => {
         // Update the last message in place (using Svelte 5 reactivity)
         this.messages[assistantMsgIndex].content = partial;
       });
