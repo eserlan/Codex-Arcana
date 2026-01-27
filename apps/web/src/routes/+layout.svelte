@@ -6,6 +6,7 @@
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { searchStore } from "$lib/stores/search";
+	import { syncStats } from "$stores/sync-stats";
 	import { onMount } from "svelte";
 
 	let { children } = $props();
@@ -17,6 +18,7 @@
 		if (import.meta.env.DEV) {
 			(window as any).searchStore = searchStore;
 			(window as any).vault = vault;
+			(window as any).syncStats = syncStats;
 		}
 	});
 

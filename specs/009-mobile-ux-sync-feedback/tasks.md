@@ -64,7 +64,7 @@
 ### Implementation for User Story 2
 
 - [x] T010 [US2] Implement pulse animation and "SYNCING" status text in apps/web/src/lib/components/settings/CloudStatus.svelte.
-- [ ] T011 [US2] Add manual sync trigger visual confirmation (flash effect) in apps/web/src/lib/components/settings/CloudStatus.svelte.
+- [x] T011 [US2] Add manual sync trigger visual confirmation (flash effect) in apps/web/src/lib/components/settings/CloudStatus.svelte.
 
 **Checkpoint**: User Story 2 is functional - users receive immediate feedback on data persistence status.
 
@@ -79,7 +79,7 @@
 ### Implementation for User Story 3
 
 - [x] T012 [P] [US3] Update apps/web/src/lib/components/EntityDetailPanel.svelte to use absolute full-width positioning on mobile viewports.
-- [ ] T013 [US3] Implement smooth slide-in transition for the detail panel on mobile in apps/web/src/lib/components/EntityDetailPanel.svelte.
+- [x] T013 [US3] Implement smooth slide-in transition for the detail panel on mobile in apps/web/src/lib/components/EntityDetailPanel.svelte.
 
 **Checkpoint**: User Story 3 is functional - entity content is now easily readable on mobile.
 
@@ -89,7 +89,7 @@
 
 **Purpose**: Final refinements and quality assurance.
 
-- [ ] T014 [P] Update quickstart.md with finalized verification steps.
+- [x] T014 [P] Update quickstart.md with finalized verification steps.
 - [ ] T015 Run final linting and type checks via `npm run check` in apps/web.
 - [ ] T016 **Offline Functionality Verification** (Constitutional Requirement: Verify Service Worker caching and offline behavior).
 

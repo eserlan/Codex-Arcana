@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Entity } from "schema";
+    import { fly } from "svelte/transition";
     import { vault } from "$lib/stores/vault.svelte";
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
 
@@ -61,6 +62,7 @@
 
 {#if entity}
     <div
+        transition:fly={{ x: 400, duration: 300 }}
         class="w-full md:w-1/3 lg:w-1/4 md:min-w-[400px] bg-[#0c0c0c] border-l border-green-900/50 flex flex-col h-[calc(100%-60px)] md:h-full absolute right-0 bottom-0 md:top-0 shadow-2xl z-40 font-mono"
     >
         <!-- Header -->
