@@ -6,13 +6,16 @@ import { browser } from "$app/environment";
 import type { CloudConfig } from "./index";
 
 export class WorkerBridge {
-  private worker: Worker;
+  // worker will be undefined in SSR
+  private worker!: Worker;
   private syncIntervalId: ReturnType<typeof setInterval> | null = null;
   private unsubscribers: (() => void)[] = [];
 
   constructor() {
-    this.worker = new SyncWorker();
-    this.setupListeners();
+    if (browser) {
+      this.worker = new SyncWorker();
+      this.setupListeners();
+    }
 
     if (browser) {
       // Setup periodic sync based on config only if enabled
