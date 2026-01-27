@@ -4,8 +4,9 @@ import { getPersistedHandle, persistHandle } from "../utils/idb";
 import { KeyedTaskQueue } from "../utils/queue";
 import type { Entity } from "schema";
 import { searchService } from "../services/search";
+import { cacheService } from "../services/cache";
 
-type LocalEntity = Entity & { _fsHandle?: FileSystemHandle };
+export type LocalEntity = Entity & { _fsHandle?: FileSystemHandle };
 
 class VaultStore {
   entities = $state<Record<string, LocalEntity>>({});
@@ -102,47 +103,73 @@ class VaultStore {
 
     this.status = "loading";
     const files = await walkDirectory(this.rootHandle);
-    const newEntities: Record<string, LocalEntity> = {};
-
+    
     // Clear index before reloading
     await searchService.clear();
+    
+    // Reset entities or keep them? "loadFiles" usually implies a fresh load or refresh.
+    // If we want to be smooth, we might want to keep existing until replaced, but that handles deletions poorly.
+    // Let's clear start fresh but progressively.
+    this.entities = {};
 
     // Process files in parallel chunks to avoid overwhelming the system while staying fast
     const CHUNK_SIZE = 20;
     for (let i = 0; i < files.length; i += CHUNK_SIZE) {
       const chunk = files.slice(i, i + CHUNK_SIZE);
+      const chunkEntities: Record<string, LocalEntity> = {};
       
-      await Promise.all(chunk.map(async (file) => {
+      await Promise.all(chunk.map(async (fileEntry) => {
         try {
-          const text = await readFile(file.handle);
-          const { metadata, content, wikiLinks } = parseMarkdown(text);
+          const filePath = Array.isArray(fileEntry.path) ? fileEntry.path.join('/') : fileEntry.path;
+          const file = await fileEntry.handle.getFile();
+          const lastModified = file.lastModified;
+          const cached = await cacheService.get(filePath);
+          
+          let entity: LocalEntity;
 
-          let id = metadata.id;
-          if (!id) {
-            id = sanitizeId(file.path[file.path.length - 1].replace(".md", ""));
+          // Hit Path: Use cached entity if valid
+          if (cached && cached.lastModified === lastModified) {
+             entity = { ...cached.entity, _fsHandle: fileEntry.handle, _path: fileEntry.path };
+          } else {
+             // Miss Path: Parse and cache
+             const text = await file.text();
+             const { metadata, content, wikiLinks } = parseMarkdown(text);
+
+             let id = metadata.id;
+             if (!id) {
+               id = sanitizeId(fileEntry.path[fileEntry.path.length - 1].replace(".md", ""));
+             }
+
+             const connections = [...(metadata.connections || []), ...wikiLinks];
+
+             entity = {
+               id: id!,
+               type: metadata.type || "npc",
+               title: metadata.title || id!,
+               tags: metadata.tags || [],
+               connections,
+               content: content,
+               lore: metadata.lore,
+               image: metadata.image,
+               metadata: metadata.metadata,
+               _fsHandle: fileEntry.handle,
+               _path: fileEntry.path,
+             };
+             
+             // Update Cache (best-effort; failures should not abort processing)
+             try {
+               await cacheService.set(filePath, lastModified, entity);
+             } catch (error) {
+               console.error("Failed to update cache for file:", filePath, error);
+             }
           }
-
-          const connections = [...(metadata.connections || []), ...wikiLinks];
-
-          const entity: LocalEntity = {
-            id: id!,
-            type: metadata.type || "npc",
-            title: metadata.title || id!,
-            tags: metadata.tags || [],
-            connections,
-            content: content,
-            image: metadata.image,
-            metadata: metadata.metadata,
-            _fsHandle: file.handle,
-            _path: file.path,
-          };
 
           if (!entity.id || entity.id === 'undefined') {
             console.error('CRITICAL: Attempted to index entity with invalid ID!', { title: entity.title, id: entity.id, path: entity._path });
             return;
           }
 
-          newEntities[entity.id] = entity;
+          chunkEntities[entity.id] = entity;
 
           const metadataValues = Object.values(entity.metadata || {});
           const metadataKeywords = metadataValues.flatMap((value) => {
@@ -155,7 +182,7 @@ class VaultStore {
 
           const keywords = [
             ...(entity.tags || []),
-            metadata.lore || '',
+            entity.lore || '',
             ...metadataKeywords
           ].join(' ');
 
@@ -163,7 +190,7 @@ class VaultStore {
             id: entity.id,
             title: entity.title,
             content: entity.content,
-            path: Array.isArray(entity._path) ? entity._path.join('/') : entity._path as string,
+            path: filePath,
             keywords,
             updatedAt: Date.now()
           };
@@ -171,12 +198,14 @@ class VaultStore {
           // Index the entity
           await searchService.index(searchEntry);
         } catch (err) {
-          console.error(`Failed to process file ${file.path.join('/')}:`, err);
+          console.error(`Failed to process file ${fileEntry.path.join('/')}:`, err);
         }
       }));
+
+      // Update state incrementally
+      this.entities = { ...this.entities, ...chunkEntities };
     }
 
-    this.entities = newEntities;
     this.status = "idle";
   }
 
@@ -281,6 +310,11 @@ class VaultStore {
   }
 
   async refresh() {
+    await this.loadFiles();
+  }
+
+  async rebuildIndex() {
+    await cacheService.clear();
     await this.loadFiles();
   }
 

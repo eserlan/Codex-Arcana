@@ -1,64 +1,78 @@
+import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import type { LocalEntity } from "../stores/vault.svelte";
+
+interface CodexDB extends DBSchema {
+  settings: {
+    key: string;
+    value: any;
+  };
+  vault_cache: {
+    key: string; // filePath
+    value: {
+      path: string;
+      lastModified: number;
+      entity: LocalEntity;
+    };
+  };
+}
+
+const DB_NAME = "CodexArcana";
+const DB_VERSION = 2;
+
+let dbPromise: Promise<IDBPDatabase<CodexDB>>;
+
+function getDB() {
+  if (!dbPromise) {
+    dbPromise = openDB<CodexDB>(DB_NAME, DB_VERSION, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1 && !db.objectStoreNames.contains("settings")) {
+          db.createObjectStore("settings");
+        }
+        if (oldVersion < 2 && !db.objectStoreNames.contains("vault_cache")) {
+          db.createObjectStore("vault_cache", { keyPath: "path" });
+        }
+      },
+    });
+  }
+  return dbPromise;
+}
+
 export async function getPersistedHandle(): Promise<FileSystemDirectoryHandle | null> {
-  return new Promise((resolve) => {
-    const request = indexedDB.open("CodexArcana", 1);
-
-    request.onupgradeneeded = (event: any) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains("settings")) {
-        db.createObjectStore("settings");
-      }
-    };
-
-    request.onsuccess = (event: any) => {
-      const db = event.target.result;
-      const transaction = db.transaction("settings", "readonly");
-      const store = transaction.objectStore("settings");
-      const getRequest = store.get("lastVaultHandle");
-
-      getRequest.onsuccess = () => {
-        resolve(getRequest.result || null);
-      };
-      getRequest.onerror = () => resolve(null);
-    };
-
-    request.onerror = () => resolve(null);
-  });
+  const db = await getDB();
+  return (await db.get("settings", "lastVaultHandle")) || null;
 }
 
 export async function persistHandle(
   handle: FileSystemDirectoryHandle,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("CodexArcana", 1);
-
-    request.onsuccess = (event: any) => {
-      const db = event.target.result;
-      const transaction = db.transaction("settings", "readwrite");
-      const store = transaction.objectStore("settings");
-      const putRequest = store.put(handle, "lastVaultHandle");
-
-      putRequest.onsuccess = () => resolve();
-      putRequest.onerror = () => reject(putRequest.error);
-    };
-
-    request.onerror = () => reject(request.error);
-  });
+  const db = await getDB();
+  await db.put("settings", handle, "lastVaultHandle");
 }
 
 export async function clearPersistedHandle(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("CodexArcana", 1);
+  const db = await getDB();
+  await db.delete("settings", "lastVaultHandle");
+}
 
-    request.onsuccess = (event: any) => {
-      const db = event.target.result;
-      const transaction = db.transaction("settings", "readwrite");
-      const store = transaction.objectStore("settings");
-      const deleteRequest = store.delete("lastVaultHandle");
+// Cache Service methods
+export async function getCachedFile(path: string) {
+  const db = await getDB();
+  return db.get("vault_cache", path);
+}
 
-      deleteRequest.onsuccess = () => resolve();
-      deleteRequest.onerror = () => reject(deleteRequest.error);
-    };
+export async function setCachedFile(
+  path: string,
+  lastModified: number,
+  entity: LocalEntity,
+) {
+  const db = await getDB();
+  
+  // Store entity in cache with lastModified timestamp for cache validation.
+  
+  await db.put("vault_cache", { path, lastModified, entity });
+}
 
-    request.onerror = () => reject(request.error);
-  });
+export async function clearCache() {
+  const db = await getDB();
+  await db.clear("vault_cache");
 }
