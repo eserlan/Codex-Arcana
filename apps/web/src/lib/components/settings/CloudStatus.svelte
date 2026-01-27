@@ -79,6 +79,9 @@
         >
             {isSyncing ? "⚡" : "☁"}
         </span>
+        {#if isSyncing}
+            <span class="text-[8px] text-green-500 font-bold ml-1 hidden xs:inline animate-pulse">SYNCING</span>
+        {/if}
         {#if isConnected && !isSyncing}
             <span
                 class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-black animate-pulse"
