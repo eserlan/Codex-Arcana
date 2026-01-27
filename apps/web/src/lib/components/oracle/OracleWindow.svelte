@@ -54,20 +54,8 @@
           onclick={popOut}
           title="Pop out to new window"
         >
-          <svg
-            class="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-            ></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
-          </svg>
+          <span class="icon-[heroicons--arrow-top-right-on-square] w-4 h-4"
+          ></span>
         </button>
 
         <!-- Pop-out Toggle (Modal) -->
@@ -76,29 +64,11 @@
           onclick={() => oracle.toggleModal()}
           title={oracle.isModal ? "Minimize to side" : "Pop out to center"}
         >
-          <svg
+          <span
             class="w-4 h-4 transition-transform duration-300 {oracle.isModal
-              ? 'rotate-180'
-              : ''}"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            {#if oracle.isModal}
-              <path d="M4 14h6v6"></path>
-              <path d="M20 10h-6V4"></path>
-              <path d="M14 10l7-7"></path>
-              <path d="M10 14l-7 7"></path>
-            {:else}
-              <path d="M15 3h6v6"></path>
-              <path d="M9 21H3v-6"></path>
-              <path d="M21 3l-7 7"></path>
-              <path d="M3 21l7-7"></path>
-            {/if}
-          </svg>
+              ? 'rotate-180 icon-[heroicons--arrows-pointing-in]'
+              : 'icon-[heroicons--arrows-pointing-out]'}"
+          ></span>
         </button>
         <button
           class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-purple-200 transition-colors"

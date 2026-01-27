@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@iconify/tailwind";
 
 @theme {
   --breakpoint-xs: 475px;
