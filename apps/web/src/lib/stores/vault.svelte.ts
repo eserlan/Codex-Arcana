@@ -156,8 +156,12 @@ class VaultStore {
                _path: fileEntry.path,
              };
              
-             // Update Cache
-             await cacheService.set(filePath, lastModified, entity);
+             // Update Cache (best-effort; failures should not abort processing)
+             try {
+               await cacheService.set(filePath, lastModified, entity);
+             } catch (error) {
+               console.error("Failed to update cache for file:", filePath, error);
+             }
           }
 
           if (!entity.id || entity.id === 'undefined') {

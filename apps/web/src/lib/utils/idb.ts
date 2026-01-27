@@ -24,11 +24,11 @@ let dbPromise: Promise<IDBPDatabase<CodexDB>>;
 function getDB() {
   if (!dbPromise) {
     dbPromise = openDB<CodexDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains("settings")) {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1 && !db.objectStoreNames.contains("settings")) {
           db.createObjectStore("settings");
         }
-        if (!db.objectStoreNames.contains("vault_cache")) {
+        if (oldVersion < 2 && !db.objectStoreNames.contains("vault_cache")) {
           db.createObjectStore("vault_cache", { keyPath: "path" });
         }
       },
@@ -67,9 +67,7 @@ export async function setCachedFile(
 ) {
   const db = await getDB();
   
-  // Clone entity to avoid structure clone errors with proxies or non-clonable fields if any
-  // But LocalEntity is mostly plain JSON + _fsHandle.
-  // _fsHandle IS clonable (FileSystemHandle is serializable to IDB).
+  // Store entity in cache with lastModified timestamp for cache validation.
   
   await db.put("vault_cache", { path, lastModified, entity });
 }

@@ -11,7 +11,7 @@ The recent architectural review identified that while `loadFiles` is parallelize
 ## Implementation Plan
 
 ### 1. Metadata Cache (IDB)
-*   **Schema**: Create an object store `file_cache` in `idb`.
+*   **Schema**: Create an object store `vault_cache` in `idb`.
     *   Key: `filePath`
     *   Value: `{ lastModified: number, entity: LocalEntity, connections: Connection[] }`
 *   **Logic**:
