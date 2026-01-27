@@ -25,6 +25,7 @@ export class AIService {
 
     try {
       const context = await this.retrieveContext(query);
+      console.log(`[AIService] Final RAG Context length: ${context.length}`);
 
       const systemPrompt = `You are the Lore Oracle, an expert on the user's personal world. 
 Answer the question based ONLY on the provided context if possible. 
@@ -68,9 +69,12 @@ ${context}
         .filter(w => w.length > 2 && !['the', 'and', 'was', 'for', 'who', 'how', 'did', 'his', 'her', 'they', 'with', 'from'].includes(w));
 
       if (keywords.length > 0) {
+        console.log(`[AIService] No direct matches, retrying with keywords: ${keywords.join(', ')}`);
         results = await searchService.search(keywords.join(' '), { limit: 5 });
       }
     }
+
+    console.log(`[AIService] Search results for "${query}":`, results.map(r => r.title));
 
     // 2. Identify the active entity to prioritize it
     const activeId = vault.selectedEntityId;
