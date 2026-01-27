@@ -11,6 +11,7 @@ class OracleStore {
   isOpen = $state(false);
   isLoading = $state(false);
   apiKey = $state<string | null>(null);
+  isModal = $state(false);
 
   async init() {
     const db = await getDB();
@@ -61,6 +62,10 @@ class OracleStore {
     if (this.isOpen && this.apiKey === null) {
       this.init();
     }
+  }
+
+  toggleModal() {
+    this.isModal = !this.isModal;
   }
 }
 

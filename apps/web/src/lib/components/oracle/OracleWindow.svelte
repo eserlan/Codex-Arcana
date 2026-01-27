@@ -25,16 +25,21 @@
 </script>
 
 {#if oracle.isOpen}
-  <!-- Backdrop for mobile/tablet to dismiss easily -->
+  <!-- Backdrop (always on mobile, only on modal mode for desktop) -->
   <div
-    class="fixed inset-0 bg-black/40 z-40 md:hidden"
+    class="fixed inset-0 bg-black/60 z-40 {oracle.isModal
+      ? 'block'
+      : 'md:hidden'}"
     onclick={() => oracle.toggle()}
     transition:fade
     aria-hidden="true"
   ></div>
 
   <div
-    class="fixed bottom-0 left-0 w-full md:bottom-40 md:left-6 md:w-96 h-[80vh] md:h-[calc(100vh-420px)] md:max-h-[800px] md:min-h-[400px] bg-black/95 border-t md:border border-purple-900/50 rounded-t-xl md:rounded-lg shadow-2xl flex flex-col z-50 overflow-hidden"
+    class="fixed transition-all duration-500 ease-in-out z-50 overflow-hidden flex flex-col bg-black/95 border border-purple-900/50 shadow-2xl
+    {oracle.isModal
+      ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[80vh] md:w-[800px] md:h-[70vh] rounded-xl'
+      : 'bottom-0 left-0 w-full md:bottom-40 md:left-6 md:w-96 h-[80vh] md:h-[calc(100vh-420px)] md:max-h-[800px] md:min-h-[400px] rounded-t-xl md:rounded-lg'}"
     transition:fly={{ y: 50, duration: 300 }}
   >
     <!-- Header -->
@@ -52,13 +57,27 @@
           >Lore Oracle</span
         >
       </div>
-      <button
-        class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-purple-200 transition-colors"
-        onclick={() => oracle.toggle()}
-        aria-label="Close oracle window"
-      >
-        ✕
-      </button>
+      <div class="flex items-center gap-1">
+        <!-- Pop-out Toggle -->
+        <button
+          class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-purple-200 transition-colors hidden md:flex"
+          onclick={() => oracle.toggleModal()}
+          title={oracle.isModal ? "Minimize to side" : "Pop out to center"}
+        >
+          <span
+            class="icon-[heroicons--arrows-pointing-out] w-4 h-4 {oracle.isModal
+              ? 'rotate-180'
+              : ''}"
+          ></span>
+        </button>
+        <button
+          class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-purple-200 transition-colors"
+          onclick={() => oracle.toggle()}
+          aria-label="Close oracle window"
+        >
+          ✕
+        </button>
+      </div>
     </div>
 
     <!-- Content -->
