@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // 1. Setup Hoisted Mocks
-const { mockGapi, mockGoogle } = vi.hoisted(() => {
+/* const { mockGapi, mockGoogle } = */ vi.hoisted(() => {
   // Mock GDrive API
   const mockGapi = {
     load: vi.fn().mockImplementation((_api, cb) => cb()),
