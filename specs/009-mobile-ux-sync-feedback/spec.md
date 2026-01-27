@@ -58,6 +58,23 @@ As a mobile user, I want entity details to be displayed in a space-efficient man
 - **FR-003**: The system MUST provide a visual confirmation (e.g., a brief flash or message) when a manual sync completes successfully.
 - **FR-004**: Entity detail panels MUST transition to a full-width overlay on mobile-sized viewports.
 - **FR-005**: All primary action buttons (Search, Sync, Create) MUST be sized for comfortable touch interaction (minimum 44x44px hit area).
+- **FR-006**: Sync engine MUST utilize metadata history to detect file changes, ignoring timestamp discrepancies caused by cross-device transfers.
+- **FR-007**: Sync operations MUST support parallel file transfers (minimum concurrency of 5) to optimize throughput for large vaults.
+- **FR-008**: Database updates during sync MUST be batched to ensure UI responsiveness.
+- **FR-009**: The system MUST detect authentication failures and provide a clear "Reconnect" action without requiring a full page reload.
+
+### User Story 4 - Reliable Sync Consistency (Priority: P0)
+As a user, I want the sync engine to only upload files I have actually modified, so that I don't waste bandwidth and time re-uploading my entire vault due to technical timestamp quirks.
+
+**Acceptance Scenarios**:
+1. **Given** a vault with existing files, **When** I sync without making changes, **Then** 0 files are uploaded.
+2. **Given** I download a file on a new device, **When** I sync immediately, **Then** the system recognizes the file is identical to the server version.
+
+### User Story 5 - Fast Sync Performance (Priority: P2)
+As a power user with hundreds of files, I want the sync process to utilize my available bandwidth efficiently, so that I can switch devices quickly.
+
+**Acceptance Scenarios**:
+1. **Given** a backlog of 50 files, **When** sync starts, **Then** multiple files are uploaded/downloaded simultaneously.
 
 ### Key Entities
 
