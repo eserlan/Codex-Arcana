@@ -68,6 +68,13 @@
             >
                 ↻
             </button>
+            <button
+                class="px-2 py-1.5 border border-green-900/50 text-amber-700 hover:text-amber-500 hover:border-amber-700 rounded text-xs transition"
+                onclick={() => vault.rebuildIndex()}
+                title="Rebuild Cache"
+            >
+                REBUILD
+            </button>
         {/if}
     </div>
 

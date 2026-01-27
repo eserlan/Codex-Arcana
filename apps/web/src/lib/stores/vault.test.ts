@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { vault } from "./vault.svelte";
 import * as fsUtils from "../utils/fs";
+import * as idbUtils from "../utils/idb";
 
 // Mock dependencies
 vi.mock("../utils/fs", () => ({
@@ -22,6 +23,9 @@ vi.mock("../utils/idb", () => ({
   persistHandle: vi.fn(),
   getPersistedHandle: vi.fn(),
   clearPersistedHandle: vi.fn(),
+  getCachedFile: vi.fn().mockResolvedValue(undefined),
+  setCachedFile: vi.fn().mockResolvedValue(undefined),
+  clearCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock global window.showDirectoryPicker
@@ -41,16 +45,19 @@ describe("VaultStore", () => {
 
   it("should load files from directory", async () => {
     // Mock FS response
-    const mockFiles = [{ handle: {}, path: ["test.md"] }];
-    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
-
-    // Use simple string without complex newlines to be safe, or template literal
-    vi.mocked(fsUtils.readFile).mockResolvedValue(`---
+    const mockFileHandle = {
+        getFile: vi.fn().mockResolvedValue({
+            lastModified: 1234567890,
+            text: vi.fn().mockResolvedValue(`---
 id: test
 title: Test Node
 type: npc
 ---
-Content`);
+Content`)
+        })
+    };
+    const mockFiles = [{ handle: mockFileHandle, path: ["test.md"] }];
+    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
 
     // Mock directory picker
     const mockHandle = {};
@@ -64,6 +71,49 @@ Content`);
     const entity = vault.entities["test"];
     expect(entity).toBeDefined();
     expect(entity?.title).toBe("Test Node");
+  });
+
+  it("should load from cache if lastModified matches", async () => {
+    const filePath = "cached.md";
+    const lastModified = 999999;
+    const cachedEntity = {
+        id: "cached-id",
+        title: "Cached Title",
+        type: "npc" as const,
+        content: "Cached Content",
+        tags: [],
+        connections: [],
+        metadata: {}
+    };
+
+    // Mock IDB hit
+    vi.mocked(idbUtils.getCachedFile).mockResolvedValue({
+        path: filePath,
+        lastModified: lastModified,
+        entity: cachedEntity
+    });
+
+    const mockFileHandle = {
+        getFile: vi.fn().mockResolvedValue({
+            lastModified: lastModified,
+            text: vi.fn() // Should NOT be called
+        })
+    };
+    
+    const mockFiles = [{ handle: mockFileHandle, path: [filePath] }];
+    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
+    vault.rootHandle = {} as any;
+    vault.isAuthorized = true;
+
+    await vault.loadFiles();
+
+    expect(mockFileHandle.getFile).toHaveBeenCalled();
+    // Verify text() was never called (proving it skipped parsing)
+    const fileObj = await mockFileHandle.getFile();
+    expect(fileObj.text).not.toHaveBeenCalled();
+    
+    expect(vault.entities["cached-id"]).toBeDefined();
+    expect(vault.entities["cached-id"]?.title).toBe("Cached Title");
   });
 
   it("should create new entity", async () => {
@@ -124,12 +174,17 @@ Content`);
   });
 
   it("should parse wiki-links with labels correctly", async () => {
-    const mockFiles = [{ handle: {}, path: ["test.md"] }];
-    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
-    vi.mocked(fsUtils.readFile).mockResolvedValue(`---
+    const mockFileHandle = {
+        getFile: vi.fn().mockResolvedValue({
+            lastModified: 1234567890,
+            text: vi.fn().mockResolvedValue(`---
 id: test
 ---
-Link to [[Other|The Label]]`);
+Link to [[Other|The Label]]`)
+        })
+    };
+    const mockFiles = [{ handle: mockFileHandle, path: ["test.md"] }];
+    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
 
     (window.showDirectoryPicker as any).mockResolvedValue({});
     await vault.openDirectory();
