@@ -1,5 +1,6 @@
 <script lang="ts">
   import { oracle } from "$lib/stores/oracle.svelte";
+  import { uiStore } from "$stores/ui.svelte";
   import ChatMessage from "./ChatMessage.svelte";
   import { fly, fade } from "svelte/transition";
 
@@ -78,6 +79,16 @@
             >Google Gemini API Key</strong
           > in the Settings panel.
         </p>
+
+        <button
+          class="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-black font-bold rounded-full text-[10px] tracking-widest transition-all active:scale-95 shadow-lg shadow-purple-900/40"
+          onclick={() => {
+            uiStore.openSettings();
+            oracle.toggle(); // Close oracle window when opening settings
+          }}
+        >
+          OPEN SETTINGS
+        </button>
         <div class="flex flex-col gap-2 w-full pt-4">
           <p class="text-[10px] text-purple-500 font-mono">
             Vault contents never leave this device except for inference via your

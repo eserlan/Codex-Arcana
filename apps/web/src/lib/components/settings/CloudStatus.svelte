@@ -4,10 +4,13 @@
     import { GoogleDriveAdapter } from "$lib/cloud-bridge/google-drive/adapter";
     import { workerBridge } from "$lib/cloud-bridge/worker-bridge";
 
+    import { uiStore } from "$stores/ui.svelte";
+    import AISettings from "./AISettings.svelte";
+
     let adapter = new GoogleDriveAdapter();
     let isLoading = $state(false);
     let error = $state<string | null>(null);
-    let showMenu = $state(false);
+    let showMenu = $derived(uiStore.showSettings);
 
     const handleLogin = async () => {
         isLoading = true;
@@ -29,7 +32,7 @@
         try {
             await adapter.disconnect();
             cloudConfig.reset();
-            showMenu = false;
+            uiStore.closeSettings();
         } catch (e: any) {
             console.error("Logout Error:", e);
         } finally {
@@ -99,7 +102,7 @@
             : 'z-10'} {isFlashing
             ? 'ring-2 ring-green-500 ring-opacity-50 scale-95'
             : ''}"
-        onclick={() => (showMenu = !showMenu)}
+        onclick={() => uiStore.toggleSettings()}
         title={isConnected
             ? `Connected as ${$cloudConfig.connectedEmail}`
             : "Cloud Sync Settings"}
@@ -150,7 +153,7 @@
                         class="text-gray-600 hover:text-gray-400 text-sm p-1 -m-1"
                         onclick={(e) => {
                             e.stopPropagation();
-                            showMenu = false;
+                            uiStore.closeSettings();
                         }}
                         data-testid="cloud-status-close">✕</button
                     >
@@ -293,6 +296,9 @@
                             >
                                 Unlink
                             </button>
+                        </div>
+                        <div class="pt-4 border-t border-green-900/20">
+                            <AISettings />
                         </div>
                     </div>
                 {/if}
