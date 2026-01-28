@@ -93,15 +93,11 @@ class OracleStore {
   }
 
   get isEnabled() {
-    return !!this.apiKey || !!import.meta.env.VITE_SHARED_GEMINI_KEY;
+    return !!this.apiKey;
   }
 
   get effectiveApiKey() {
-    try {
-      return this.apiKey || import.meta.env.VITE_SHARED_GEMINI_KEY;
-    } catch {
-      return this.apiKey;
-    }
+    return this.apiKey;
   }
 
   async ask(query: string) {

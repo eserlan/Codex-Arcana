@@ -57,7 +57,7 @@
   });
 
   const copyToChronicle = () => {
-    const finalTargetId = message.archiveTargetId || message.entityId;
+    const finalTargetId = message.archiveTargetId || message.entityId || (activeEntity ? activeEntity.id : null);
     if (!finalTargetId || !message.content) return;
     const existing = vault.entities[finalTargetId]?.content || "";
     const newContent = existing
@@ -71,7 +71,7 @@
   };
 
   const copyToLore = () => {
-    const finalTargetId = message.archiveTargetId || message.entityId;
+    const finalTargetId = message.archiveTargetId || message.entityId || (activeEntity ? activeEntity.id : null);
     if (!finalTargetId || !message.content) return;
     const existing = vault.entities[finalTargetId]?.lore || "";
     const newContent = existing

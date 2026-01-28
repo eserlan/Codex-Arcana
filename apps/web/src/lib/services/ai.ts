@@ -11,9 +11,14 @@ export class AIService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: GenerativeModel | null = null;
   private currentApiKey: string | null = null;
+  private currentModelName: string | null = null;
 
   init(apiKey: string, modelName: string) {
-    if (this.genAI && this.model && this.currentApiKey === apiKey && this.model.modelName === `models/${modelName}`) return;
+    const currentModelName = (this.model as any)?.modelName;
+    const matchesModel =
+      currentModelName === modelName ||
+      currentModelName === `models/${modelName}`;
+    if (this.genAI && this.model && this.currentApiKey === apiKey && matchesModel) return;
 
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
@@ -29,11 +34,11 @@ When providing information, consider two formats:
 
 Only if you have NO information about the subject in either the new context blocks OR the previous messages, and you aren't asked to invent it, say "I cannot find that in your records." 
 
-Always prioritize the vault context as the absolute truth.`
+      Always prioritize the vault context as the absolute truth.`
     });
     this.currentApiKey = apiKey;
+    this.currentModelName = modelName;
   }
-
   async generateResponse(apiKey: string, query: string, history: any[], context: string, modelName: string, onUpdate: (partial: string) => void) {
     this.init(apiKey, modelName);
     if (!this.model) throw new Error("AI Model not initialized");
