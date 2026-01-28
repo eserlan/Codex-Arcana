@@ -2,19 +2,22 @@ import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai"
 import { searchService } from "./search";
 import { vault } from "../stores/vault.svelte";
 
-const MODEL_NAME = "gemini-3-flash-preview";
+export const TIER_MODES = {
+  lite: "gemini-2.5-flash-lite",
+  advanced: "gemini-3-flash-preview",
+};
 
 export class AIService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: GenerativeModel | null = null;
   private currentApiKey: string | null = null;
 
-  init(apiKey: string) {
-    if (this.genAI && this.model && this.currentApiKey === apiKey) return;
+  init(apiKey: string, modelName: string) {
+    if (this.genAI && this.model && this.currentApiKey === apiKey && this.model.modelName === `models/${modelName}`) return;
 
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
-      model: MODEL_NAME,
+      model: modelName,
       systemInstruction: `You are the Lore Oracle, a wise and creative keeper of the user's personal world records. 
 Your primary goal is to provide information from the provided context or conversation history. 
 
@@ -31,8 +34,8 @@ Always prioritize the vault context as the absolute truth.`
     this.currentApiKey = apiKey;
   }
 
-  async generateResponse(apiKey: string, query: string, history: any[], context: string, onUpdate: (partial: string) => void) {
-    this.init(apiKey);
+  async generateResponse(apiKey: string, query: string, history: any[], context: string, modelName: string, onUpdate: (partial: string) => void) {
+    this.init(apiKey, modelName);
     if (!this.model) throw new Error("AI Model not initialized");
 
     // Create a new session with current history
