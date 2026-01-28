@@ -65,14 +65,26 @@ Always prioritize the vault context as the absolute truth.`
     }
   }
 
+  private escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
   private findExplicitSubject(query: string): string | undefined {
     const queryLower = query.toLowerCase();
     const entities = Object.values(vault.entities);
 
     // Find entities whose titles are explicitly mentioned in the query
+    // For very short titles (length <= 2), require a word-boundary match to avoid false positives.
     // Sort by title length descending to match "The Forbidden Woods" before "The" or "Woods"
     const matches = entities
-      .filter(e => e.title.length > 2 && queryLower.includes(e.title.toLowerCase()))
+      .filter(e => {
+        const titleLower = e.title.toLowerCase();
+        if (titleLower.length > 2) {
+          return queryLower.includes(titleLower);
+        }
+        const pattern = new RegExp(`\\b${this.escapeRegExp(titleLower)}\\b`);
+        return pattern.test(queryLower);
+      })
       .sort((a, b) => b.title.length - a.title.length);
 
     return matches[0]?.id;
@@ -85,14 +97,17 @@ Always prioritize the vault context as the absolute truth.`
       /^more$/i,
       /^elaborate$/i,
       /^anything else\??$/i,
-      /\b(it|him|her|them|that|she|he|they|his|hers|its)\b/i,
       /^and\b/i,
       /^what about (it|him|her|them|that|she|he|they)\??$/i
     ];
 
     // Short queries are often follow-ups
-    if (q.split(/\s+/).length <= 3) {
-      if (followUpPatterns.some(p => p.test(q))) return true;
+    const isShort = q.split(/\s+/).length <= 3;
+    if (isShort) {
+      // Treat queries that are just a pronoun (optionally with ?) as follow-ups,
+      // e.g. "it", "her?", "them".
+      const pronounOnlyPattern = /^(it|him|her|them|that|she|he|they|his|hers|its)\??$/i;
+      if (pronounOnlyPattern.test(q)) return true;
     }
 
     return followUpPatterns.some(p => p.test(q));
@@ -152,8 +167,14 @@ Always prioritize the vault context as the absolute truth.`
       potentialIds.unshift(primaryEntityId);
     }
 
-    // Add sticky entity for context if it wasn't the primary but we have it
-    if (lastEntityId && !potentialIds.includes(lastEntityId)) {
+    // Add sticky entity for context if it wasn't the primary but we have it.
+    // Avoid mixing a different "last" entity when a high-confidence search
+    // has already determined a distinct primary entity.
+    if (
+      lastEntityId &&
+      !potentialIds.includes(lastEntityId) &&
+      !(isHighConfidenceSearch && primaryEntityId && primaryEntityId !== lastEntityId)
+    ) {
       potentialIds.push(lastEntityId);
     }
 
@@ -181,12 +202,20 @@ Always prioritize the vault context as the absolute truth.`
         // 4b. Add Connection Context
         let connectionContext = "";
         const outbound = entity.connections.map(c => {
-          const target = vault.entities[c.target]?.title || c.target;
+          const targetEntity = vault.entities[c.target];
+          const target =
+            targetEntity && targetEntity.title
+              ? targetEntity.title
+              : `[missing entity: ${c.target}]`;
           return `- ${c.label || c.type}: ${target}`;
         });
 
         const inbound = (vault.inboundConnections[id] || []).map(item => {
-          const source = vault.entities[item.sourceId]?.title || item.sourceId;
+          const sourceEntity = vault.entities[item.sourceId];
+          const source =
+            sourceEntity && sourceEntity.title
+              ? sourceEntity.title
+              : `[missing entity: ${item.sourceId}]`;
           return `- ${source}: ${item.connection.label || item.connection.type}`;
         });
 

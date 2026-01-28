@@ -13,12 +13,21 @@
 
     const adjustHeight = () => {
         if (!textArea) return;
-        textArea.style.height = "auto";
-        textArea.style.height = `${Math.min(textArea.scrollHeight, 200)}px`;
+
+        const currentHeight = textArea.clientHeight;
+        const scrollHeight = textArea.scrollHeight;
+        const maxHeight = 200;
+
+        // Only adjust if there's a meaningful change to avoid jitter
+        if (scrollHeight !== currentHeight || input === "") {
+            textArea.style.height = "auto";
+            textArea.style.height = `${Math.min(textArea.scrollHeight, maxHeight)}px`;
+        }
     };
 
     $effect(() => {
-        input; // Dependency
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        input; // Reactive dependency
         adjustHeight();
     });
 
@@ -150,7 +159,7 @@
                 bind:value={input}
                 data-testid="oracle-input"
                 onkeydown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
                         e.preventDefault();
                         handleSubmit();
                     }

@@ -31,6 +31,7 @@ describe("AIService Context Retrieval", () => {
             "woods-id": { id: "woods-id", title: "The Woods", content: "Dark woods.", connections: [] },
             "crone-id": { id: "crone-id", title: "The Crone", content: "Old woman.", connections: [] },
             "guardsman-id": { id: "guardsman-id", title: "The Guardsman", content: "A guard in the woods.", connections: [] },
+            "ai-id": { id: "ai-id", title: "AI", content: "The Artificial Intelligence.", connections: [] },
         };
         (vault as any).selectedEntityId = null;
         (vault as any).inboundConnections = {};
@@ -41,6 +42,17 @@ describe("AIService Context Retrieval", () => {
         (vault as any).selectedEntityId = "crone-id";
         const { primaryEntityId } = await aiService.retrieveContext("Tell me about The Woods", new Set());
         expect(primaryEntityId).toBe("woods-id");
+    });
+
+    it("should match short titles only with word boundaries", async () => {
+        // "AI" is length 2.
+        // It should match "Tell me about AI"
+        const { primaryEntityId: match1 } = await aiService.retrieveContext("Tell me about AI", new Set());
+        expect(match1).toBe("ai-id");
+
+        // It should NOT match "Training" (substring "AI")
+        const { primaryEntityId: match2 } = await aiService.retrieveContext("Training is hard", new Set());
+        expect(match2).not.toBe("ai-id");
     });
 
     it("should prioritize high-confidence search results over active selection", async () => {
@@ -55,11 +67,22 @@ describe("AIService Context Retrieval", () => {
         expect(primaryEntityId).toBe("woods-id");
     });
 
+    it("should prioritize high-confidence search over sticky context", async () => {
+        vi.mocked(searchService.search).mockResolvedValue([
+            { id: "crone-id", title: "The Crone", score: 0.9, matchType: "title", path: "" }
+        ]);
+
+        // Explicit match fails. High-confidence search says "Crone". Sticky says "Woods".
+        // Search should win Tier 2 vs Tier 3.
+        const { primaryEntityId } = await aiService.retrieveContext("Tell me about that ancient woman", new Set(), "woods-id");
+        expect(primaryEntityId).toBe("crone-id");
+    });
+
     it("should stick to previous context for follow-up questions", async () => {
         (vault as any).selectedEntityId = "crone-id";
         // Not an explicit match, no high-confidence search match.
         // Tier 3 (Sticky Follow-up) should win because of "it".
-        const { primaryEntityId } = await aiService.retrieveContext("Tell me more about it", new Set(), "woods-id");
+        const { primaryEntityId } = await aiService.retrieveContext("it?", new Set(), "woods-id");
         expect(primaryEntityId).toBe("woods-id");
     });
 
@@ -75,26 +98,37 @@ describe("AIService Context Retrieval", () => {
         expect(primaryEntityId).toBe("crone-id");
     });
 
-    it("should fallback to top search result if no active selection and no other matches", async () => {
-        (vault as any).selectedEntityId = null;
-        vi.mocked(searchService.search).mockResolvedValue([
-            { id: "guardsman-id", title: "The Guardsman", score: 0.4, matchType: "content", path: "" }
-        ]);
+    it("should include connection context in the retrieved text", async () => {
+        (vault as any).entities["woods-id"].connections = [
+            { target: "crone-id", type: "inhabited_by", label: "Ancient Dweller" }
+        ];
+        (vault as any).inboundConnections["crone-id"] = [
+            { sourceId: "woods-id", connection: { target: "crone-id", type: "inhabited_by" } }
+        ];
 
-        const { primaryEntityId } = await aiService.retrieveContext("Who is there?", new Set());
-        expect(primaryEntityId).toBe("guardsman-id");
+        // Outbound case
+        const { content: contentOut } = await aiService.retrieveContext("The Woods", new Set());
+        expect(contentOut).toContain("--- Connections ---");
+        expect(contentOut).toContain("- Ancient Dweller: The Crone");
+
+        // Inbound case
+        const { content: contentIn } = await aiService.retrieveContext("The Crone", new Set());
+        expect(contentIn).toContain("--- Connections ---");
+        expect(contentIn).toContain("- The Woods: inhabited_by");
     });
 
-    it("should switch context even with sticky context if a new title is explicitly mentioned", async () => {
-        // Tier 1 (Explicit Match) has highest priority.
-        const { primaryEntityId } = await aiService.retrieveContext("Tell me about The Crone", new Set(), "woods-id");
-        expect(primaryEntityId).toBe("crone-id");
+    it("should handle missing entities in connection context gracefully", async () => {
+        (vault as any).entities["woods-id"].connections = [
+            { target: "missing-id", type: "part_of" }
+        ];
+
+        const { content } = await aiService.retrieveContext("The Woods", new Set());
+        expect(content).toContain("[missing entity: missing-id]");
     });
 
-    it("should recognize follow-ups with pronouns", async () => {
-        // The internal method isFollowUp is private, but we test it via behavior
+    it("should recognize lone pronouns as follow-ups", async () => {
         (vault as any).selectedEntityId = "crone-id";
-        const { primaryEntityId } = await aiService.retrieveContext("What is his role?", new Set(), "guardsman-id");
+        const { primaryEntityId } = await aiService.retrieveContext("it", new Set(), "guardsman-id");
         expect(primaryEntityId).toBe("guardsman-id");
     });
 });

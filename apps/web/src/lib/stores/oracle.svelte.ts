@@ -5,7 +5,8 @@ export interface ChatMessage {
   id: string; // Unique identifier for reactivity and identification
   role: "user" | "assistant" | "system";
   content: string;
-  entityId?: string; // ID of the entity this message is primarily about
+  entityId?: string; // ID of the entity used for generation context
+  archiveTargetId?: string; // ID of the entity where the user wants to archive this message
 }
 
 class OracleStore {
@@ -150,7 +151,7 @@ class OracleStore {
   updateMessageEntity(messageId: string, entityId: string) {
     const target = this.messages.find(m => m.id === messageId);
     if (target) {
-      target.entityId = entityId;
+      target.archiveTargetId = entityId;
       this.broadcast();
     }
   }
