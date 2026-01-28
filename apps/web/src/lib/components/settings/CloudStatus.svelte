@@ -88,6 +88,7 @@
     let isConnected = $derived(
         $cloudConfig.enabled && $cloudConfig.connectedEmail,
     );
+
     let isConfigured = $derived(
         adapter?.isConfigured() ||
             (typeof window !== "undefined" &&
