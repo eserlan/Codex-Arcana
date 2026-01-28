@@ -58,23 +58,29 @@
             </button>
         {:else}
             <button
-                class="px-3 md:px-4 py-1.5 border border-green-900 text-green-600 hover:text-green-400 hover:border-green-700 rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap"
+                class="px-3 md:px-4 py-1.5 border border-green-900 text-green-600 hover:text-green-400 hover:border-green-700 rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap flex items-center gap-2"
                 onclick={() => (showForm = !showForm)}
             >
-                {showForm ? "CANCEL" : "+ NEW"}
+                <span
+                    class={showForm
+                        ? "icon-[heroicons--x-mark] w-3 h-3"
+                        : "icon-[heroicons--plus] w-3 h-3"}
+                ></span>
+                {showForm ? "CANCEL" : "NEW"}
             </button>
             <button
-                class="px-2 py-1.5 border border-green-900/50 text-green-700 hover:text-green-500 hover:border-green-700 rounded text-sm transition"
+                class="px-2 py-1.5 border border-green-900/50 text-green-700 hover:text-green-500 hover:border-green-700 rounded text-sm transition flex items-center justify-center"
                 onclick={() => vault.refresh()}
                 title="Reload from disk"
             >
-                ↻
+                <span class="icon-[lucide--refresh-cw] w-3.5 h-3.5"></span>
             </button>
             <button
-                class="px-2 py-1.5 border border-green-900/50 text-amber-700 hover:text-amber-500 hover:border-amber-700 rounded text-[10px] transition hidden xs:block"
+                class="px-3 py-1.5 border border-green-900/50 text-amber-700 hover:text-amber-500 hover:border-amber-700 rounded text-[10px] transition hidden xs:flex items-center gap-1.5"
                 onclick={() => vault.rebuildIndex()}
                 title="Clear cache and re-index all vault files. Use if search seems out of sync."
             >
+                <span class="icon-[lucide--database-zap] w-3 h-3"></span>
                 REBUILD
             </button>
         {/if}
