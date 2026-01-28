@@ -27,6 +27,7 @@
         if (!input || oracle.isLoading) return;
         const query = input;
         input = "";
+        tick().then(() => adjustHeight());
         await oracle.ask(query);
     };
 
