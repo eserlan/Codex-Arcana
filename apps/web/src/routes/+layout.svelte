@@ -4,7 +4,9 @@
 	import CloudStatus from "$lib/components/settings/CloudStatus.svelte";
 	import SearchModal from "$lib/components/search/SearchModal.svelte";
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
+	import CategoryManagerModal from "$lib/components/settings/CategoryManagerModal.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
+	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
 	import { syncStats } from "$stores/sync-stats";
 	import { onMount } from "svelte";
@@ -16,11 +18,13 @@
 
 	onMount(() => {
 		vault.init();
+		categories.init();
 
 		// Expose for E2E testing
 		if (import.meta.env.DEV) {
 			(window as any).searchStore = searchStore;
 			(window as any).vault = vault;
+			(window as any).categories = categories;
 			(window as any).syncStats = syncStats;
 		}
 	});
@@ -82,5 +86,6 @@
 	{#if !isPopup}
 		<SearchModal />
 		<OracleWindow />
+		<CategoryManagerModal />
 	{/if}
 </div>
