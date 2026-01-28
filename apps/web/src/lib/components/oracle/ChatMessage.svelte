@@ -15,14 +15,16 @@
   );
 
   let isSaved = $state(false);
-  const LORE_THRESHOLD = 200;
+  const LORE_THRESHOLD = 400;
   let isLore = $derived(message.content.length >= LORE_THRESHOLD);
 
   const copyToChronicle = () => {
     if (!message.entityId || !message.content) return;
     const existing = vault.entities[message.entityId]?.content || "";
-    const newContent = existing ? `${existing}\n\n---\n${message.content}` : message.content;
-    
+    const newContent = existing
+      ? `${existing}\n\n---\n${message.content}`
+      : message.content;
+
     vault.selectedEntityId = message.entityId;
     vault.activeDetailTab = "status";
     vault.updateEntity(message.entityId, { content: newContent });
@@ -32,7 +34,9 @@
   const copyToLore = () => {
     if (!message.entityId || !message.content) return;
     const existing = vault.entities[message.entityId]?.lore || "";
-    const newContent = existing ? `${existing}\n\n---\n${message.content}` : message.content;
+    const newContent = existing
+      ? `${existing}\n\n---\n${message.content}`
+      : message.content;
 
     vault.selectedEntityId = message.entityId;
     vault.activeDetailTab = "lore";

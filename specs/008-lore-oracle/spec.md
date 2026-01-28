@@ -30,7 +30,7 @@ Users desire a natural language interface to query their vault ("Who is the king
 
 ### FR-004: Direct Injection
 - Assistant messages MUST provide an archival button when a target entity is identified.
-- System MUST intelligently select between "COPY TO CHRONICLE" (concise) or "COPY TO LORE" (expansive) based on the content length of the response.
+- System MUST intelligently select between "COPY TO CHRONICLE" (concise) or "COPY TO LORE" (expansive) based on the content length of the response (default threshold: 400 characters) or explicitly detected user intent (e.g., keywords like "blurb", "chronicle", "short desc").
 - At most ONE archival button should be visible per message.
 - These actions MUST automatically update the target entity (appending or creating) and navigate the user to the appropriate tab in the Detail Panel.
 

@@ -28,8 +28,8 @@ Integrate Google Gemini via `@google/generative-ai` to provide a lightweight, ac
 ### 4. Direct Vault Integration
 - Chat messages contain an `entityId` when the Oracle is focused on a specific node.
 - **Intelligent Archival**:
-  - Responses under 200 chars: **Copy to Chronicle** (Summary).
-  - Responses 200+ chars: **Copy to Lore** (Deep dive).
+  - Responses under 400 chars (or with "blurb"/"chronicle" intent): **Copy to Chronicle** (Summary).
+  - Responses 400+ chars: **Copy to Lore** (Deep dive).
 - Buttons automatically append to existing content/lore via `updateEntity` and switch the Detail Panel to the appropriate tab.
 
 ## Source Code Structure
