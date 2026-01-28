@@ -85,7 +85,7 @@ Always prioritize the vault context as the absolute truth.`
       /^more$/i,
       /^elaborate$/i,
       /^anything else\??$/i,
-      /\b(it|him|her|them|that|she|he|they)\b/i,
+      /\b(it|him|her|them|that|she|he|they|his|hers|its)\b/i,
       /^and\b/i,
       /^what about (it|him|her|them|that|she|he|they)\??$/i
     ];
