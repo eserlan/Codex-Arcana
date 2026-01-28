@@ -79,7 +79,7 @@
           {#if canOverride}
             <button
               onclick={() =>
-                oracle.updateMessageEntity(message, activeEntity!.id)}
+                oracle.updateMessageEntity(message.id, activeEntity!.id)}
               class="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold tracking-widest transition-all bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-700 hover:text-white"
               title="Change target to your current selection: {activeEntity!
                 .title}"

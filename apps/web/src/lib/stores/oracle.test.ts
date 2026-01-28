@@ -57,7 +57,7 @@ describe("OracleStore", () => {
 
   it("should save API key to database", async () => {
     const mockDB = await idbUtils.getDB();
-    
+
     await oracle.setKey("new-key");
 
     expect(mockDB.put).toHaveBeenCalledWith("settings", "new-key", "ai_api_key");
@@ -67,7 +67,7 @@ describe("OracleStore", () => {
   it("should clear API key and messages", async () => {
     const mockDB = await idbUtils.getDB();
     oracle.apiKey = "some-key";
-    oracle.messages = [{ role: "user", content: "hello" }];
+    oracle.messages = [{ id: "1", role: "user", content: "hello" }];
 
     await oracle.clearKey();
 
