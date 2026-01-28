@@ -58,7 +58,6 @@ const search = async (query: string, options: SearchOptions = {}): Promise<Searc
   if (!index) return [];
 
   const limit = options.limit || 20;
-
   const results = await index.searchAsync(query, {
     limit,
     enrich: true,

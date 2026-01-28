@@ -220,17 +220,19 @@
           if (currentIds.has(el.data.id)) {
             const node = cy?.$id(el.data.id);
             if (node) {
-               // Only update if data actually changed to avoid style recalc? 
-               // Cytoscape handles this reasonably well, but we can be explicit if needed.
-               // For now, blind update is cheap enough compared to layout.
-               node.data(el.data);
+              // Only update if data actually changed to avoid style recalc?
+              // Cytoscape handles this reasonably well, but we can be explicit if needed.
+              // For now, blind update is cheap enough compared to layout.
+              node.data(el.data);
             }
           }
         });
 
         // 4. Force layout ONLY if structural changes occurred OR if first load
-        const structuralChange = newElements.length > 0 || removedElements.length > 0;
-        const shouldRunLayout = structuralChange || (!initialLoaded && graph.elements.length > 0);
+        const structuralChange =
+          newElements.length > 0 || removedElements.length > 0;
+        const shouldRunLayout =
+          structuralChange || (!initialLoaded && graph.elements.length > 0);
 
         if (shouldRunLayout) {
           // console.log("Running layout/fit. Initial:", !initialLoaded, "Structural:", structuralChange);
@@ -242,16 +244,16 @@
             duration: 800,
             padding: 50,
             componentSpacing: 100,
-            // Randomize only on first load to let cose find a good shape. 
+            // Randomize only on first load to let cose find a good shape.
             // On updates, keep existing positions as starting point.
-            randomize: !initialLoaded, 
+            randomize: !initialLoaded,
           });
 
           layout.one("layoutstop", () => {
-             if (!initialLoaded) {
-                 cy?.fit(undefined, 50);
-                 initialLoaded = true;
-             }
+            if (!initialLoaded) {
+              cy?.fit(undefined, 50);
+              initialLoaded = true;
+            }
           });
 
           layout.run();
@@ -297,10 +299,12 @@
     style="background-image: radial-gradient(#15803d 1px, transparent 1px); background-size: 30px 30px;"
   ></div>
 
-  <!-- Breadcrumbs Overlay -->
-  <div class="absolute top-6 left-6 z-20 flex items-center gap-3">
+  <!-- Top Left Overlay (Breadcrumbs & Minimap) -->
+  <div
+    class="absolute top-6 left-6 z-20 flex flex-col items-start gap-3 pointer-events-none"
+  >
     <div
-      class="bg-black/80 backdrop-blur border border-green-900/50 px-4 py-1.5 flex items-center gap-2 text-[10px] font-mono tracking-widest text-green-500 shadow-lg uppercase"
+      class="bg-black/80 backdrop-blur border border-green-900/50 px-4 py-1.5 flex items-center gap-2 text-[10px] font-mono tracking-widest text-green-500 shadow-lg uppercase pointer-events-auto"
     >
       {#if selectedEntity}
         {#if parentEntity}
@@ -318,14 +322,35 @@
         <span class="font-bold text-green-400">OVERVIEW</span>
       {/if}
     </div>
+
     {#if selectedId}
       <div
-        class="flex items-center gap-2 text-[9px] font-bold text-green-500 animate-pulse"
+        class="flex items-center gap-2 text-[9px] font-bold text-green-500 animate-pulse bg-black/40 px-2 py-0.5 border border-green-500/20"
       >
         <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
         ARCHIVE DETAIL MODE
       </div>
     {/if}
+
+    <!-- Mini-map Decoration (Static Mock) -->
+    <div
+      class="w-48 h-32 bg-black/80 backdrop-blur border border-green-900/50 rounded-lg p-2 hidden md:block pointer-events-auto shadow-2xl"
+    >
+      <div
+        class="w-full h-full border border-green-900/30 relative overflow-hidden"
+      >
+        <div
+          class="absolute top-1/4 left-1/4 w-1/2 h-1/2 border border-green-500/30 bg-green-500/5"
+        ></div>
+        <div
+          class="absolute bottom-2 left-2 w-1 h-1 bg-green-500 rounded-full animate-pulse"
+        ></div>
+        <span
+          class="absolute bottom-1 right-2 text-[8px] text-green-800 font-mono"
+          >LIVE_SURVEILLANCE_ACTIVE</span
+        >
+      </div>
+    </div>
   </div>
 
   <!-- Zoom Controls (Bottom Left) -->
@@ -344,18 +369,7 @@
         title="Zoom In"
         aria-label="Zoom In"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          ><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-          ></path></svg
-        >
+        <span class="icon-[lucide--zoom-in] w-4 h-4"></span>
       </button>
       <button
         class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
@@ -363,18 +377,7 @@
         title="Zoom Out"
         aria-label="Zoom Out"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          ><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
-          ></path></svg
-        >
+        <span class="icon-[lucide--zoom-out] w-4 h-4"></span>
       </button>
 
       <!-- Connect Mode Toggle -->
@@ -385,20 +388,7 @@
         onclick={toggleConnectMode}
         title="Connect Mode (C)"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-          ></path>
-        </svg>
+        <span class="icon-[lucide--link] w-4 h-4"></span>
       </button>
     </div>
   </div>
@@ -449,26 +439,6 @@
       ></div>
     </div>
   {/if}
-
-  <!-- Mini-map Decoration (Static Mock) -->
-  <div
-    class="absolute bottom-6 right-6 z-20 w-48 h-32 bg-black/80 backdrop-blur border border-green-900/50 rounded-lg p-2 hidden md:block"
-  >
-    <div
-      class="w-full h-full border border-green-900/30 relative overflow-hidden"
-    >
-      <div
-        class="absolute top-1/4 left-1/4 w-1/2 h-1/2 border border-green-500/30 bg-green-500/5"
-      ></div>
-      <div
-        class="absolute bottom-2 left-2 w-1 h-1 bg-green-500 rounded-full animate-pulse"
-      ></div>
-      <span
-        class="absolute bottom-1 right-2 text-[8px] text-green-800 font-mono"
-        >LIVE_SURVEILLANCE_ACTIVE</span
-      >
-    </div>
-  </div>
 
   <!-- Connection Hints -->
   {#if connectMode}
