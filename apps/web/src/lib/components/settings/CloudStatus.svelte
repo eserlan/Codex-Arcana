@@ -307,6 +307,7 @@
                             <button
                                 onclick={() => uiStore.openCategoryManager()}
                                 class="w-full py-2 bg-purple-900/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600 hover:text-black rounded text-[10px] font-bold tracking-widest transition-all flex items-center justify-center gap-2"
+                                data-testid="manage-categories-button"
                             >
                                 <span class="icon-[lucide--tags] w-3 h-3"></span>
                                 MANAGE CATEGORIES

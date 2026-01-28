@@ -9,6 +9,7 @@
 	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
 	import { syncStats } from "$stores/sync-stats";
+	import { cloudConfig } from "$stores/cloud-config";
 	import { onMount } from "svelte";
 
 	import { page } from "$app/state";
@@ -26,6 +27,7 @@
 			(window as any).vault = vault;
 			(window as any).categories = categories;
 			(window as any).syncStats = syncStats;
+			(window as any).cloudConfig = cloudConfig;
 		}
 	});
 

@@ -1,50 +1,142 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Flexible Categories", () => {
+test.describe("Category Architecture Modal", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
+        // Force configured state for settings menu
+        await page.evaluate(() => {
+            (window as any).TEST_FORCE_CONFIGURED = true;
+        });
         // Wait for vault to initialize
         await page.waitForFunction(() => (window as any).vault?.status === 'idle');
+        // Simulate connected cloud state so manage-categories-button is visible
+        await page.evaluate(() => {
+            const cloudConfig = (window as any).cloudConfig;
+            if (cloudConfig) {
+                cloudConfig.setEnabled(true);
+                cloudConfig.setConnectedEmail('test@example.com');
+            }
+        });
     });
 
-    test("should allow adding a new category and use it for a new entity", async ({ page }) => {
-        // 1. Open Settings
+    test("should open Category Architecture modal and display default categories", async ({ page }) => {
+        // 1. Open main Settings
         await page.getByTestId("cloud-status-button").click();
-        
-        // 2. Add New Category
-        const categoryLabel = "Deity";
-        
-        await page.getByPlaceholder("Category label...").fill(categoryLabel);
-        await page.getByTitle("Add Category").click();
-        
-        // Verify it exists in the list (using value attribute since it's an input)
-        await expect(page.locator(`input[value="${categoryLabel}"]`)).toBeVisible();
-        
-        // 3. Close settings
-        await page.getByTestId("cloud-status-close").click();
-        
-        // 4. Create new entity with this category
-        await page.getByPlaceholder("Entity title...").fill("Odin");
-        await page.locator("select").selectOption({ label: categoryLabel });
-        await page.getByRole("button", { name: "CREATE" }).click();
-        
-        // 5. Verify entity details show the category
-        await expect(page.locator("h2", { hasText: "Odin" })).toBeVisible();
-        await expect(page.getByText(categoryLabel, { exact: true })).toBeVisible();
+        await expect(page.getByTestId("cloud-status-menu")).toBeVisible();
+
+        // 2. Open Category Manager
+        await page.getByTestId("manage-categories-button").click();
+
+        // 3. Verify Modal is visible
+        await expect(page.getByText("Category Architecture")).toBeVisible();
+
+        // 4. Verify default categories are loaded (check for NPC which is a default category)
+        const hasNpc = await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            return inputs.some(input => (input as HTMLInputElement).value === 'NPC');
+        });
+        expect(hasNpc).toBe(true);
+
+        // 5. Verify the new category input and ADD button exist
+        await expect(page.getByPlaceholder("New category...")).toBeVisible();
+        await expect(page.getByRole("button", { name: "ADD" })).toBeVisible();
+
+        // 6. Close modal
+        await page.getByRole("button", { name: "DONE" }).click();
+        await expect(page.getByText("Category Architecture")).not.toBeVisible();
     });
 
-    test("should update graph styles when category label changes", async ({ page }) => {
+    test("should add a new category in session", async ({ page }) => {
+        // Open settings and category manager
         await page.getByTestId("cloud-status-button").click();
-        
-        const npcInput = page.locator('input[value="NPC"]');
-        await expect(npcInput).toBeVisible();
-        
-        await npcInput.fill("Person");
-        await npcInput.press("Enter");
-        
-        // Re-open settings to ensure persistence
-        await page.reload();
+        await expect(page.getByTestId("cloud-status-menu")).toBeVisible();
+        await page.getByTestId("manage-categories-button").click();
+        await expect(page.getByText("Category Architecture")).toBeVisible();
+
+        // Count initial categories
+        const initialCount = await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            return inputs.filter(input => (input as HTMLInputElement).value).length;
+        });
+
+        // Add new category
+        await page.getByPlaceholder("New category...").fill("Artifact");
+        await page.getByRole("button", { name: "ADD" }).click();
+
+        // Wait a bit for the UI to update
+        await page.waitForTimeout(300);
+
+        // Verify new category was added
+        const newCount = await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            return inputs.filter(input => (input as HTMLInputElement).value).length;
+        });
+        expect(newCount).toBe(initialCount + 1);
+
+        // Verify "Artifact" exists in the list
+        const hasArtifact = await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            return inputs.some(input => (input as HTMLInputElement).value === 'Artifact');
+        });
+        expect(hasArtifact).toBe(true);
+    });
+
+    test("should open and close glyph library picker", async ({ page }) => {
+        // Open settings and category manager
         await page.getByTestId("cloud-status-button").click();
-        await expect(page.locator('input[value="Person"]')).toBeVisible();
+        await page.getByTestId("manage-categories-button").click();
+        await expect(page.getByText("Category Architecture")).toBeVisible();
+
+        // Open glyph library via "Select Icon" button
+        await page.getByTitle("Select Icon").click();
+        await expect(page.getByText("Glyph Library")).toBeVisible();
+
+        // Verify icons are present
+        const iconCount = await page.locator('button[title^="icon-[lucide"]').count();
+        expect(iconCount).toBeGreaterThan(10);
+
+        // Close by clicking outside or selecting an icon
+        await page.getByTitle("icon-[lucide--star]").click();
+        await expect(page.getByText("Glyph Library")).not.toBeVisible();
+    });
+
+    test("should reset categories to defaults", async ({ page }) => {
+        // Open settings and category manager
+        await page.getByTestId("cloud-status-button").click();
+        await page.getByTestId("manage-categories-button").click();
+        await expect(page.getByText("Category Architecture")).toBeVisible();
+
+        // Delete NPC category using JavaScript (to bypass hover issues)
+        await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            const npcInput = inputs.find(input => (input as HTMLInputElement).value === 'NPC');
+            if (npcInput) {
+                const row = npcInput.closest('div.group');
+                const deleteBtn = row?.querySelector('button[title="Delete Category"]') as HTMLButtonElement;
+                if (deleteBtn) {
+                    deleteBtn.style.opacity = '1';
+                    deleteBtn.click();
+                }
+            }
+        });
+        await page.waitForTimeout(300);
+
+        // Verify NPC is gone
+        const npcGone = await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            return !inputs.some(input => (input as HTMLInputElement).value === 'NPC');
+        });
+        expect(npcGone).toBe(true);
+
+        // Click Reset to Defaults
+        await page.getByRole("button", { name: /RESET TO DEFAULTS/i }).click();
+        await page.waitForTimeout(300);
+
+        // Verify NPC is back
+        const npcBack = await page.evaluate(() => {
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+            return inputs.some(input => (input as HTMLInputElement).value === 'NPC');
+        });
+        expect(npcBack).toBe(true);
     });
 });

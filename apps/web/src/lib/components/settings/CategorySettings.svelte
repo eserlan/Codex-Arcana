@@ -132,6 +132,8 @@
                 <button
                     onclick={() => categories.removeCategory(cat.id)}
                     class="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500 transition-all p-1"
+                    aria-label="Delete category {cat.label}"
+                    title="Delete Category"
                 >
                     <span class="icon-[lucide--trash-2] w-4 h-4"></span>
                 </button>
@@ -169,6 +171,17 @@
                 ADD
             </button>
         </div>
+    </div>
+
+    <!-- Reset Section -->
+    <div class="pt-4 border-t border-purple-900/20">
+        <button
+            onclick={() => categories.resetToDefaults()}
+            class="w-full py-2 bg-purple-900/10 border border-purple-900/30 text-purple-400 hover:bg-purple-900/20 hover:text-purple-300 rounded text-[10px] font-bold tracking-widest transition-all flex items-center justify-center gap-2"
+        >
+            <span class="icon-[lucide--refresh-cw] w-3 h-3"></span>
+            RESET TO DEFAULTS
+        </button>
     </div>
 </div>
 
