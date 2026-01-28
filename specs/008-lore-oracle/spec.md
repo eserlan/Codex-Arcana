@@ -19,6 +19,7 @@ Users desire a natural language interface to query their vault ("Who is the king
 ### FR-002: Context-Aware Retrieval (RAG)
 - System MUST retrieve up to 5 relevant vault entries based on the user's query.
 - System MUST prioritize the currently selected entity in the context.
+- System MUST include **bidirectional connections** (outbound links and inbound references) for all retrieved context entries.
 - System MUST fallback to keyword extraction if direct fuzzy search returns no results.
 - System MUST track sent context within a session to avoid sending redundant data in subsequent turns.
 
@@ -28,8 +29,10 @@ Users desire a natural language interface to query their vault ("Who is the king
 - System MUST synchronize chat history and state across all open windows/tabs using `BroadcastChannel`.
 
 ### FR-004: Direct Injection
-- Assistant messages MUST provide "COPY TO CHRONICLE" and "COPY TO LORE" buttons when a target entity is identified.
-- These actions MUST automatically update the target entity and navigate the user to the appropriate tab in the Detail Panel.
+- Assistant messages MUST provide an archival button when a target entity is identified.
+- System MUST intelligently select between "COPY TO CHRONICLE" (concise) or "COPY TO LORE" (expansive) based on the content length of the response.
+- At most ONE archival button should be visible per message.
+- These actions MUST automatically update the target entity (appending or creating) and navigate the user to the appropriate tab in the Detail Panel.
 
 ## Constraints
 -   **Network**: Requires active internet connection.

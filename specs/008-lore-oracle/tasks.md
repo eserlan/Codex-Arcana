@@ -16,12 +16,14 @@
 - [x] **Core: RAG Integration** <!-- id: 4 -->
     - [x] Implement `retrieveContext` with keyword fallback and redundancy filtering. <!-- id: 4.1 -->
     - [x] Prioritize currently selected entity in context. <!-- id: 4.2 -->
+    - [x] **Relational Context**: Integrate bidirectional connections into RAG prompt. <!-- id: 4.3 -->
 
 - [x] **UI: Oracle Interface** <!-- id: 5 -->
     - [x] Create `OracleChat.svelte` as a shared component. <!-- id: 5.1 -->
     - [x] Update `OracleWindow.svelte` with modal/pop-out toggles. <!-- id: 5.2 -->
     - [x] Create standalone Oracle page at `/oracle`. <!-- id: 5.3 -->
     - [x] **Direct Injection**: Add "Copy to Chronicle/Lore" buttons to messages. <!-- id: 5.4 -->
+    - [x] **Intelligent Archival**: Implement length-based button detection and multi-tab navigation. <!-- id: 5.5 -->
 
 - [x] **Quality Assurance** <!-- id: 6 -->
     - [x] **Privacy Verification**: Verify NO requests are made unless key is present. <!-- id: 6.1 -->
