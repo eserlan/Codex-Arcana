@@ -2,9 +2,11 @@ import { aiService } from "../services/ai";
 import { getDB } from "../utils/idb";
 
 export interface ChatMessage {
+  id: string; // Unique identifier for reactivity and identification
   role: "user" | "assistant" | "system";
   content: string;
-  entityId?: string; // ID of the entity this message is primarily about
+  entityId?: string; // ID of the entity used for generation context
+  archiveTargetId?: string; // ID of the entity where the user wants to archive this message
 }
 
 class OracleStore {
@@ -86,13 +88,13 @@ class OracleStore {
   async ask(query: string) {
     if (!query.trim() || !this.apiKey) return;
 
-    this.messages = [...this.messages, { role: "user", content: query }];
+    this.messages = [...this.messages, { id: crypto.randomUUID(), role: "user", content: query }];
     this.isLoading = true;
     this.broadcast();
 
     // Streaming response setup
     const assistantMsgIndex = this.messages.length;
-    this.messages = [...this.messages, { role: "assistant", content: "" }];
+    this.messages = [...this.messages, { id: crypto.randomUUID(), role: "assistant", content: "" }];
 
     try {
       // Extract already sent entity titles from history to avoid redundancy
@@ -106,7 +108,16 @@ class OracleStore {
         }
       });
 
-      const { content: context, primaryEntityId } = await aiService.retrieveContext(query, alreadySentTitles);
+      // Identify the last entity we were talking about
+      let lastEntityId: string | undefined;
+      for (let i = this.messages.length - 1; i >= 0; i--) {
+        if (this.messages[i].entityId) {
+          lastEntityId = this.messages[i].entityId;
+          break;
+        }
+      }
+
+      const { content: context, primaryEntityId } = await aiService.retrieveContext(query, alreadySentTitles, lastEntityId);
 
       // Store the primary entity ID in both the user message (for context) and the assistant message (for the button target)
       this.messages[assistantMsgIndex - 1].entityId = primaryEntityId;
@@ -118,7 +129,7 @@ class OracleStore {
         this.broadcastThrottle();
       });
     } catch (err: any) {
-      this.messages = [...this.messages, { role: "system", content: err.message || "Error generating response." }];
+      this.messages = [...this.messages, { id: crypto.randomUUID(), role: "system", content: err.message || "Error generating response." }];
       this.broadcast();
     } finally {
       this.isLoading = false;
@@ -135,6 +146,14 @@ class OracleStore {
 
   toggleModal() {
     this.isModal = !this.isModal;
+  }
+
+  updateMessageEntity(messageId: string, entityId: string) {
+    const target = this.messages.find(m => m.id === messageId);
+    if (target) {
+      target.archiveTargetId = entityId;
+      this.broadcast();
+    }
   }
 }
 

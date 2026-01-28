@@ -420,11 +420,9 @@ class VaultStore {
       const text = await readFile(handle);
       const { metadata } = parseMarkdown(text);
 
-      if (metadata.lore) {
-        this.updateEntity(id, { lore: metadata.lore });
-      } else {
-        // If no lore exists, set empty string to indicate loaded but empty
-        this.updateEntity(id, { lore: "" });
+      const entity = this.entities[id];
+      if (entity) {
+        this.entities[id] = { ...entity, lore: metadata.lore || "" };
       }
     } catch (err) {
       console.error("Failed to fetch lore", err);

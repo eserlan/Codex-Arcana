@@ -78,6 +78,7 @@
                         type="button"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-200 flex items-center justify-center"
                         onclick={() => (showKey = !showKey)}
+                        aria-label="{showKey ? 'Hide' : 'Show'} API Key"
                     >
                         <span
                             class={showKey

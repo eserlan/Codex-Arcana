@@ -9,11 +9,33 @@
 
     let input = $state("");
     let scrollContainer = $state<HTMLDivElement>();
+    let textArea = $state<HTMLTextAreaElement>();
+
+    const adjustHeight = () => {
+        if (!textArea) return;
+
+        const currentHeight = textArea.clientHeight;
+        const scrollHeight = textArea.scrollHeight;
+        const maxHeight = 200;
+
+        // Only adjust if there's a meaningful change to avoid jitter
+        if (scrollHeight !== currentHeight || input === "") {
+            textArea.style.height = "auto";
+            textArea.style.height = `${Math.min(textArea.scrollHeight, maxHeight)}px`;
+        }
+    };
+
+    $effect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        input; // Reactive dependency
+        adjustHeight();
+    });
 
     const handleSubmit = async () => {
         if (!input || oracle.isLoading) return;
         const query = input;
         input = "";
+        if (textArea) textArea.style.height = "";
         await oracle.ask(query);
     };
 
@@ -132,15 +154,24 @@
             }}
             class="flex gap-2"
         >
-            <input
+            <textarea
+                bind:this={textArea}
                 bind:value={input}
+                data-testid="oracle-input"
+                onkeydown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+                        e.preventDefault();
+                        handleSubmit();
+                    }
+                }}
                 placeholder="Ask the archives..."
-                class="flex-1 bg-black/40 border border-purple-900/40 rounded px-4 py-2.5 text-sm text-purple-100 placeholder-purple-900/50 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20 transition-all font-mono"
+                class="flex-1 bg-black/40 border border-purple-900/40 rounded px-4 py-2.5 text-sm text-purple-100 placeholder-purple-900/50 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20 transition-all font-mono resize-none overflow-hidden no-scrollbar"
                 disabled={oracle.isLoading}
-            />
+                rows="1"
+            ></textarea>
             <button
                 type="submit"
-                class="w-10 h-10 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-black rounded transition shadow-lg shadow-purple-900/20 disabled:opacity-30 disabled:grayscale transition-all active:scale-95"
+                class="w-10 h-10 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-black rounded transition shadow-lg shadow-purple-900/20 disabled:opacity-30 disabled:grayscale transition-all active:scale-95 shrink-0 self-end"
                 disabled={!input.trim() || oracle.isLoading}
             >
                 ➤
@@ -148,3 +179,13 @@
         </form>
     </div>
 {/if}
+
+<style>
+    .no-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+</style>

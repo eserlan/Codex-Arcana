@@ -21,7 +21,7 @@ Your primary goal is to provide information from the provided context or convers
 If the user asks you to expand, describe, or fill in the blanks, you should feel free to "weave new threads"—inventing details that are stylistically and logically consistent with the existing lore. 
 
 When providing information, consider two formats:
-1. Chronicle / Blurb: A short, focused 2-3 sentence summary.
+1. Chronicle / Blurb: A short, focused 2-3 sentence summary. (Default if "blurb", "chronicle", or "short desc" is mentioned)
 2. Lore / Notes: An expansive, detailed deep-dive including "hooks", secrets, and background fluff.
 
 Only if you have NO information about the subject in either the new context blocks OR the previous messages, and you aren't asked to invent it, say "I cannot find that in your records." 
@@ -65,7 +65,55 @@ Always prioritize the vault context as the absolute truth.`
     }
   }
 
-  async retrieveContext(query: string, excludeTitles: Set<string>): Promise<{ content: string, primaryEntityId?: string }> {
+  private escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  private findExplicitSubject(query: string): string | undefined {
+    const queryLower = query.toLowerCase();
+    const entities = Object.values(vault.entities);
+
+    // Find entities whose titles are explicitly mentioned in the query
+    // For very short titles (length <= 2), require a word-boundary match to avoid false positives.
+    // Sort by title length descending to match "The Forbidden Woods" before "The" or "Woods"
+    const matches = entities
+      .filter(e => {
+        const titleLower = e.title.toLowerCase();
+        if (titleLower.length > 2) {
+          return queryLower.includes(titleLower);
+        }
+        const pattern = new RegExp(`\\b${this.escapeRegExp(titleLower)}\\b`);
+        return pattern.test(queryLower);
+      })
+      .sort((a, b) => b.title.length - a.title.length);
+
+    return matches[0]?.id;
+  }
+
+  private isFollowUp(query: string): boolean {
+    const q = query.toLowerCase().trim();
+    const followUpPatterns = [
+      /^tell me more$/i,
+      /^more$/i,
+      /^elaborate$/i,
+      /^anything else\??$/i,
+      /^and\b/i,
+      /^what about (it|him|her|them|that|she|he|they)\??$/i
+    ];
+
+    // Short queries are often follow-ups
+    const isShort = q.split(/\s+/).length <= 3;
+    if (isShort) {
+      // Treat queries that are just a pronoun (optionally with ?) as follow-ups,
+      // e.g. "it", "her?", "them".
+      const pronounOnlyPattern = /^(it|him|her|them|that|she|he|they|his|hers|its)\??$/i;
+      if (pronounOnlyPattern.test(q)) return true;
+    }
+
+    return followUpPatterns.some(p => p.test(q));
+  }
+
+  async retrieveContext(query: string, excludeTitles: Set<string>, lastEntityId?: string): Promise<{ content: string, primaryEntityId?: string }> {
     // 1. Get search results for relevance
     let results = await searchService.search(query, { limit: 5 });
 
@@ -85,11 +133,55 @@ Always prioritize the vault context as the absolute truth.`
     // 2. Identify the active entity to prioritize it
     const activeId = vault.selectedEntityId;
 
-    // 3. Build context from both search results and active entity
-    const potentialIds = Array.from(new Set(results.map(r => r.id)));
-    if (activeId && !potentialIds.includes(activeId)) potentialIds.unshift(activeId);
+    // 3. Identification of primary target
+    // We use a multi-layered priority system:
+    // 1. Explicit Title Match in Query (High Confidence)
+    // 2. High Confidence Search Result (Score >= 0.6)
+    // 3. Sticky Conversation Context (If it's a follow-up)
+    // 4. Active Viewer Selection (Default Fallback)
 
-    const primaryEntityId = activeId || potentialIds[0];
+    const explicitSubject = this.findExplicitSubject(query);
+    const topSearchResult = results[0];
+    const isHighConfidenceSearch = topSearchResult && topSearchResult.score >= 0.6;
+    const isFollowUp = this.isFollowUp(query);
+
+    let primaryEntityId: string | undefined;
+
+    if (explicitSubject) {
+      primaryEntityId = explicitSubject;
+    } else if (isHighConfidenceSearch) {
+      primaryEntityId = topSearchResult.id;
+    } else if (isFollowUp && lastEntityId) {
+      primaryEntityId = lastEntityId;
+    } else {
+      primaryEntityId = activeId || (topSearchResult?.id);
+    }
+
+    const searchIds = results.map(r => r.id);
+
+    // Build the collection of IDs to fetch context for
+    const potentialIds = Array.from(new Set([...searchIds]));
+
+    // Ensure the primary target is ALWAYS in the context
+    if (primaryEntityId && !potentialIds.includes(primaryEntityId)) {
+      potentialIds.unshift(primaryEntityId);
+    }
+
+    // Add sticky entity for context if it wasn't the primary but we have it.
+    // Avoid mixing a different "last" entity when a high-confidence search
+    // has already determined a distinct primary entity.
+    if (
+      lastEntityId &&
+      !potentialIds.includes(lastEntityId) &&
+      !(isHighConfidenceSearch && primaryEntityId && primaryEntityId !== lastEntityId)
+    ) {
+      potentialIds.push(lastEntityId);
+    }
+
+    // Add active entity for RAG context
+    if (activeId && !potentialIds.includes(activeId)) {
+      potentialIds.push(activeId);
+    }
 
     // 4. Filter for NEW titles only
     const contents = potentialIds
@@ -107,7 +199,31 @@ Always prioritize the vault context as the absolute truth.`
         const prefix = isActive ? "[ACTIVE FILE] " : "";
         const truncated = mainContent.slice(0, 10000);
 
-        return `--- ${prefix}File: ${entity.title} ---\n${truncated}`;
+        // 4b. Add Connection Context
+        let connectionContext = "";
+        const outbound = entity.connections.map(c => {
+          const targetEntity = vault.entities[c.target];
+          const target =
+            targetEntity && targetEntity.title
+              ? targetEntity.title
+              : `[missing entity: ${c.target}]`;
+          return `- ${c.label || c.type}: ${target}`;
+        });
+
+        const inbound = (vault.inboundConnections[id] || []).map(item => {
+          const sourceEntity = vault.entities[item.sourceId];
+          const source =
+            sourceEntity && sourceEntity.title
+              ? sourceEntity.title
+              : `[missing entity: ${item.sourceId}]`;
+          return `- ${source}: ${item.connection.label || item.connection.type}`;
+        });
+
+        if (outbound.length > 0 || inbound.length > 0) {
+          connectionContext = "\n--- Connections ---\n" + [...outbound, ...inbound].join("\n");
+        }
+
+        return `--- ${prefix}File: ${entity.title} ---\n${truncated}${connectionContext}`;
       })
       .filter((c): c is string => c !== null);
 
@@ -121,7 +237,7 @@ Always prioritize the vault context as the absolute truth.`
 
     return {
       content: contents.join("\n\n"),
-      primaryEntityId
+      primaryEntityId: primaryEntityId || undefined
     };
   }
 }

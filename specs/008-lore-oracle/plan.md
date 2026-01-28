@@ -21,12 +21,16 @@ Integrate Google Gemini via `@google/generative-ai` to provide a lightweight, ac
     1. Direct Fuzzy Search (FlexSearch).
     2. Keyword Extraction Fallback (if search returns 0).
     3. Active Entity Prioritization (always include selected entity).
-    4. Redundancy Filter: Tracks titles already sent in the current conversation turn.
+    4. **Relational Context**: Includes bidirectional links (Outbound and Inbound) to provide social/structural context.
+    5. Redundancy Filter: Tracks titles already sent in the current conversation turn.
 - **Truncation**: Limits individual file context to 10,000 characters to prevent prompt bloat.
 
 ### 4. Direct Vault Integration
-- Chat messages can contain an `entityId`.
-- Buttons allow "One-Click Save" to `content` (Chronicle) or `lore` (Detailed Notes) fields of the linked entity.
+- Chat messages contain an `entityId` when the Oracle is focused on a specific node.
+- **Intelligent Archival**:
+  - Responses under 400 chars (or with "blurb"/"chronicle" intent): **Copy to Chronicle** (Summary).
+  - Responses 400+ chars: **Copy to Lore** (Deep dive).
+- Buttons automatically append to existing content/lore via `updateEntity` and switch the Detail Panel to the appropriate tab.
 
 ## Source Code Structure
 
