@@ -65,6 +65,39 @@ Always prioritize the vault context as the absolute truth.`
     }
   }
 
+  private findExplicitSubject(query: string): string | undefined {
+    const queryLower = query.toLowerCase();
+    const entities = Object.values(vault.entities);
+
+    // Find entities whose titles are explicitly mentioned in the query
+    // Sort by title length descending to match "The Forbidden Woods" before "The" or "Woods"
+    const matches = entities
+      .filter(e => e.title.length > 2 && queryLower.includes(e.title.toLowerCase()))
+      .sort((a, b) => b.title.length - a.title.length);
+
+    return matches[0]?.id;
+  }
+
+  private isFollowUp(query: string): boolean {
+    const q = query.toLowerCase().trim();
+    const followUpPatterns = [
+      /^tell me more$/i,
+      /^more$/i,
+      /^elaborate$/i,
+      /^anything else\??$/i,
+      /\b(it|him|her|them|that|she|he|they)\b/i,
+      /^and\b/i,
+      /^what about (it|him|her|them|that|she|he|they)\??$/i
+    ];
+
+    // Short queries are often follow-ups
+    if (q.split(/\s+/).length <= 3) {
+      if (followUpPatterns.some(p => p.test(q))) return true;
+    }
+
+    return followUpPatterns.some(p => p.test(q));
+  }
+
   async retrieveContext(query: string, excludeTitles: Set<string>, lastEntityId?: string): Promise<{ content: string, primaryEntityId?: string }> {
     // 1. Get search results for relevance
     let results = await searchService.search(query, { limit: 5 });
@@ -86,16 +119,40 @@ Always prioritize the vault context as the absolute truth.`
     const activeId = vault.selectedEntityId;
 
     // 3. Identification of primary target
-    // We prioritize search results: if we found a direct match, that's definitely the target.
-    // If not, we check if we have a "sticky" entity from the previous conversation turn.
-    // Finally, we fall back to the active viewer selection.
+    // We use a multi-layered priority system:
+    // 1. Explicit Title Match in Query (High Confidence)
+    // 2. High Confidence Search Result (Score >= 0.6)
+    // 3. Sticky Conversation Context (If it's a follow-up)
+    // 4. Active Viewer Selection (Default Fallback)
+
+    const explicitSubject = this.findExplicitSubject(query);
+    const topSearchResult = results[0];
+    const isHighConfidenceSearch = topSearchResult && topSearchResult.score >= 0.6;
+    const isFollowUp = this.isFollowUp(query);
+
+    let primaryEntityId: string | undefined;
+
+    if (explicitSubject) {
+      primaryEntityId = explicitSubject;
+    } else if (isHighConfidenceSearch) {
+      primaryEntityId = topSearchResult.id;
+    } else if (isFollowUp && lastEntityId) {
+      primaryEntityId = lastEntityId;
+    } else {
+      primaryEntityId = activeId || (topSearchResult?.id);
+    }
+
     const searchIds = results.map(r => r.id);
-    const primaryEntityId = searchIds[0] || lastEntityId || activeId;
 
     // Build the collection of IDs to fetch context for
     const potentialIds = Array.from(new Set([...searchIds]));
 
-    // Add sticky entity for context if it wasn't a search match
+    // Ensure the primary target is ALWAYS in the context
+    if (primaryEntityId && !potentialIds.includes(primaryEntityId)) {
+      potentialIds.unshift(primaryEntityId);
+    }
+
+    // Add sticky entity for context if it wasn't the primary but we have it
     if (lastEntityId && !potentialIds.includes(lastEntityId)) {
       potentialIds.push(lastEntityId);
     }
