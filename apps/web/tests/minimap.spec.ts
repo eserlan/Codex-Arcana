@@ -24,13 +24,7 @@ test.describe("Minimap Navigation", () => {
     await page.goto("/");
     // Wait for graph to be ready (cy instance) and layout to settle
     // Increase timeout significantly to debug if it's just slow or broken
-    try {
-        await page.waitForSelector('.minimap-container', { state: 'attached', timeout: 5000 });
-    } catch (e) {
-        console.log("Minimap container not found. Dumping page content...");
-        // console.log(await page.content());
-        throw e;
-    }
+    await page.waitForSelector('.minimap-container', { state: 'attached', timeout: 5000 });
     await page.waitForTimeout(1000); 
   });
 

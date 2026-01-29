@@ -81,7 +81,7 @@
         id: node.id(),
         x: pos.x,
         y: pos.y,
-        color: "#22c55e", // green-500
+        color: node.style("background-color") || "#22c55e",
       });
     }
     nodes = newNodes;
@@ -220,6 +220,11 @@
     });
   };
 
+  const handleGraphUpdate = () => {
+    syncGraphToMinimap();
+    updateProjection();
+  };
+
   onMount(() => {
     ctx = canvas.getContext("2d");
 
@@ -232,19 +237,17 @@
 
     // Listeners
     if (cy) {
-      // Debounce graph structural changes (heavy)
-      // Viewport changes handled in RAF loop for smoothness
-      cy.on("add remove move", () => {
-        syncGraphToMinimap();
-        updateProjection();
-      });
-      // We also need to listen for resize or other events if needed, but 'viewport' covers pan/zoom.
+      cy.on("add remove move", handleGraphUpdate);
       cy.on("resize", updateProjection);
     }
   });
 
   onDestroy(() => {
     cancelAnimationFrame(animationFrameId);
+    if (cy) {
+      cy.off("add remove move", handleGraphUpdate);
+      cy.off("resize", updateProjection);
+    }
   });
 </script>
 
