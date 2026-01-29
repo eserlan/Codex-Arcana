@@ -241,6 +241,63 @@ class VaultStore {
     this.status = "idle";
   }
 
+  private imageBlobCache = new Map<string, string>();
+
+  async resolveImagePath(path: string): Promise<string> {
+    if (!path) return "";
+    // If it's already a browser-usable URL, return it
+    if (
+      path.startsWith("http") ||
+      path.startsWith("blob:") ||
+      path.startsWith("data:")
+    )
+      return path;
+
+    // Check cache
+    if (this.imageBlobCache.has(path)) {
+      return this.imageBlobCache.get(path)!;
+    }
+
+    if (!this.rootHandle) return path;
+
+    try {
+      // Normalize path (remove leading ./)
+      const normalized = path.startsWith("./") ? path.slice(2) : path;
+      const segments = normalized.split("/");
+
+      let currentHandle: FileSystemDirectoryHandle | FileSystemFileHandle =
+        this.rootHandle;
+
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        if (i === segments.length - 1) {
+          // Last segment is the file
+          const fileHandle = await (
+            currentHandle as FileSystemDirectoryHandle
+          ).getFileHandle(segment);
+          const file = await fileHandle.getFile();
+          const url = URL.createObjectURL(file);
+          this.imageBlobCache.set(path, url);
+          return url;
+        } else {
+          currentHandle = await (
+            currentHandle as FileSystemDirectoryHandle
+          ).getDirectoryHandle(segment);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to resolve image path", path, err);
+    }
+
+    return path;
+  }
+
+  // Cleanup blob URLs on destroy/reset if needed
+  clearImageCache() {
+    this.imageBlobCache.forEach((url) => URL.revokeObjectURL(url));
+    this.imageBlobCache.clear();
+  }
+
   async saveImageToVault(blob: Blob, entityId: string): Promise<string> {
     if (!this.rootHandle) throw new Error("Vault not open");
 
