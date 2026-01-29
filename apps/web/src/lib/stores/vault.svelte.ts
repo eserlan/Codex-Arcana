@@ -112,7 +112,7 @@ class VaultStore {
       const handle = await window.showDirectoryPicker({
         mode: "readwrite",
       });
-      
+
       this.clearImageCache();
       this.rootHandle = handle;
       this.isAuthorized = true;
@@ -293,7 +293,8 @@ class VaultStore {
       console.error("Failed to resolve image path", path, err);
     }
 
-    return path;
+    // Return empty string on failure - Cytoscape/CSS can't use local file paths
+    return "";
   }
 
   // Cleanup blob URLs on destroy/reset if needed

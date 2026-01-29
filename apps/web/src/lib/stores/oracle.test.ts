@@ -30,6 +30,8 @@ vi.mock("../services/ai", () => ({
   },
   aiService: {
     generateResponse: vi.fn(),
+    generateImage: vi.fn().mockResolvedValue(new Blob()),
+    enhancePrompt: vi.fn().mockImplementation((q) => q),
     retrieveContext: vi.fn().mockResolvedValue({ content: "context", primaryEntityId: undefined }),
   },
 }));
@@ -122,5 +124,26 @@ describe("OracleStore", () => {
     expect(oracle.isOpen).toBe(true);
     oracle.toggle();
     expect(oracle.isOpen).toBe(false);
+  });
+
+  it("should detect image generation intent correctly", async () => {
+    const { aiService } = await import("../services/ai");
+    vi.mocked(aiService.generateImage).mockResolvedValue(new Blob());
+    oracle.apiKey = "test-key";
+
+    // Test various intent keywords
+    const intents = [
+      "/draw a dragon",
+      "sketch of a tavern",
+      "paint a portrait of Eldrin",
+      "visualize the sawmill",
+      "show me what he looks like"
+    ];
+
+    for (const query of intents) {
+      await oracle.ask(query);
+      const assistantMsg = oracle.messages[oracle.messages.length - 1];
+      expect(assistantMsg.type).toBe("image");
+    }
   });
 });

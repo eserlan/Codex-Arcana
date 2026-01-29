@@ -148,3 +148,55 @@ describe("AIService Prompt Enhancement", () => {
         expect(result).toContain("User visualization request: Show me what he looks like");
     });
 });
+
+describe("AIService Style Caching", () => {
+    beforeEach(() => {
+        aiService.clearStyleCache();
+        vi.mocked(searchService.search).mockClear();
+        vi.mocked(searchService.search).mockResolvedValue([]);
+    });
+
+    it("should cache the style context after first lookup", async () => {
+        vi.mocked(searchService.search).mockResolvedValue([
+            { id: "style-id", title: "World Aesthetic", score: 0.9, matchType: "title", path: "" }
+        ]);
+        (vault as any).entities["style-id"] = { 
+            id: "style-id", 
+            title: "World Aesthetic", 
+            content: "Cyberpunk style.",
+            connections: [],
+            tags: []
+        };
+
+        // First call triggers search
+        await aiService.retrieveContext("test", new Set(), undefined, true);
+        const callsAfterFirst = vi.mocked(searchService.search).mock.calls.length;
+        expect(callsAfterFirst).toBeGreaterThan(0);
+        
+        // Second call should NOT trigger more search (cached)
+        await aiService.retrieveContext("test 2", new Set(), undefined, true);
+        expect(vi.mocked(searchService.search).mock.calls.length).toBe(callsAfterFirst + 1); // +1 for the main context search
+    });
+
+    it("should clear cache when clearStyleCache is called", async () => {
+        vi.mocked(searchService.search).mockResolvedValue([
+            { id: "style-id", title: "Style", score: 0.9, matchType: "title", path: "" }
+        ]);
+        (vault as any).entities["style-id"] = { 
+            id: "style-id", 
+            title: "Style", 
+            content: "...",
+            connections: [],
+            tags: []
+        };
+
+        await aiService.retrieveContext("test", new Set(), undefined, true);
+        const calls1 = vi.mocked(searchService.search).mock.calls.length;
+
+        aiService.clearStyleCache();
+        
+        await aiService.retrieveContext("test 2", new Set(), undefined, true);
+        const calls2 = vi.mocked(searchService.search).mock.calls.length;
+        expect(calls2).toBeGreaterThan(calls1 + 1); // +1 for main search, +1 for style search
+    });
+});

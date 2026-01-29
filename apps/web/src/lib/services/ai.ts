@@ -24,6 +24,7 @@ export class AIService {
     if (this.genAI && this.model && this.currentApiKey === apiKey && matchesModel) return;
 
     console.log(`[AIService] Initializing model: ${modelName}`);
+    this.clearStyleCache();
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
       model: modelName,
@@ -206,10 +207,7 @@ User visualization request: ${query}`;
     lastEntityId?: string,
     isImage: boolean = false,
   ): Promise<{ content: string; primaryEntityId?: string }> {
-    // 1. Get search results for relevance
-    let results = await searchService.search(query, { limit: 5 });
-
-    // 1b. Style Search: If this is an image request, look for a style guide or aesthetic note
+    // 1. Style Search: If this is an image request, look for a style guide or aesthetic note
     let styleContext = "";
     if (isImage) {
       if (this.styleCache !== null) {
@@ -231,7 +229,10 @@ User visualization request: ${query}`;
       }
     }
 
-    // 1c. Fallback 1: if no results, try extracting keywords
+    // 2. Main Context Search
+    let results = await searchService.search(query, { limit: 5 });
+
+    // 2b. Fallback 1: if no results, try extracting keywords
     if (results.length === 0) {
       const keywords = query
         .toLowerCase()

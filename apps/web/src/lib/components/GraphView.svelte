@@ -178,9 +178,13 @@
       graph.elements.forEach(async (el) => {
         if (el.group === "nodes" && (el.data.thumbnail || el.data.image)) {
           const resolvedUrl = await vault.resolveImagePath(
-            el.data.thumbnail || el.data.image,
+            (el.data.thumbnail || el.data.image)!,
           );
-          if (resolvedUrl) {
+          // Only apply if we got a valid browser-usable URL (blob: or data:)
+          if (
+            resolvedUrl &&
+            (resolvedUrl.startsWith("blob:") || resolvedUrl.startsWith("data:"))
+          ) {
             cy?.$id(el.data.id).style({
               "background-image": resolvedUrl,
               "background-fit": "cover",
