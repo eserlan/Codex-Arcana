@@ -39,15 +39,18 @@ export class MockDriveAdapter implements ICloudAdapter {
         typeof content === "string" ? "text/markdown" : "application/json",
       modifiedTime: new Date().toISOString(),
       parents: ["mock-folder-id"],
+      appProperties: {
+        vault_path: path,
+      },
     };
     this.files.set(path, meta);
     return meta;
   }
 
-  async downloadFile(fileId: string): Promise<string> {
+  async downloadFile(fileId: string): Promise<Blob> {
     this.checkConnected();
     // Simulate finding content by ID
-    return `Mock content for file ${fileId}`;
+    return new Blob([`Mock content for file ${fileId}`], { type: "text/plain" });
   }
 
   async deleteFile(fileId: string): Promise<void> {

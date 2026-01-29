@@ -284,13 +284,17 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     throw new Error("Not implemented");
   }
 
-  async downloadFile(fileId: string): Promise<string> {
+  async downloadFile(fileId: string): Promise<Blob> {
     if (!this.accessToken) throw new Error("Not authenticated");
-    const response = await gapi.client.drive.files.get({
-      fileId: fileId,
-      alt: "media",
+
+    // Using fetch() instead of gapi.client.drive.files.get to avoid body mangling
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
     });
-    return response.body;
+
+    if (!res.ok) throw new Error(`GDrive Download Error: ${res.statusText}`);
+    return res.blob();
   }
 
   async deleteFile(fileId: string): Promise<void> {
