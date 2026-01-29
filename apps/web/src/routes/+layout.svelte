@@ -89,6 +89,27 @@
 	</main>
 
 	{#if !isPopup}
+		<footer
+			class="px-6 py-4 bg-[#080808] border-t border-green-900/10 flex flex-col md:flex-row justify-between items-center gap-4"
+		>
+			<div
+				class="text-[10px] font-mono text-green-900/60 uppercase tracking-widest"
+			>
+				&copy; 2026 Codex Cryptica // Local-First Intelligence
+			</div>
+			<div class="flex gap-6">
+				<a
+					href="{base}/privacy"
+					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
+					>Privacy Policy</a
+				>
+				<a
+					href="{base}/terms"
+					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
+					>Terms of Service</a
+				>
+			</div>
+		</footer>
 		<SearchModal />
 		<OracleWindow />
 		<CategoryManagerModal />
