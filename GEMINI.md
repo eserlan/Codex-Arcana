@@ -7,6 +7,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-26
 - OPFS (Origin Private File System) for binary images, Markdown (frontmatter) for entity linkage. (011-oracle-image-gen)
 - TypeScript 5.x / Node.js 20+ + Cytoscape.js (Graph Engine), Svelte 5 (UI Framework) (012-minimap)
 - N/A (Transient UI state) (012-minimap)
+- TypeScript 5.x / Node.js 20+ + Cytoscape.js, Svelte 5 (014-graph-focus-mode)
+- N/A (UI-only state) (014-graph-focus-mode)
 
 - TypeScript 5.x, Node.js 20+ (dev), Browser Runtime + `googleapis` or `gapi-script` (003-gdrive-mirroring)
 - OPFS (Origin Private File System) / IndexedDB (Metadata) (003-gdrive-mirroring)
@@ -37,10 +39,10 @@ npm test; npm run lint
 TypeScript: Follow standard conventions
 
 ## Recent Changes
+- 014-graph-focus-mode: Added TypeScript 5.x / Node.js 20+ + Cytoscape.js, Svelte 5
 - 012-minimap: Added TypeScript 5.x / Node.js 20+ + Cytoscape.js (Graph Engine), Svelte 5 (UI Framework)
 - 011-oracle-image-gen: Added TypeScript 5.x / Node.js 20+ + `@google/generative-ai` (for context), Browser Native `fetch` (for Imagen REST API), `idb` (for metadata)
 
-- 003-gdrive-mirroring: Added TypeScript 5.x, Node.js 20+ (dev), Browser Runtime + `googleapis` or `gapi-script`
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
