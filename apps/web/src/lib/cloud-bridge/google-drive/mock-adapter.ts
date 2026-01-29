@@ -39,6 +39,9 @@ export class MockDriveAdapter implements ICloudAdapter {
         typeof content === "string" ? "text/markdown" : "application/json",
       modifiedTime: new Date().toISOString(),
       parents: ["mock-folder-id"],
+      appProperties: {
+        vault_path: path,
+      },
     };
     this.files.set(path, meta);
     return meta;

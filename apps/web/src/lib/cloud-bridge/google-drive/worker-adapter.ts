@@ -56,6 +56,9 @@ export class WorkerDriveAdapter implements ICloudAdapter {
 
   private getMimeType(path: string): string {
     const ext = path.split(".").pop()?.toLowerCase();
+    if (!ext || ext === path.toLowerCase()) {
+      return "application/octet-stream";
+    }
     switch (ext) {
       case "md":
         return "text/markdown";
@@ -83,13 +86,21 @@ export class WorkerDriveAdapter implements ICloudAdapter {
     const url = new URL(baseUrl);
     url.searchParams.append("uploadType", "multipart");
 
+    const pathByteLength = new TextEncoder().encode(path).length;
+    if (pathByteLength > 124) {
+      throw new Error(
+        `[WorkerDriveAdapter] Path byte length (${pathByteLength}) exceeds Google Drive appProperties limit (124 bytes). Sync aborted for: ${path}`,
+      );
+    }
     if (path.length > 100) {
-      console.warn(`[WorkerDriveAdapter] Path length (${path.length}) exceeds safe appProperties limit (124 bytes). Sync may fail for: ${path}`);
+      console.warn(
+        `[WorkerDriveAdapter] Path length (${path.length} chars, ${pathByteLength} bytes) approaches Google Drive appProperties limit (124 bytes).`,
+      );
     }
 
     const mimeType = this.getMimeType(path);
     const metadata = {
-      name: path.split("/").pop(),
+      name: path.split("/").filter(Boolean).pop() || "unknown",
       mimeType: mimeType,
       parents: existingId ? undefined : [this.folderId],
       appProperties: {

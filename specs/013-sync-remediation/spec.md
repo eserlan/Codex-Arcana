@@ -64,7 +64,7 @@ As a power user with deeply nested lore folders, I want the sync engine to find 
 - **FR-001**: System MUST use `Blob` or `ArrayBuffer` for all file read/write operations in the sync pipeline.
 - **FR-002**: System MUST store the relative path of each file in Google Drive `appProperties` metadata field.
 - **FR-003**: System MUST use the full relative path (e.g., `images/foo.png`) as the primary key for diffing local and remote states.
-- **FR-004**: System MUST recursively scan the remote Google Drive folder to build a complete file map.
+- **FR-004**: System MUST scan the flat remote Google Drive folder and build a complete file map using metadata `vault_path`.
 - **FR-005**: System MUST automatically create local subdirectories in OPFS when downloading files from nested remote paths.
 - **FR-006**: System MUST correctly detect and set `Content-Type` headers for uploads based on file extension.
 

@@ -23,9 +23,7 @@
 - [x] T014 Verify that `SyncEngine.scan` identifies files in all nested levels in `apps/web/src/lib/cloud-bridge/sync-engine/engine.ts`
 
 ## Phase 5: Polish & Validation
-- [x] T015 Verify binary integrity of image files after sync in `apps/web/tests/sync-remediation.spec.ts`
-- [x] T016 Verify folder structure restoration on a "fresh" simulated device in `apps/web/tests/sync-remediation.spec.ts`
-- [x] T017 [P] Update `CloudStatus.svelte` to show binary sync progress if applicable in `apps/web/src/lib/components/settings/CloudStatus.svelte`
+- [ ] T017 [P] Update `CloudStatus.svelte` to show binary sync progress if applicable in `apps/web/src/lib/components/settings/CloudStatus.svelte`
 - [x] T018 Acceptance: Offline Functionality Verification (Principle VIII)
 
 ## Implementation Strategy
