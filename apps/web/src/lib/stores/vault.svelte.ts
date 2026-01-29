@@ -5,6 +5,7 @@ import { KeyedTaskQueue } from "../utils/queue";
 import type { Entity, Connection } from "schema";
 import { searchService } from "../services/search";
 import { cacheService } from "../services/cache";
+import { aiService } from "../services/ai";
 
 export type LocalEntity = Entity & { _fsHandle?: FileSystemHandle };
 
@@ -134,6 +135,7 @@ class VaultStore {
     if (!this.rootHandle) return;
 
     this.status = "loading";
+    aiService.clearStyleCache();
     const files = await walkDirectory(this.rootHandle);
 
     // Clear index before reloading
@@ -404,6 +406,7 @@ class VaultStore {
     const updated = { ...entity, ...updates };
     this.entities[id] = updated;
 
+    aiService.clearStyleCache();
     this.scheduleSave(updated);
   }
 

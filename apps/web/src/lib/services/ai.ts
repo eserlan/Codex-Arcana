@@ -12,6 +12,7 @@ export class AIService {
   private model: GenerativeModel | null = null;
   private currentApiKey: string | null = null;
   private currentModelName: string | null = null;
+  private styleCache: string | null = null;
 
   init(apiKey: string, modelName: string) {
     // Re-initialize if key or model has changed
@@ -211,14 +212,21 @@ User visualization request: ${query}`;
     // 1b. Style Search: If this is an image request, look for a style guide or aesthetic note
     let styleContext = "";
     if (isImage) {
-      const styleResults = await searchService.search(
-        "art style visual aesthetic world guide",
-        { limit: 1 },
-      );
-      if (styleResults.length > 0 && styleResults[0].score > 0.5) {
-        const styleEntity = vault.entities[styleResults[0].id];
-        if (styleEntity && !excludeTitles.has(styleEntity.title)) {
-          styleContext = `--- GLOBAL ART STYLE ---\n${styleEntity.content || styleEntity.lore || ""}\n\n`;
+      if (this.styleCache !== null) {
+        styleContext = this.styleCache;
+      } else {
+        const styleResults = await searchService.search(
+          "art style visual aesthetic world guide",
+          { limit: 1 },
+        );
+        if (styleResults.length > 0 && styleResults[0].score > 0.5) {
+          const styleEntity = vault.entities[styleResults[0].id];
+          if (styleEntity) {
+            styleContext = `--- GLOBAL ART STYLE ---\n${styleEntity.content || styleEntity.lore || ""}\n\n`;
+            this.styleCache = styleContext;
+          }
+        } else {
+          this.styleCache = ""; // Mark as searched but not found
         }
       }
     }
@@ -345,6 +353,10 @@ User visualization request: ${query}`;
       content: styleContext + contents.join("\n\n"),
       primaryEntityId: primaryEntityId || undefined,
     };
+  }
+
+  clearStyleCache() {
+    this.styleCache = null;
   }
 }
 
