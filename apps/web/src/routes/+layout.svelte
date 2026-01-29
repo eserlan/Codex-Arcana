@@ -4,7 +4,7 @@
 	import CloudStatus from "$lib/components/settings/CloudStatus.svelte";
 	import SearchModal from "$lib/components/search/SearchModal.svelte";
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
-	import CategoryManagerModal from "$lib/components/settings/CategoryManagerModal.svelte";
+	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
@@ -80,6 +80,15 @@
 			>
 				<VaultControls />
 				<CloudStatus />
+				<button
+					class="w-8 h-8 flex items-center justify-center border transition-all {uiStore.showSettings && uiStore.activeSettingsTab !== 'sync'
+						? 'border-green-500 bg-green-900/10 text-green-500'
+						: 'border-green-900/30 hover:border-green-500 text-green-900 hover:text-green-500'}"
+					onclick={() => uiStore.toggleSettings("vault")}
+					title="Application Settings"
+				>
+					<span class="icon-[lucide--settings] w-5 h-5"></span>
+				</button>
 			</div>
 		</header>
 	{/if}
@@ -112,6 +121,6 @@
 		</footer>
 		<SearchModal />
 		<OracleWindow />
-		<CategoryManagerModal />
+		<SettingsModal />
 	{/if}
 </div>

@@ -1,8 +1,11 @@
+export type SettingsTab = "vault" | "sync" | "intelligence" | "schema" | "about";
+
 class UIStore {
     showSettings = $state(false);
-    showCategoryManager = $state(false);
+    activeSettingsTab = $state<SettingsTab>("vault");
 
-    openSettings() {
+    openSettings(tab: SettingsTab = "vault") {
+        this.activeSettingsTab = tab;
         this.showSettings = true;
     }
 
@@ -10,17 +13,13 @@ class UIStore {
         this.showSettings = false;
     }
 
-    toggleSettings() {
-        this.showSettings = !this.showSettings;
-    }
-
-    openCategoryManager() {
-        this.showCategoryManager = true;
-        this.showSettings = false; // Close settings when opening manager
-    }
-
-    closeCategoryManager() {
-        this.showCategoryManager = false;
+    toggleSettings(tab: SettingsTab = "vault") {
+        if (this.showSettings && this.activeSettingsTab === tab) {
+            this.showSettings = false;
+        } else {
+            this.activeSettingsTab = tab;
+            this.showSettings = true;
+        }
     }
 }
 
