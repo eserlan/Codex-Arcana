@@ -1,17 +1,16 @@
 <script lang="ts">
     import { cloudConfig } from "$stores/cloud-config";
     import { syncStats } from "$stores/sync-stats";
-    import { GoogleDriveAdapter } from "$lib/cloud-bridge/google-drive/adapter";
+    import { gdriveAdapter as adapter } from "$stores/gdrive.svelte";
     import { workerBridge } from "$lib/cloud-bridge/worker-bridge";
 
     import { uiStore } from "$stores/ui.svelte";
-    import AISettings from "./AISettings.svelte";
     import { base } from "$app/paths";
 
-    let adapter = new GoogleDriveAdapter();
+    let { embedMode = false } = $props<{ embedMode?: boolean }>();
+
     let isLoading = $state(false);
     let error = $state<string | null>(null);
-    let showMenu = $derived(uiStore.showSettings);
 
     const handleLogin = async () => {
         isLoading = true;
@@ -98,71 +97,55 @@
 </script>
 
 <div class="relative font-mono cloud-status-container">
-    <button
-        class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition-all group relative {showMenu
-            ? 'z-[60] border-green-500 bg-green-900/10'
-            : 'z-10'} {isFlashing
-            ? 'ring-2 ring-green-500 ring-opacity-50 scale-95'
-            : ''}"
-        onclick={() => uiStore.toggleSettings()}
-        title={isConnected
-            ? `Connected as ${$cloudConfig.connectedEmail}`
-            : "Cloud Sync Settings"}
-        data-testid="cloud-status-button"
-    >
-        {#if isFlashing}
-            <div
-                class="absolute inset-0 bg-green-500/20 rounded animate-ping pointer-events-none"
-            ></div>
-        {/if}
-        <span
-            class="transition-all flex items-center justify-center {isConnected
-                ? 'text-green-500'
-                : 'text-green-900 group-hover:text-green-700'}"
+    {#if !embedMode}
+        <button
+            class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition-all group relative {uiStore.showSettings && uiStore.activeSettingsTab === 'sync'
+                ? 'z-[60] border-green-500 bg-green-900/10'
+                : 'z-10'} {isFlashing
+                ? 'ring-2 ring-green-500 ring-opacity-50 scale-95'
+                : ''}"
+            onclick={() => uiStore.toggleSettings("sync")}
+            title={isConnected
+                ? `Connected as ${$cloudConfig.connectedEmail}`
+                : "Cloud Sync Settings"}
+            data-testid="cloud-status-button"
         >
+            {#if isFlashing}
+                <div
+                    class="absolute inset-0 bg-green-500/20 rounded animate-ping pointer-events-none"
+                ></div>
+            {/if}
             <span
-                class="w-5 h-5 {isSyncing
-                    ? 'icon-[lucide--zap] animate-pulse'
-                    : 'icon-[lucide--settings]'}"
-            ></span>
-        </span>
-        {#if isSyncing}
-            <span
-                class="text-[8px] text-green-500 font-bold ml-1 hidden xs:inline animate-pulse"
-                >SYNCING</span
+                class="transition-all flex items-center justify-center {isConnected
+                    ? 'text-green-500'
+                    : 'text-green-900 group-hover:text-green-700'}"
             >
-        {/if}
-        {#if isConnected && !isSyncing}
-            <span
-                class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-black animate-pulse"
-            ></span>
-        {/if}
-    </button>
+                <span
+                    class="w-5 h-5 {isSyncing
+                        ? 'icon-[lucide--zap] animate-pulse'
+                        : 'icon-[lucide--cloud]'}"
+                ></span>
+            </span>
+            {#if isSyncing}
+                <span
+                    class="text-[8px] text-green-500 font-bold ml-1 hidden xs:inline animate-pulse"
+                    >SYNCING</span
+                >
+            {/if}
+            {#if isConnected && !isSyncing}
+                <span
+                    class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-black animate-pulse"
+                ></span>
+            {/if}
+        </button>
+    {/if}
 
-    {#if showMenu}
+    {#if embedMode}
         <div
-            class="absolute right-0 top-full mt-2 w-72 bg-[#0c0c0c] border border-green-900/50 shadow-2xl rounded p-4 z-50 text-xs"
+            class="w-full"
             data-testid="cloud-status-menu"
         >
             <div class="flex flex-col gap-4">
-                <div
-                    class="flex justify-between items-center pb-2 border-b border-green-900/20"
-                >
-                    <span
-                        class="text-gray-500 uppercase tracking-widest text-[10px]"
-                        >Cloud Sync</span
-                    >
-                    <button
-                        type="button"
-                        class="text-gray-600 hover:text-gray-400 text-sm p-1 -m-1"
-                        onclick={(e) => {
-                            e.stopPropagation();
-                            uiStore.closeSettings();
-                        }}
-                        data-testid="cloud-status-close">✕</button
-                    >
-                </div>
-
                 {#if !isConfigured}
                     <div
                         class="p-3 bg-amber-950/20 border border-amber-900/30 rounded text-amber-200 text-[10px] leading-relaxed"
@@ -301,25 +284,25 @@
                                 Unlink
                             </button>
                         </div>
-                        <div class="pt-4 border-t border-green-900/20">
-                            <AISettings />
-                        </div>
-                        <div class="pt-4 border-t border-green-900/20">
-                            <button
-                                onclick={() => uiStore.openCategoryManager()}
-                                class="w-full py-2 bg-purple-900/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600 hover:text-black rounded text-[10px] font-bold tracking-widest transition-all flex items-center justify-center gap-2"
-                                data-testid="manage-categories-button"
-                            >
-                                <span class="icon-[lucide--tags] w-3 h-3"></span>
-                                MANAGE CATEGORIES
-                            </button>
-                        </div>
+                        
+                        {#if !embedMode}
+                            <div class="pt-4 border-t border-green-900/20">
+                                <button
+                                    onclick={() => uiStore.toggleSettings("schema")}
+                                    class="w-full py-2 bg-purple-900/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600 hover:text-black rounded text-[10px] font-bold tracking-widest transition-all flex items-center justify-center gap-2"
+                                    data-testid="manage-categories-button"
+                                >
+                                    <span class="icon-[lucide--tags] w-3 h-3"></span>
+                                    MANAGE CATEGORIES
+                                </button>
+                            </div>
 
-                        <div class="pt-2 flex justify-center gap-4 text-[9px] text-gray-700 uppercase tracking-tighter">
-                            <a href="{base}/privacy" class="hover:text-green-900 transition-colors">Privacy Policy</a>
-                            <span>•</span>
-                            <a href="{base}/terms" class="hover:text-green-900 transition-colors">Terms of Service</a>
-                        </div>
+                            <div class="pt-2 flex justify-center gap-4 text-[9px] text-gray-700 uppercase tracking-tighter">
+                                <a href="{base}/privacy" class="hover:text-green-900 transition-colors">Privacy Policy</a>
+                                <span>•</span>
+                                <a href="{base}/terms" class="hover:text-green-900 transition-colors">Terms of Service</a>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             </div>

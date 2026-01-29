@@ -4,11 +4,12 @@
 	import CloudStatus from "$lib/components/settings/CloudStatus.svelte";
 	import SearchModal from "$lib/components/search/SearchModal.svelte";
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
-	import CategoryManagerModal from "$lib/components/settings/CategoryManagerModal.svelte";
+	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
+	import { uiStore } from "$stores/ui.svelte";
 	import { syncStats } from "$stores/sync-stats";
 	import { cloudConfig } from "$stores/cloud-config";
 	import { onMount } from "svelte";
@@ -18,6 +19,10 @@
 	let { children } = $props();
 
 	const isPopup = $derived(page.url.pathname === `${base}/oracle`);
+	const isLegalPage = $derived(
+		page.url.pathname.includes("/privacy") ||
+			page.url.pathname.includes("/terms"),
+	);
 
 	onMount(() => {
 		vault.init();
@@ -29,6 +34,7 @@
 			(window as any).vault = vault;
 			(window as any).oracle = oracle;
 			(window as any).categories = categories;
+			(window as any).uiStore = uiStore;
 			(window as any).syncStats = syncStats;
 			(window as any).cloudConfig = cloudConfig;
 		}
@@ -80,6 +86,16 @@
 			>
 				<VaultControls />
 				<CloudStatus />
+				<button
+					class="w-8 h-8 flex items-center justify-center border transition-all {uiStore.showSettings &&
+					uiStore.activeSettingsTab !== 'sync'
+						? 'border-green-500 bg-green-900/10 text-green-500'
+						: 'border-green-900/30 hover:border-green-500 text-green-900 hover:text-green-500'}"
+					onclick={() => uiStore.toggleSettings("vault")}
+					title="Application Settings"
+				>
+					<span class="icon-[lucide--settings] w-5 h-5"></span>
+				</button>
 			</div>
 		</header>
 	{/if}
@@ -100,18 +116,24 @@
 			<div class="flex gap-6">
 				<a
 					href="{base}/privacy"
+					target="_blank"
+					rel="noopener noreferrer"
 					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
 					>Privacy Policy</a
 				>
 				<a
 					href="{base}/terms"
+					target="_blank"
+					rel="noopener noreferrer"
 					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
 					>Terms of Service</a
 				>
 			</div>
 		</footer>
 		<SearchModal />
-		<OracleWindow />
-		<CategoryManagerModal />
+		{#if !isLegalPage}
+			<OracleWindow />
+		{/if}
+		<SettingsModal />
 	{/if}
 </div>
