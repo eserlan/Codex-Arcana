@@ -22,13 +22,13 @@ test.describe("Category Architecture Modal", () => {
     test("should open Category Architecture modal and display default categories", async ({ page }) => {
         // 1. Open main Settings
         await page.getByTestId("cloud-status-button").click();
-        await expect(page.getByTestId("cloud-status-menu")).toBeVisible();
+        await expect(page.locator('h2', { hasText: 'Cloud Sync' })).toBeVisible();
 
-        // 2. Open Category Manager
-        await page.getByTestId("manage-categories-button").click();
+        // 2. Open Schema tab via sidebar
+        await page.click('nav button:has-text("Schema")');
 
-        // 3. Verify Modal is visible
-        await expect(page.getByText("Category Architecture")).toBeVisible();
+        // 3. Verify Schema heading is visible
+        await expect(page.locator('h2', { hasText: 'Schema' })).toBeVisible();
 
         // 4. Verify default categories are loaded (check for NPC which is a default category)
         const hasNpc = await page.evaluate(() => {
@@ -42,16 +42,15 @@ test.describe("Category Architecture Modal", () => {
         await expect(page.getByRole("button", { name: "ADD" })).toBeVisible();
 
         // 6. Close modal
-        await page.getByRole("button", { name: "DONE" }).click();
-        await expect(page.getByText("Category Architecture")).not.toBeVisible();
+        await page.click('button[aria-label="Close Settings"]');
+        await expect(page.locator('h2', { hasText: 'Schema' })).not.toBeVisible();
     });
 
     test("should add a new category in session", async ({ page }) => {
-        // Open settings and category manager
+        // Open settings and go to Schema
         await page.getByTestId("cloud-status-button").click();
-        await expect(page.getByTestId("cloud-status-menu")).toBeVisible();
-        await page.getByTestId("manage-categories-button").click();
-        await expect(page.getByText("Category Architecture")).toBeVisible();
+        await page.click('nav button:has-text("Schema")');
+        await expect(page.locator('h2', { hasText: 'Schema' })).toBeVisible();
 
         // Count initial categories
         const initialCount = await page.evaluate(() => {
@@ -82,10 +81,10 @@ test.describe("Category Architecture Modal", () => {
     });
 
     test("should open and close glyph library picker", async ({ page }) => {
-        // Open settings and category manager
+        // Open settings and go to Schema
         await page.getByTestId("cloud-status-button").click();
-        await page.getByTestId("manage-categories-button").click();
-        await expect(page.getByText("Category Architecture")).toBeVisible();
+        await page.click('nav button:has-text("Schema")');
+        await expect(page.locator('h2', { hasText: 'Schema' })).toBeVisible();
 
         // Open glyph library via "Select Icon" button
         await page.getByTitle("Select Icon").click();
@@ -101,10 +100,10 @@ test.describe("Category Architecture Modal", () => {
     });
 
     test("should reset categories to defaults", async ({ page }) => {
-        // Open settings and category manager
+        // Open settings and go to Schema
         await page.getByTestId("cloud-status-button").click();
-        await page.getByTestId("manage-categories-button").click();
-        await expect(page.getByText("Category Architecture")).toBeVisible();
+        await page.click('nav button:has-text("Schema")');
+        await expect(page.locator('h2', { hasText: 'Schema' })).toBeVisible();
 
         // Delete NPC category naturally
         const npcRow = page.getByTestId('category-row-npc');
@@ -131,10 +130,10 @@ test.describe("Category Architecture Modal", () => {
             test.skip();
         }
 
-        // 2. Open category manager
+        // 2. Open settings and go to Schema
         await page.getByTestId("cloud-status-button").click();
-        await page.getByTestId("manage-categories-button").click();
-        await expect(page.getByText("Category Architecture")).toBeVisible();
+        await page.click('nav button:has-text("Schema")');
+        await expect(page.locator('h2', { hasText: 'Schema' })).toBeVisible();
 
         // 3. Find NPC category color input and change it to a distinct color
         const npcRow = page.getByTestId('category-row-npc');
@@ -148,11 +147,11 @@ test.describe("Category Architecture Modal", () => {
         await colorInput.fill(newColor);
 
         // 4. Close modal and verify color was saved
-        await page.getByRole("button", { name: "DONE" }).click();
+        await page.click('button[aria-label="Close Settings"]');
 
         // 5. Reopen and verify the color persisted
         await page.getByTestId("cloud-status-button").click();
-        await page.getByTestId("manage-categories-button").click();
+        await page.click('nav button:has-text("Schema")');
 
         const updatedColorInput = page.getByTestId('category-row-npc').locator('input[type="color"]');
         const savedColor = await updatedColorInput.inputValue();
@@ -164,6 +163,6 @@ test.describe("Category Architecture Modal", () => {
 
         // 6. Clean up - reset to defaults
         await page.getByRole("button", { name: /RESET TO DEFAULTS/i }).click();
-        await page.getByRole("button", { name: "DONE" }).click();
+        await page.click('button[aria-label="Close Settings"]');
     });
 });

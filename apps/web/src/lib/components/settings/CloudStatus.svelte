@@ -11,7 +11,6 @@
 
     let isLoading = $state(false);
     let error = $state<string | null>(null);
-    let showMenu = $derived(false);
 
     const handleLogin = async () => {
         isLoading = true;
@@ -100,7 +99,7 @@
 <div class="relative font-mono cloud-status-container">
     {#if !embedMode}
         <button
-            class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition-all group relative {showMenu
+            class="w-8 h-8 flex items-center justify-center border border-green-900/30 hover:border-green-500 rounded transition-all group relative {uiStore.showSettings && uiStore.activeSettingsTab === 'sync'
                 ? 'z-[60] border-green-500 bg-green-900/10'
                 : 'z-10'} {isFlashing
                 ? 'ring-2 ring-green-500 ring-opacity-50 scale-95'
@@ -141,32 +140,12 @@
         </button>
     {/if}
 
-    {#if showMenu || embedMode}
+    {#if embedMode}
         <div
-            class={embedMode ? "w-full" : "absolute right-0 top-full mt-2 w-72 bg-[#0c0c0c] border border-green-900/50 shadow-2xl rounded p-4 z-50 text-xs"}
+            class="w-full"
             data-testid="cloud-status-menu"
         >
             <div class="flex flex-col gap-4">
-                {#if !embedMode}
-                    <div
-                        class="flex justify-between items-center pb-2 border-b border-green-900/20"
-                    >
-                        <span
-                            class="text-gray-500 uppercase tracking-widest text-[10px]"
-                            >Cloud Sync</span
-                        >
-                        <button
-                            type="button"
-                            class="text-gray-600 hover:text-gray-400 text-sm p-1 -m-1"
-                            onclick={(e) => {
-                                e.stopPropagation();
-                                uiStore.closeSettings();
-                            }}
-                            data-testid="cloud-status-close">✕</button
-                        >
-                    </div>
-                {/if}
-
                 {#if !isConfigured}
                     <div
                         class="p-3 bg-amber-950/20 border border-amber-900/30 rounded text-amber-200 text-[10px] leading-relaxed"

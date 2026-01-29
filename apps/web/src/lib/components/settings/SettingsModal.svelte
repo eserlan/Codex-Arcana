@@ -6,6 +6,7 @@
     import CategorySettings from "./CategorySettings.svelte";
     import { vault } from "$lib/stores/vault.svelte";
     import { base } from "$app/paths";
+    import { VERSION, CODENAME } from "$lib/config";
 
     const tabs: { id: SettingsTab; label: string; icon: string }[] = [
         { id: "vault", label: "Vault", icon: "icon-[lucide--database]" },
@@ -19,31 +20,73 @@
         { id: "about", label: "About", icon: "icon-[lucide--info]" },
     ];
 
-    const VERSION = "0.8.4";
-    const CODENAME = "Cryptica";
-
     const close = () => uiStore.closeSettings();
+
+    let previousActiveElement: HTMLElement | null = null;
+    let modalElement: HTMLElement | undefined = $state();
+
+    $effect(() => {
+        if (uiStore.showSettings) {
+            previousActiveElement = document.activeElement as HTMLElement;
+            // Focus the first tab button after a short delay to allow for transition
+            setTimeout(() => {
+                const firstTab = modalElement?.querySelector(
+                    '[role="tab"]',
+                ) as HTMLElement;
+                firstTab?.focus();
+            }, 100);
+        } else if (previousActiveElement) {
+            previousActiveElement.focus();
+            previousActiveElement = null;
+        }
+    });
+
+    const handleKeydown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") close();
+        if (e.key === "Tab") {
+            if (!modalElement) return;
+            const focusables = modalElement.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            );
+            const first = focusables[0] as HTMLElement;
+            const last = focusables[focusables.length - 1] as HTMLElement;
+
+            if (e.shiftKey && document.activeElement === first) {
+                last.focus();
+                e.preventDefault();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                first.focus();
+                e.preventDefault();
+            }
+        }
+    };
 </script>
 
 {#if uiStore.showSettings}
     <!-- Backdrop -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="fixed inset-0 bg-black/80 z-[100] backdrop-blur-sm"
         onclick={close}
         onkeydown={(e) => e.key === "Escape" && close()}
-        role="button"
-        tabindex="-1"
-        aria-label="Close modal"
+        role="presentation"
         transition:fade
     ></div>
 
     <div
+        bind:this={modalElement}
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] md:w-[800px] h-[80vh] bg-[#050505] border border-green-900/40 shadow-2xl rounded-lg overflow-hidden flex z-[101]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-heading"
+        onkeydown={handleKeydown}
         transition:fly={{ y: 20, duration: 300 }}
     >
         <!-- Sidebar Navigation -->
         <nav
             class="w-16 md:w-48 bg-[#0c0c0c] border-r border-green-900/20 flex flex-col pt-6"
+            role="tablist"
+            aria-label="Settings Categories"
         >
             <div class="px-6 mb-8 hidden md:block">
                 <span
@@ -56,6 +99,10 @@
                 {#each tabs as tab}
                     <button
                         onclick={() => (uiStore.activeSettingsTab = tab.id)}
+                        role="tab"
+                        aria-selected={uiStore.activeSettingsTab === tab.id}
+                        aria-controls="settings-panel-{tab.id}"
+                        id="settings-tab-{tab.id}"
                         class="px-4 md:px-6 py-3 flex items-center gap-3 transition-all relative {uiStore.activeSettingsTab ===
                         tab.id
                             ? 'text-green-400 bg-green-900/10'
@@ -90,6 +137,7 @@
                 class="px-8 py-6 flex justify-between items-center border-b border-green-900/10"
             >
                 <h2
+                    id="settings-heading"
                     class="text-lg font-bold text-green-100 uppercase tracking-widest flex items-center gap-3"
                 >
                     <span
@@ -112,7 +160,12 @@
             <!-- Body -->
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 {#if uiStore.activeSettingsTab === "vault"}
-                    <div class="space-y-6">
+                    <div
+                        role="tabpanel"
+                        id="settings-panel-vault"
+                        aria-labelledby="settings-tab-vault"
+                        class="space-y-6"
+                    >
                         <section>
                             <h3
                                 class="text-xs font-bold text-green-500 uppercase mb-3 tracking-widest"
@@ -166,7 +219,12 @@
                         </section>
                     </div>
                 {:else if uiStore.activeSettingsTab === "sync"}
-                    <div class="space-y-6">
+                    <div
+                        role="tabpanel"
+                        id="settings-panel-sync"
+                        aria-labelledby="settings-tab-sync"
+                        class="space-y-6"
+                    >
                         <p
                             class="text-[11px] text-green-100/60 leading-relaxed"
                         >
@@ -175,7 +233,6 @@
                             archives to Google Drive for multi-device access and
                             backup.
                         </p>
-                        <!-- We will refactor CloudStatus to be useable here or just move its inner content -->
                         <div
                             class="bg-green-900/5 border border-green-900/20 p-6 rounded"
                         >
@@ -183,7 +240,12 @@
                         </div>
                     </div>
                 {:else if uiStore.activeSettingsTab === "intelligence"}
-                    <div class="space-y-6">
+                    <div
+                        role="tabpanel"
+                        id="settings-panel-intelligence"
+                        aria-labelledby="settings-tab-intelligence"
+                        class="space-y-6"
+                    >
                         <p
                             class="text-[11px] text-green-100/60 leading-relaxed"
                         >
@@ -194,7 +256,12 @@
                         <AISettings />
                     </div>
                 {:else if uiStore.activeSettingsTab === "schema"}
-                    <div class="space-y-6">
+                    <div
+                        role="tabpanel"
+                        id="settings-panel-schema"
+                        aria-labelledby="settings-tab-schema"
+                        class="space-y-6"
+                    >
                         <p
                             class="text-[11px] text-green-100/60 leading-relaxed"
                         >
@@ -209,7 +276,12 @@
                         </div>
                     </div>
                 {:else if uiStore.activeSettingsTab === "about"}
-                    <div class="space-y-8">
+                    <div
+                        role="tabpanel"
+                        id="settings-panel-about"
+                        aria-labelledby="settings-tab-about"
+                        class="space-y-8"
+                    >
                         <section>
                             <h3
                                 class="text-xs font-bold text-green-500 uppercase mb-4 tracking-widest border-b border-green-900/10 pb-2"
@@ -232,7 +304,7 @@
                                         Codename
                                     </div>
                                     <div class="text-green-100">
-                                        Ghost-in-the-Shell
+                                        {CODENAME}
                                     </div>
                                 </div>
                                 <div>
