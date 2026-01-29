@@ -12,7 +12,7 @@
 
 ### `Entity` (Update)
 - **`image`**: string (optional, local path to persisted visual in `/images/`)
-- **`thumbnail`**: string (optional, local path to 128px optimized visual)
+- **`thumbnail`**: string (optional, local path to 512px optimized visual)
 - **`type`**: string (supports custom categories + new default `note`)
 
 ## New Storage Artifacts

@@ -23,6 +23,30 @@
 
   let skipNextCenter = false;
 
+  const applyFocus = (id: string | null) => {
+    const currentCy = cy;
+    if (!currentCy) return;
+    currentCy.batch(() => {
+      if (!id) {
+        currentCy.elements().removeClass("dimmed");
+        currentCy.elements().removeClass("neighborhood");
+      } else {
+        const node = currentCy.$id(id);
+        if (node.length > 0) {
+          const neighborhood = node.neighborhood().add(node);
+          currentCy.elements().addClass("dimmed");
+          currentCy.elements().removeClass("neighborhood");
+          neighborhood.removeClass("dimmed");
+          neighborhood.addClass("neighborhood");
+        } else {
+          // If the target node no longer exists, clear focus/dimming.
+          currentCy.elements().removeClass("dimmed");
+          currentCy.elements().removeClass("neighborhood");
+        }
+      }
+    });
+  };
+
   // Hover state
   let hoveredEntityId = $state<string | null>(null);
   let hoverPosition = $state<{ x: number; y: number } | null>(null);
@@ -67,6 +91,11 @@
         elements: graph.elements,
         style: graphStyle,
       });
+
+      // Expose for E2E testing
+      if (import.meta.env.DEV) {
+        (window as any).cy = cy;
+      }
 
       // Hover events
       cy.on("mouseover", "node", (evt) => {
@@ -161,6 +190,9 @@
     if (cy) {
       cy.destroy();
     }
+    if (import.meta.env.DEV) {
+      delete (window as any).cy;
+    }
     clearTimeout(hoverTimeout);
   });
 
@@ -198,6 +230,9 @@
 
   // Center on selection when it changes externally
   $effect(() => {
+    if (cy) {
+      applyFocus(selectedId);
+    }
     if (cy && selectedId) {
       const node = cy.$id(selectedId);
       if (node.length > 0) {
@@ -287,9 +322,13 @@
               cy?.fit(undefined, 50);
               initialLoaded = true;
             }
+            if (selectedId) applyFocus(selectedId);
           });
 
           layout.run();
+        } else {
+          // If no layout run, still might need focus update if elements were updated
+          if (selectedId) applyFocus(selectedId);
         }
       } catch (err) {
         console.error("Cytoscape Error:", err);

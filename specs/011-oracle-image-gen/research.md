@@ -23,7 +23,7 @@
     - `EntityDetailPanel` will have a drop zone that listens for `drop` events, extracts the path, and updates the active entity via `vault.updateEntity`.
 
 ## Decision: Performance Optimization (Thumbnails)
-- **Choice**: Canvas-based 128px Thumbnails
+- **Choice**: Canvas-based 512px Thumbnails
 - **Rationale**: Keeps the Knowledge Graph responsive even with many images. Cytoscape nodes load much faster with small thumbnails than full-resolution generated images.
 - **Implementation**: Generated on-the-fly during the archive process and stored as a separate file.
 

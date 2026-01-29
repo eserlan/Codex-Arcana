@@ -18,6 +18,8 @@ export const BASE_STYLE = [
       "text-margin-y": 8,
       "text-max-width": 80,
       "text-wrap": "wrap",
+      "transition-property": "opacity",
+      "transition-duration": 200,
     },
   },
   {
@@ -73,6 +75,8 @@ export const BASE_STYLE = [
       "text-background-opacity": 0.8,
       "text-background-padding": "2px",
       "text-margin-y": -8,
+      "transition-property": "opacity",
+      "transition-duration": 200,
     },
   },
   {
@@ -82,6 +86,20 @@ export const BASE_STYLE = [
       "target-arrow-color": "#4ade80",
       width: 2,
       opacity: 1,
+    },
+  },
+  {
+    selector: ".dimmed",
+    style: {
+      opacity: 0.35,
+      events: "no",
+    },
+  },
+  {
+    selector: ".neighborhood",
+    style: {
+      opacity: 1,
+      "z-index": 100,
     },
   },
 ] as any[];
