@@ -12,6 +12,7 @@ export class AIService {
   private model: GenerativeModel | null = null;
   private currentApiKey: string | null = null;
   private currentModelName: string | null = null;
+  private styleCache: string | null = null;
 
   init(apiKey: string, modelName: string) {
     // Re-initialize if key or model has changed
@@ -23,6 +24,7 @@ export class AIService {
     if (this.genAI && this.model && this.currentApiKey === apiKey && matchesModel) return;
 
     console.log(`[AIService] Initializing model: ${modelName}`);
+    this.clearStyleCache();
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
       model: modelName,
@@ -37,11 +39,86 @@ When providing information, consider two formats:
 
 Only if you have NO information about the subject in either the new context blocks OR the previous messages, and you aren't asked to invent it, say "I cannot find that in your records." 
 
+If the user asks for a visual, image, portrait, or to see what something looks like, inform them that they can use the "/draw" command to have you visualize it.
+
       Always prioritize the vault context as the absolute truth.`
     });
     this.currentApiKey = apiKey;
     this.currentModelName = modelName;
   }
+
+  enhancePrompt(query: string, context: string): string {
+    if (!context) return query;
+    return `You are a world-building artist. 
+
+Use the following context to ground your visualization accurately. 
+If a "GLOBAL ART STYLE" is provided, ensure the generated image strictly adheres to that aesthetic style.
+
+${context}
+
+User visualization request: ${query}`;
+  }
+
+  async generateImage(apiKey: string, prompt: string): Promise<Blob> {
+    // We use gemini-2.5-flash-image (Nano Banana) which is optimized for image generation
+    // and available via the standard, CORS-friendly generateContent endpoint.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          // Instruct the model to generate an image
+          response_modalities: ["IMAGE"],
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      const message = err.error?.message || response.statusText;
+      if (
+        message.toLowerCase().includes("safety") ||
+        message.toLowerCase().includes("block")
+      ) {
+        throw new Error(
+          "The Oracle cannot visualize this request due to safety policies.",
+        );
+      }
+      throw new Error(`Image Generation Error: ${message}`);
+    }
+
+    const data = await response.json();
+    // In generateContent multimodal responses, the image is returned in the parts
+    const base64Data = data.candidates?.[0]?.content?.parts?.find(
+      (p: any) => p.inlineData,
+    )?.inlineData?.data;
+
+    if (!base64Data) {
+      throw new Error("No image data returned from AI");
+    }
+
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    return new Blob([bytes], { type: "image/png" });
+  }
+
   async generateResponse(apiKey: string, query: string, history: any[], context: string, modelName: string, onUpdate: (partial: string) => void) {
     this.init(apiKey, modelName);
     if (!this.model) throw new Error("AI Model not initialized");
@@ -124,11 +201,38 @@ Only if you have NO information about the subject in either the new context bloc
     return followUpPatterns.some(p => p.test(q));
   }
 
-  async retrieveContext(query: string, excludeTitles: Set<string>, lastEntityId?: string): Promise<{ content: string, primaryEntityId?: string }> {
-    // 1. Get search results for relevance
+  async retrieveContext(
+    query: string,
+    excludeTitles: Set<string>,
+    lastEntityId?: string,
+    isImage: boolean = false,
+  ): Promise<{ content: string; primaryEntityId?: string }> {
+    // 1. Style Search: If this is an image request, look for a style guide or aesthetic note
+    let styleContext = "";
+    if (isImage) {
+      if (this.styleCache !== null) {
+        styleContext = this.styleCache;
+      } else {
+        const styleResults = await searchService.search(
+          "art style visual aesthetic world guide",
+          { limit: 1 },
+        );
+        if (styleResults.length > 0 && styleResults[0].score > 0.5) {
+          const styleEntity = vault.entities[styleResults[0].id];
+          if (styleEntity) {
+            styleContext = `--- GLOBAL ART STYLE ---\n${styleEntity.content || styleEntity.lore || ""}\n\n`;
+            this.styleCache = styleContext;
+          }
+        } else {
+          this.styleCache = ""; // Mark as searched but not found
+        }
+      }
+    }
+
+    // 2. Main Context Search
     let results = await searchService.search(query, { limit: 5 });
 
-    // 1b. Fallback 1: if no results, try extracting keywords
+    // 2b. Fallback 1: if no results, try extracting keywords
     if (results.length === 0) {
       const keywords = query
         .toLowerCase()
@@ -247,9 +351,13 @@ Only if you have NO information about the subject in either the new context bloc
     }
 
     return {
-      content: contents.join("\n\n"),
-      primaryEntityId: primaryEntityId || undefined
+      content: styleContext + contents.join("\n\n"),
+      primaryEntityId: primaryEntityId || undefined,
     };
+  }
+
+  clearStyleCache() {
+    this.styleCache = null;
   }
 }
 

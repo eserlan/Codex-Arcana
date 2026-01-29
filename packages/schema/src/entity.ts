@@ -23,6 +23,7 @@ export const EntitySchema = z.object({
   content: z.string().default(""), // Markdown content, default empty
   lore: z.string().optional(), // Extended lore & rich notes
   image: z.string().optional(),
+  thumbnail: z.string().optional(),
   metadata: z
     .object({
       coordinates: z.object({ x: z.number(), y: z.number() }).optional(),
@@ -41,4 +42,5 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: "item", label: "Item", color: "#facc15", icon: "lucide:package" },
   { id: "event", label: "Event", color: "#e879f9", icon: "lucide:calendar" },
   { id: "faction", label: "Faction", color: "#fb923c", icon: "lucide:users" },
+  { id: "note", label: "Note", color: "#94a3b8", icon: "lucide:file-text" },
 ];

@@ -32,9 +32,53 @@ vi.mock("../utils/idb", () => ({
 global.window = global.window || {};
 global.window.showDirectoryPicker = vi.fn();
 
+// Mock Image and Canvas for thumbnail testing
+class MockImage {
+  onload: () => void = () => { };
+  onerror: (err: any) => void = () => { };
+  private _src: string = "";
+  width: number = 512;
+  height: number = 512;
+
+  set src(value: string) {
+    this._src = value;
+    if (value) {
+      // Execute onload synchronously for reliable testing
+      this.onload();
+    }
+  }
+  get src() { return this._src; }
+}
+(global as any).Image = MockImage;
+
+global.document = global.document || {};
+const originalCreateElement = global.document.createElement;
+
+// Create canvas mock function that survives resetAllMocks
+function createCanvasMock() {
+  return {
+    getContext: () => ({
+      drawImage: () => { },
+    }),
+    toBlob: (callback: (blob: Blob | null) => void) => {
+      callback(new Blob(["thumb"], { type: "image/png" }));
+    },
+    width: 0,
+    height: 0,
+  };
+}
+
 describe("VaultStore", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+
+    // Re-setup canvas mock after resetAllMocks
+    global.document.createElement = vi.fn().mockImplementation((tag: string) => {
+      if (tag === "canvas") {
+        return createCanvasMock();
+      }
+      return typeof originalCreateElement === 'function' ? originalCreateElement(tag) : {};
+    });
     vault.entities = {};
   });
 
@@ -45,23 +89,23 @@ describe("VaultStore", () => {
 
   it("should load files from directory", async () => {
     // Mock FS response
-    const mockFileHandle = {
-        getFile: vi.fn().mockResolvedValue({
-            lastModified: 1234567890,
-            text: vi.fn().mockResolvedValue(`---
-id: test
-title: Test Node
-type: npc
----
-Content`)
-        })
+    const mockDirectoryHandle = {
+      getDirectoryHandle: vi.fn().mockResolvedValue({}),
     };
-    const mockFiles = [{ handle: mockFileHandle, path: ["test.md"] }];
-    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
+    const mockFileHandle = {
+      getFile: vi.fn().mockResolvedValue({
+        lastModified: 1234567890,
+        text: vi.fn().mockResolvedValue(`---\nid: test\ntype: npc\ntitle: Test Node\n---\nContent`)
+      }),
+      kind: 'file',
+      name: 'test.md'
+    };
 
-    // Mock directory picker
-    const mockHandle = {};
-    (window.showDirectoryPicker as any).mockResolvedValue(mockHandle);
+    vi.mocked(fsUtils.walkDirectory).mockResolvedValue([
+      { handle: mockFileHandle as any, path: ['test.md'] }
+    ]);
+
+    vi.mocked(global.window.showDirectoryPicker).mockResolvedValue(mockDirectoryHandle as any);
 
     await vault.openDirectory();
 
@@ -77,29 +121,29 @@ Content`)
     const filePath = "cached.md";
     const lastModified = 999999;
     const cachedEntity = {
-        id: "cached-id",
-        title: "Cached Title",
-        type: "npc" as const,
-        content: "Cached Content",
-        tags: [],
-        connections: [],
-        metadata: {}
+      id: "cached-id",
+      title: "Cached Title",
+      type: "npc" as const,
+      content: "Cached Content",
+      tags: [],
+      connections: [],
+      metadata: {}
     };
 
     // Mock IDB hit
     vi.mocked(idbUtils.getCachedFile).mockResolvedValue({
-        path: filePath,
-        lastModified: lastModified,
-        entity: cachedEntity
+      path: filePath,
+      lastModified: lastModified,
+      entity: cachedEntity
     });
 
     const mockFileHandle = {
-        getFile: vi.fn().mockResolvedValue({
-            lastModified: lastModified,
-            text: vi.fn() // Should NOT be called
-        })
+      getFile: vi.fn().mockResolvedValue({
+        lastModified: lastModified,
+        text: vi.fn() // Should NOT be called
+      })
     };
-    
+
     const mockFiles = [{ handle: mockFileHandle, path: [filePath] }];
     vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
     vault.rootHandle = {} as any;
@@ -111,7 +155,7 @@ Content`)
     // Verify text() was never called (proving it skipped parsing)
     const fileObj = await mockFileHandle.getFile();
     expect(fileObj.text).not.toHaveBeenCalled();
-    
+
     expect(vault.entities["cached-id"]).toBeDefined();
     expect(vault.entities["cached-id"]?.title).toBe("Cached Title");
   });
@@ -133,6 +177,50 @@ Content`)
     expect(vault.entities[id]?.title).toBe("New Hero");
   });
 
+  it("should save image to vault and generate paths", async () => {
+    const mockWritable = { write: vi.fn(), close: vi.fn() };
+    const mockFileHandle = { createWritable: vi.fn().mockResolvedValue(mockWritable) };
+    const mockImagesDir = { getFileHandle: vi.fn().mockResolvedValue(mockFileHandle) };
+
+    vault.rootHandle = {
+      getDirectoryHandle: vi.fn().mockResolvedValue(mockImagesDir),
+    } as any;
+
+    // Create the entity that will be updated with image paths
+    vault.entities["test-entity"] = {
+      id: "test-entity",
+      title: "Test Entity",
+      type: "npc",
+      content: "",
+      tags: [],
+      connections: [],
+      metadata: {},
+    } as any;
+
+    const blob = new Blob(["fake-image"], { type: "image/png" });
+    const path = await vault.saveImageToVault(blob, "test-entity");
+
+    expect(path).toContain("./images/test-entity-");
+    expect(vault.entities["test-entity"]?.image).toBe(path);
+    expect(vault.entities["test-entity"]?.thumbnail).toContain("-thumb.png");
+  });
+
+  it("should resolve local paths to blob URLs", async () => {
+    const mockFile = new File(["data"], "image.png", { type: "image/png" });
+    const mockFileHandle = { getFile: vi.fn().mockResolvedValue(mockFile) };
+    const mockImagesDir = { getFileHandle: vi.fn().mockResolvedValue(mockFileHandle) };
+
+    vault.rootHandle = {
+      getDirectoryHandle: vi.fn().mockResolvedValue(mockImagesDir),
+    } as any;
+
+    global.URL.createObjectURL = vi.fn().mockReturnValue("blob:resolved-url");
+
+    const url = await vault.resolveImagePath("./images/test.png");
+    expect(url).toBe("blob:resolved-url");
+    expect(global.URL.createObjectURL).toHaveBeenCalled();
+  });
+
   it("should update entity and schedule save", async () => {
     const mockFileHandle = {
       createWritable: vi
@@ -152,7 +240,7 @@ Content`)
 
     // Wait for the queue to process the save
     await vi.waitFor(() => {
-        expect(fsUtils.writeFile).toHaveBeenCalled();
+      expect(fsUtils.writeFile).toHaveBeenCalled();
     });
   });
 
@@ -174,27 +262,31 @@ Content`)
   });
 
   it("should parse wiki-links with labels correctly", async () => {
-    const mockFileHandle = {
-        getFile: vi.fn().mockResolvedValue({
-            lastModified: 1234567890,
-            text: vi.fn().mockResolvedValue(`---
-id: test
----
-Link to [[Other|The Label]]`)
-        })
+    const mockDirectoryHandle = {
+      getDirectoryHandle: vi.fn().mockResolvedValue({}),
     };
-    const mockFiles = [{ handle: mockFileHandle, path: ["test.md"] }];
-    vi.mocked(fsUtils.walkDirectory).mockResolvedValue(mockFiles as any);
+    const mockFileHandle = {
+      getFile: vi.fn().mockResolvedValue({
+        lastModified: 1234567890,
+        text: vi.fn().mockResolvedValue(`---\nid: test\ntitle: Test\ntype: npc\n---\n[[other|Labeled Link]]`)
+      }),
+      kind: 'file',
+      name: 'test.md'
+    };
 
-    (window.showDirectoryPicker as any).mockResolvedValue({});
+    vi.mocked(fsUtils.walkDirectory).mockResolvedValue([
+      { handle: mockFileHandle as any, path: ['test.md'] }
+    ]);
+    vi.mocked(global.window.showDirectoryPicker).mockResolvedValue(mockDirectoryHandle as any);
+
     await vault.openDirectory();
 
     const entity = vault.entities["test"];
     expect(entity?.connections).toContainEqual({
       target: "other",
       type: "related_to",
-      label: "The Label",
       strength: 1,
+      label: "Labeled Link"
     });
   });
 
@@ -221,7 +313,7 @@ Link to [[Other|The Label]]`)
     expect(vault.entities["source"]?.connections[0].type).toBe("knows"); // Unchanged
 
     await vi.waitFor(() => {
-        expect(fsUtils.writeFile).toHaveBeenCalled();
+      expect(fsUtils.writeFile).toHaveBeenCalled();
     });
   });
 
@@ -288,7 +380,7 @@ Link to [[Other|The Label]]`)
     expect(vault.entities["test-lore"]?.lore).toBe("New Secret Lore");
 
     await vi.waitFor(() => {
-        expect(fsUtils.writeFile).toHaveBeenCalled();
+      expect(fsUtils.writeFile).toHaveBeenCalled();
     });
     // Verify that the written content includes the lore (either in frontmatter or body)
     // This depends on how _serializeAttributes handles it.

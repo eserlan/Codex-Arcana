@@ -8,6 +8,7 @@ export interface GraphNode {
     type: string;
     weight: number;
     image?: string;
+    thumbnail?: string;
   };
   position?: { x: number; y: number };
 }
@@ -31,16 +32,20 @@ export class GraphTransformer {
     const elements: GraphElement[] = [];
 
     for (const entity of entities) {
-      // Create Node
+      // Create Node - only include image/thumbnail if they have valid values
+      // (Cytoscape selectors like `node[image]` match even empty strings)
+      const nodeData: GraphNode["data"] = {
+        id: entity.id,
+        label: entity.title,
+        type: entity.type,
+        weight: entity.connections?.length || 0,
+      };
+      if (entity.image) nodeData.image = entity.image;
+      if (entity.thumbnail) nodeData.thumbnail = entity.thumbnail;
+
       elements.push({
         group: "nodes",
-        data: {
-          id: entity.id,
-          label: entity.title,
-          type: entity.type,
-          weight: entity.connections?.length || 0, // Basic weight based on connectivity
-          image: entity.image,
-        },
+        data: nodeData,
         position: entity.metadata?.coordinates,
       });
 

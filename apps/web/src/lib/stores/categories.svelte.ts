@@ -12,7 +12,15 @@ class CategoryStore {
       const db = await getDB();
       const stored = await db.get("settings", "categories");
       if (stored && Array.isArray(stored)) {
-        this.list = stored;
+        // Merge Logic: Keep user-customized/added categories, 
+        // but ensure all CURRENT defaults are also present.
+        const merged = [...stored];
+        DEFAULT_CATEGORIES.forEach((defaultCat) => {
+          if (!merged.some((c) => c.id === defaultCat.id)) {
+            merged.push(defaultCat);
+          }
+        });
+        this.list = merged;
       }
     } catch (e) {
       console.error("Failed to load categories", e);
@@ -31,6 +39,13 @@ class CategoryStore {
   }
 
   addCategory(category: Category) {
+    // Prevent duplicate category IDs by updating existing entries instead of pushing duplicates.
+    const existingIndex = this.list.findIndex((c) => c.id === category.id);
+    if (existingIndex !== -1) {
+      // Use updateCategory to preserve centralized update logic.
+      this.updateCategory(category.id, category);
+      return;
+    }
     this.list.push(category);
     void this.save();
   }
