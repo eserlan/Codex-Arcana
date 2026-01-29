@@ -39,7 +39,7 @@ class CategoryStore {
     try {
       await this.save();
       notifications.success("Category added");
-    } catch (e) {
+    } catch {
       this.list = previousList;
       notifications.error("Failed to add category");
     }
@@ -52,7 +52,7 @@ class CategoryStore {
       this.list[index] = { ...this.list[index], ...updates };
       try {
         await this.save();
-      } catch (e) {
+      } catch {
         this.list = previousList;
         notifications.error("Failed to update category");
       }
@@ -65,7 +65,7 @@ class CategoryStore {
     try {
       await this.save();
       notifications.success("Category removed");
-    } catch (e) {
+    } catch {
       this.list = previousList;
       notifications.error("Failed to remove category");
     }
@@ -77,7 +77,7 @@ class CategoryStore {
     try {
       await this.save();
       notifications.success("Categories reset to defaults");
-    } catch (e) {
+    } catch {
       this.list = previousList;
       notifications.error("Failed to reset categories");
     }
