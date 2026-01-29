@@ -37,6 +37,8 @@ When providing information, consider two formats:
 
 Only if you have NO information about the subject in either the new context blocks OR the previous messages, and you aren't asked to invent it, say "I cannot find that in your records." 
 
+If the user asks for a visual, image, portrait, or to see what something looks like, inform them that they can use the "/draw" command to have you visualize it.
+
       Always prioritize the vault context as the absolute truth.`
     });
     this.currentApiKey = apiKey;
@@ -45,7 +47,11 @@ Only if you have NO information about the subject in either the new context bloc
 
   enhancePrompt(query: string, context: string): string {
     if (!context) return query;
-    return `Context: ${context}\n\nUser request: ${query}`;
+    return `You are a world-building artist. Use the following context to ground your visualization accurately:
+
+${context}
+
+User visualization request: ${query}`;
   }
 
   async generateImage(apiKey: string, prompt: string): Promise<Blob> {

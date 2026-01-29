@@ -144,7 +144,7 @@ describe("AIService Prompt Enhancement", () => {
         const query = "Show me what he looks like";
         const context = "--- File: Eldrin ---\nAn old elf with stars.";
         const result = aiService.enhancePrompt(query, context);
-        expect(result).toContain("Context: --- File: Eldrin ---");
-        expect(result).toContain("User request: Show me what he looks like");
+        expect(result).toContain("--- File: Eldrin ---");
+        expect(result).toContain("User visualization request: Show me what he looks like");
     });
 });

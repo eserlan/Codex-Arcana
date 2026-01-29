@@ -54,7 +54,10 @@
 
     const handleDragOver = (e: DragEvent) => {
         e.preventDefault();
-        if (e.dataTransfer?.types.includes("application/codex-image-id")) {
+        if (
+            e.dataTransfer?.types.includes("application/codex-image-id") ||
+            e.dataTransfer?.types.includes("Files")
+        ) {
             isDraggingOver = true;
             e.dataTransfer.dropEffect = "copy";
         }
@@ -78,6 +81,15 @@
                     await vault.saveImageToVault(message.imageBlob, entity.id);
                 } catch (err) {
                     console.error("Failed to save dropped image", err);
+                }
+            }
+        } else if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            if (file.type.startsWith("image/")) {
+                try {
+                    await vault.saveImageToVault(file, entity.id);
+                } catch (err) {
+                    console.error("Failed to save dropped external file", err);
                 }
             }
         }

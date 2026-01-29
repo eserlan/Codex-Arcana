@@ -106,12 +106,18 @@ class OracleStore {
   private detectImageIntent(query: string): boolean {
     const q = query.toLowerCase();
     return (
-      q.startsWith("/draw") ||
-      q.includes("draw a picture") ||
-      q.includes("generate an image") ||
+      q.includes("/draw") ||
+      q.includes("/image") ||
+      q.startsWith("draw") ||
+      q.includes("draw me") ||
+      q.includes("draw a") ||
+      q.includes("portrait of") ||
       q.includes("visualize") ||
+      q.includes("generate an image") ||
       q.includes("show me what") ||
-      q.includes("show me a")
+      q.includes("show me a") ||
+      q.includes("sketch of") ||
+      q.includes("paint a")
     );
   }
 
@@ -141,18 +147,7 @@ class OracleStore {
     ];
 
     try {
-      // Extract already sent entity titles from history to avoid redundancy
-      const alreadySentTitles = new Set<string>();
-      this.messages.forEach((m) => {
-        if (m.role === "user") {
-          const matches = m.content.matchAll(
-            /--- (?:\[ACTIVE FILE\] )?File: ([^\n-]+) ---/g,
-          );
-          for (const match of matches) {
-            alreadySentTitles.add(match[1]);
-          }
-        }
-      });
+      const alreadySentTitles = this.getSentTitles();
 
       // Identify the last entity we were talking about
       let lastEntityId: string | undefined;
@@ -230,6 +225,21 @@ class OracleStore {
       target.archiveTargetId = entityId;
       this.broadcast();
     }
+  }
+
+  private getSentTitles(): Set<string> {
+    const titles = new Set<string>();
+    this.messages.forEach((m) => {
+      if (m.role === "user") {
+        const matches = m.content.matchAll(
+          /--- (?:\[ACTIVE FILE\] )?File: ([^\n-]+) ---/g,
+        );
+        for (const match of matches) {
+          titles.add(match[1]);
+        }
+      }
+    });
+    return titles;
   }
 }
 

@@ -251,7 +251,7 @@ class VaultStore {
 
       // Generate filename: {entity-id}-{timestamp}-{hash}.png
       const timestamp = Date.now();
-      const hash = Math.random().toString(36).substring(2, 8);
+      const hash = crypto.randomUUID().split("-")[0];
       const filename = `${entityId}-${timestamp}-${hash}.png`;
 
       const fileHandle = await imagesDir.getFileHandle(filename, {
