@@ -43,7 +43,7 @@
             ],
             editorProps: {
                 attributes: {
-                    class: "prose prose-invert max-w-none focus:outline-none min-h-[150px] font-sans text-lg leading-relaxed text-gray-200",
+                    class: "prose prose-invert max-w-none focus:outline-none min-h-[100px] font-sans text-lg leading-relaxed text-gray-200",
                 },
             },
             content: content,
@@ -96,13 +96,11 @@
 
 <style>
     .tiptap-editor-wrapper {
-        min-height: 200px;
         background: #0a0a0a;
         color: #d1d5db;
         border: 1px solid rgba(34, 197, 94, 0.2);
         border-radius: 4px;
         padding: 1rem;
-        overflow-y: auto;
     }
 
     .tiptap-editor-wrapper.readonly {

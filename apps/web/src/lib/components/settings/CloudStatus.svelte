@@ -11,7 +11,6 @@
 
     let isLoading = $state(false);
     let error = $state<string | null>(null);
-    let showMenu = $derived(!embedMode && uiStore.showSettings && uiStore.activeSettingsTab === 'sync');
 
     const handleLogin = async () => {
         isLoading = true;

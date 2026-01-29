@@ -237,7 +237,7 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     }
   }
 
-  async listFiles(): Promise<Map<string, RemoteFileMeta>> {
+  async listFiles(): Promise<RemoteFileMeta[]> {
     if (!this.accessToken) throw new Error("Not authenticated");
 
     // Get the email from GAPI to build the key

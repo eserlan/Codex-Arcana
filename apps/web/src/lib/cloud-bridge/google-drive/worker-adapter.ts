@@ -60,6 +60,8 @@ export class WorkerDriveAdapter implements ICloudAdapter {
         return "text/markdown";
       case "png":
         return "image/png";
+      case "webp":
+        return "image/webp";
       case "jpg":
       case "jpeg":
         return "image/jpeg";
@@ -84,8 +86,8 @@ export class WorkerDriveAdapter implements ICloudAdapter {
     url.searchParams.append("uploadType", "multipart");
 
     const mimeType = this.getMimeType(path);
-    const boundary = "-------314159265358979323846";
-    const delimiter = `\r\n--${boundary}\r\n`;
+    const boundary = "-------" + Math.random().toString(36).substring(2);
+    const delimiter = `--${boundary}\r\n`;
     const closeDelimiter = `\r\n--${boundary}--`;
 
     const metadata = {
@@ -107,8 +109,9 @@ export class WorkerDriveAdapter implements ICloudAdapter {
     const multipartBody = new Blob(
       [
         delimiter,
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n',
-        JSON.stringify(metadata),
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+          JSON.stringify(metadata) +
+          "\r\n",
         delimiter,
         `Content-Type: ${mimeType}\r\n\r\n`,
         contentBlob,

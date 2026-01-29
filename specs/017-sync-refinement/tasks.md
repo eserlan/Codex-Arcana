@@ -23,7 +23,7 @@
 - [x] T005 Implement remote deduplication logic in `SyncEngine.scan` or `calculateDiff` to keep only the newest file per `vault_path`
 - [x] T006 Update `SyncEngine.applyPlan` to execute `deletes` via the cloud adapter
 - [x] T007 Implement metadata cleanup for deleted files in `SyncEngine.applyPlan`
-- [ ] T008 [P] Add unit tests for deletion and deduplication scenarios in `apps/web/src/lib/cloud-bridge/sync-engine/engine.test.ts`
+- [x] T008 [P] Add unit tests for deletion and deduplication scenarios in `apps/web/src/lib/cloud-bridge/sync-engine/engine.test.ts`
 
 ---
 

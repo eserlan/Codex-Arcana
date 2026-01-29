@@ -45,11 +45,14 @@ self.onmessage = async (event) => {
         self.postMessage({ type: "SYNC_STATUS", payload: "SCANNING" });
 
         const { local, remote, metadata } = await engine.scan();
-        console.log(`SyncWorker: Scan complete. Local: ${local.length}, Remote: ${remote.size}`);
+        console.log(`SyncWorker: Scan complete. Local: ${local.length}, Remote: ${remote.length}, Metadata: ${metadata.length}`);
+        
+        if (local.length > 0) console.log('SyncWorker: Sample Local:', local[0].path);
+        if (remote.length > 0) console.log('SyncWorker: Sample Remote:', remote[0].appProperties?.vault_path || remote[0].name);
 
         // Calculate Diff
         const plan = engine.calculateDiff(local, remote, metadata);
-        console.log(`SyncWorker: Plan calculated. Uploads: ${plan.uploads.length}, Downloads: ${plan.downloads.length}`);
+        console.log(`SyncWorker: Plan calculated. Uploads: ${plan.uploads.length}, Downloads: ${plan.downloads.length}, Deletions: ${plan.deletes.length}`);
 
         if (plan.uploads.length > 0 || plan.downloads.length > 0 || plan.deletes.length > 0) {
           self.postMessage({ type: "SYNC_STATUS", payload: "SYNCING" });
