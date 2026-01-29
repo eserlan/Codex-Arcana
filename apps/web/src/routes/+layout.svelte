@@ -9,6 +9,7 @@
 	import { oracle } from "$lib/stores/oracle.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
+	import { uiStore } from "$stores/ui.svelte";
 	import { syncStats } from "$stores/sync-stats";
 	import { cloudConfig } from "$stores/cloud-config";
 	import { onMount } from "svelte";
@@ -29,6 +30,7 @@
 			(window as any).vault = vault;
 			(window as any).oracle = oracle;
 			(window as any).categories = categories;
+			(window as any).uiStore = uiStore;
 			(window as any).syncStats = syncStats;
 			(window as any).cloudConfig = cloudConfig;
 		}
