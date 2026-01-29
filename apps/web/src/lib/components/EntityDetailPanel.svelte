@@ -12,8 +12,94 @@
 
     let isEditing = $state(false);
     let editTitle = $state("");
+    let editContent = $state("");
+    let editLore = $state("");
     let editImage = $state("");
     let resolvedImageUrl = $state("");
+
+    const startEditing = () => {
+        if (!entity) return;
+        editTitle = entity.title;
+        editContent = entity.content || "";
+        editLore = entity.lore || "";
+        editImage = entity.image || "";
+        isEditing = true;
+    };
+
+    const cancelEditing = () => {
+        isEditing = false;
+    };
+
+    const saveChanges = async () => {
+        if (!entity) return;
+        try {
+            await vault.updateEntity(entity.id, {
+                title: editTitle,
+                content: editContent,
+                lore: editLore,
+                image: editImage,
+                type: entity.type, // Preserve type
+            });
+            isEditing = false;
+        } catch (err) {
+            console.error("Failed to save changes", err);
+        }
+    };
+
+    const handleContentUpdate = (markdown: string) => {
+        editContent = markdown;
+    };
+
+    const handleLoreUpdate = (markdown: string) => {
+        editLore = markdown;
+    };
+
+    // Lightbox state
+    let showLightbox = $state(false);
+    let isDraggingOver = $state(false);
+
+    const handleDragOver = (e: DragEvent) => {
+        e.preventDefault();
+        if (
+            e.dataTransfer?.types.includes("application/codex-image-id") ||
+            e.dataTransfer?.types.includes("Files")
+        ) {
+            isDraggingOver = true;
+            e.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = () => {
+        isDraggingOver = false;
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+        e.preventDefault();
+        isDraggingOver = false;
+
+        if (!entity) return;
+
+        const messageId = e.dataTransfer?.getData("application/codex-image-id");
+        if (messageId) {
+            const message = oracle.messages.find((m) => m.id === messageId);
+            if (message?.imageBlob) {
+                try {
+                    await vault.saveImageToVault(message.imageBlob, entity.id);
+                } catch (err) {
+                    console.error("Failed to save dropped image", err);
+                }
+            }
+        } else if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            if (file.type.startsWith("image/")) {
+                try {
+                    await vault.saveImageToVault(file, entity.id);
+                } catch (err) {
+                    console.error("Failed to save dropped external file", err);
+                }
+            }
+        }
+    };
 
     $effect(() => {
         if (entity?.image) {
