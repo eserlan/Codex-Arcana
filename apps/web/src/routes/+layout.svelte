@@ -54,8 +54,8 @@
 			>
 				<span class="icon-[lucide--book-open] text-green-500 w-5 h-5"
 				></span>
-				<span class="hidden sm:inline">Codex Arcana</span>
-				<span class="sm:hidden text-green-500">CA</span>
+				<span class="hidden sm:inline">Codex Cryptica</span>
+				<span class="sm:hidden text-green-500">CC</span>
 			</h1>
 
 			<div class="flex-1 order-3 md:order-2 w-full md:max-w-xl md:px-4">
