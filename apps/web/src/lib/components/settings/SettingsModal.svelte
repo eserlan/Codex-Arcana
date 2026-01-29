@@ -15,6 +15,9 @@
         { id: "about", label: "About", icon: "icon-[lucide--info]" },
     ];
 
+    const VERSION = "0.8.4";
+    const CODENAME = "Cryptica";
+
     const close = () => uiStore.closeSettings();
 </script>
 
@@ -59,7 +62,7 @@
             </div>
 
             <div class="mt-auto p-4 md:p-6 text-[9px] font-mono text-green-900/40 uppercase hidden md:block">
-                Version 0.8.4 // Build Cryptica
+                Version {VERSION} // Build {CODENAME}
             </div>
         </nav>
 
@@ -113,7 +116,7 @@
                         </p>
                         <!-- We will refactor CloudStatus to be useable here or just move its inner content -->
                         <div class="bg-green-900/5 border border-green-900/20 p-6 rounded">
-                             <CloudStatus embedMode={true} />
+                            <CloudStatus embedMode={true} />
                         </div>
                     </div>
                 {:else if uiStore.activeSettingsTab === "intelligence"}

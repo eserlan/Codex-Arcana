@@ -1,7 +1,7 @@
 <script lang="ts">
     import { cloudConfig } from "$stores/cloud-config";
     import { syncStats } from "$stores/sync-stats";
-    import { GoogleDriveAdapter } from "$lib/cloud-bridge/google-drive/adapter";
+    import { gdriveAdapter as adapter } from "$stores/gdrive.svelte";
     import { workerBridge } from "$lib/cloud-bridge/worker-bridge";
 
     import { uiStore } from "$stores/ui.svelte";
@@ -9,10 +9,9 @@
 
     let { embedMode = false } = $props<{ embedMode?: boolean }>();
 
-    let adapter = new GoogleDriveAdapter();
     let isLoading = $state(false);
     let error = $state<string | null>(null);
-    let showMenu = $derived(!embedMode && uiStore.showSettings && uiStore.activeSettingsTab === 'sync');
+    let showMenu = $derived(false);
 
     const handleLogin = async () => {
         isLoading = true;
@@ -122,11 +121,12 @@
                     ? 'text-green-500'
                     : 'text-green-900 group-hover:text-green-700'}"
             >
-                            <span
-                                class="w-5 h-5 {isSyncing
-                                    ? 'icon-[lucide--zap] animate-pulse'
-                                    : 'icon-[lucide--cloud]'}"
-                            ></span>            </span>
+                <span
+                    class="w-5 h-5 {isSyncing
+                        ? 'icon-[lucide--zap] animate-pulse'
+                        : 'icon-[lucide--cloud]'}"
+                ></span>
+            </span>
             {#if isSyncing}
                 <span
                     class="text-[8px] text-green-500 font-bold ml-1 hidden xs:inline animate-pulse"
