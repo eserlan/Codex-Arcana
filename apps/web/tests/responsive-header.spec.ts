@@ -21,17 +21,6 @@ test.describe("Mobile Header Responsiveness", () => {
     // Verify vault controls and cloud status are visible
     const vaultControls = page.locator('header').locator('div.flex.items-center.gap-2');
     await expect(vaultControls).toBeVisible();
-
-    // Check for wrapping - the search bar should be in its own "row" (flex-basis 100% via w-full)
-    // and below the logo/controls. In Tailwind, order-3 for search, order-2 for controls on mobile.
-    const searchBox = page.locator('header > div.w-full');
-    const box = await searchBox.boundingBox();
-    const logoBox = await page.locator('h1').boundingBox();
-
-    if (box && logoBox) {
-      // Search box should be below OR equal to logo position (wrapped layout on mobile)
-      expect(box.y).toBeGreaterThanOrEqual(logoBox.y);
-    }
   });
 
   test("should hide entity labels on small screens", async ({ page }) => {
@@ -42,5 +31,26 @@ test.describe("Mobile Header Responsiveness", () => {
     const entityLabel = page.getByTestId("entity-count");
     // Wait for vault to init if needed, but it should be hidden regardless of count if it has the class
     await expect(entityLabel).not.toBeVisible();
+  });
+
+  test("should stack search box below logo on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/");
+
+    const logo = page.locator('h1');
+    const searchBox = page.getByPlaceholder(/Search/);
+
+    const logoBox = await logo.boundingBox();
+    const searchBoxBox = await searchBox.boundingBox();
+
+    // Verify search box is below the logo
+    // Note: Due to flex wrap, the search box container might be what wraps.
+    // The logo is at the top left. The search box should be below it.
+    expect(logoBox).not.toBeNull();
+    expect(searchBoxBox).not.toBeNull();
+
+    if (logoBox && searchBoxBox) {
+       expect(searchBoxBox.y).toBeGreaterThanOrEqual(logoBox.y + logoBox.height);
+    }
   });
 });
