@@ -182,17 +182,9 @@
               const resolvedUrl = await vault.resolveImagePath(
                 (el.data.thumbnail || el.data.image)!,
               );
-              // Only apply if we got a valid browser-usable URL (blob: or data:)
-              if (
-                resolvedUrl &&
-                (resolvedUrl.startsWith("blob:") ||
-                  resolvedUrl.startsWith("data:"))
-              ) {
-                cy?.$id(el.data.id).style({
-                  "background-image": resolvedUrl,
-                  "background-fit": "cover",
-                  "background-opacity": 1,
-                });
+              // Only apply if we got a valid URL
+              if (resolvedUrl) {
+                cy?.$id(el.data.id).data("resolvedImage", resolvedUrl);
               }
             }
           }
