@@ -12,9 +12,9 @@ In `apps/web/src/lib/themes/graph-theme.ts`, add the `.dimmed` selector to `BASE
 {
   selector: '.dimmed',
   style: {
-    'opacity': 0.15,
+    'opacity': 0.35,
     'transition-property': 'opacity',
-    'transition-duration': '200ms'
+    'transition-duration': 200
   }
 }
 ```

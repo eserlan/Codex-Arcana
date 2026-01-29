@@ -29,12 +29,19 @@
     currentCy.batch(() => {
       if (!id) {
         currentCy.elements().removeClass("dimmed");
+        currentCy.elements().removeClass("neighborhood");
       } else {
         const node = currentCy.$id(id);
         if (node.length > 0) {
           const neighborhood = node.neighborhood().add(node);
           currentCy.elements().addClass("dimmed");
+          currentCy.elements().removeClass("neighborhood");
           neighborhood.removeClass("dimmed");
+          neighborhood.addClass("neighborhood");
+        } else {
+          // If the target node no longer exists, clear focus/dimming.
+          currentCy.elements().removeClass("dimmed");
+          currentCy.elements().removeClass("neighborhood");
         }
       }
     });
@@ -182,6 +189,9 @@
   onDestroy(() => {
     if (cy) {
       cy.destroy();
+    }
+    if (import.meta.env.DEV) {
+      delete (window as any).cy;
     }
     clearTimeout(hoverTimeout);
   });

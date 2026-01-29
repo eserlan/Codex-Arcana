@@ -42,6 +42,7 @@ TypeScript: Follow standard conventions
 - 014-graph-focus-mode: Added TypeScript 5.x / Node.js 20+ + Cytoscape.js, Svelte 5
 - 012-minimap: Added TypeScript 5.x / Node.js 20+ + Cytoscape.js (Graph Engine), Svelte 5 (UI Framework)
 - 011-oracle-image-gen: Added TypeScript 5.x / Node.js 20+ + `@google/generative-ai` (for context), Browser Native `fetch` (for Imagen REST API), `idb` (for metadata)
+- 003-gdrive-mirroring: Initial implementation of Google Drive sync.
 
 
 <!-- MANUAL ADDITIONS START -->

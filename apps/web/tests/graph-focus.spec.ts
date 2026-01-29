@@ -4,13 +4,16 @@ test.describe("Graph Focus Mode", () => {
     test.beforeEach(async ({ page }) => {
         // Mock initialization to ensure a consistent graph state
         await page.addInitScript(() => {
-            const applyMocks = () => {
-                if ((window as any).vault) {
-                    (window as any).vault.isAuthorized = true;
-                    (window as any).vault.status = 'idle';
-                    (window as any).vault.rootHandle = { kind: 'directory' };
-                    // Inject some dummy entities with connections
-                    (window as any).vault.entities = {
+            let _vault: any;
+            Object.defineProperty(window, 'vault', {
+                get() { return _vault; },
+                set(v) {
+                    _vault = v;
+                    // Apply mocks immediately when vault is set
+                    _vault.isAuthorized = true;
+                    _vault.status = 'idle';
+                    _vault.rootHandle = { kind: 'directory' };
+                    _vault.entities = {
                         "node-1": { 
                             id: "node-1", 
                             title: "Node 1", 
@@ -25,45 +28,48 @@ test.describe("Graph Focus Mode", () => {
                             id: "node-3", 
                             title: "Node 3", 
                             connections: [] 
+                        },
+                        "island": {
+                            id: "island",
+                            title: "Island Node",
+                            connections: []
                         }
                     };
-                }
-            };
-            applyMocks();
-            setInterval(applyMocks, 100);
+                },
+                configurable: true
+            });
         });
 
         await page.goto("/");
-        // Wait for graph to be ready
-        await page.waitForTimeout(2000); 
+        // Wait for graph to be ready - check if cy is exposed and has nodes
+        await page.waitForFunction(() => {
+            const cy = (window as any).cy;
+            return cy && cy.nodes().length >= 4;
+        }, { timeout: 10000 });
     });
 
     test("should highlight neighborhood and dim others on node click", async ({ page }) => {
         // Click on Node 1
-        // We'll use page.evaluate to simulate the tap or just click the canvas at position
-        // Better yet, we can check for the existence of the 'dimmed' class on elements
-        // But since we can't easily query Cytoscape internal state from Playwright locators,
-        // we'll use page.evaluate to check the classes on elements.
-
         await page.evaluate(() => {
-            const cy = (window as any).cy; // Assume we exposed cy for testing in layout
+            const cy = (window as any).cy;
             if (cy) {
                 const node1 = cy.$id('node-1');
                 node1.emit('tap');
             }
         });
 
-        // Wait for transition
-        await page.waitForTimeout(500);
+        // Wait for transition (CSS transition is 200ms, 300ms is a safe buffer)
+        await page.waitForTimeout(300);
 
         const focusState = await page.evaluate(() => {
             const cy = (window as any).cy;
             if (!cy) return null;
+            const edge = cy.edges().filter((e: any) => e.source().id() === 'node-1' && e.target().id() === 'node-2');
             return {
                 node1Dimmed: cy.$id('node-1').hasClass('dimmed'),
                 node2Dimmed: cy.$id('node-2').hasClass('dimmed'),
                 node3Dimmed: cy.$id('node-3').hasClass('dimmed'),
-                edgeDimmed: cy.edges().hasClass('dimmed')
+                edgeDimmed: edge.hasClass('dimmed')
             };
         });
 
@@ -73,6 +79,60 @@ test.describe("Graph Focus Mode", () => {
         expect(focusState?.edgeDimmed).toBe(false);  // Connecting edge
     });
 
+    test("should shift focus when clicking a neighbor", async ({ page }) => {
+        // 1. Focus Node 1
+        await page.evaluate(() => {
+            const cy = (window as any).cy;
+            if (cy) cy.$id('node-1').emit('tap');
+        });
+
+        await page.waitForTimeout(300);
+
+        // 2. Focus Node 2 (neighbor of Node 1)
+        await page.evaluate(() => {
+            const cy = (window as any).cy;
+            if (cy) cy.$id('node-2').emit('tap');
+        });
+
+        await page.waitForTimeout(300);
+
+        const focusState = await page.evaluate(() => {
+            const cy = (window as any).cy;
+            if (!cy) return null;
+            return {
+                node1Dimmed: cy.$id('node-1').hasClass('dimmed'), // Now neighbor
+                node2Dimmed: cy.$id('node-2').hasClass('dimmed'), // Now focused
+                node3Dimmed: cy.$id('node-3').hasClass('dimmed')  // Still distant
+            };
+        });
+
+        expect(focusState?.node2Dimmed).toBe(false);
+        expect(focusState?.node1Dimmed).toBe(false);
+        expect(focusState?.node3Dimmed).toBe(true);
+    });
+
+    test("should work correctly for island nodes (no connections)", async ({ page }) => {
+        // Focus the island node
+        await page.evaluate(() => {
+            const cy = (window as any).cy;
+            if (cy) cy.$id('island').emit('tap');
+        });
+
+        await page.waitForTimeout(300);
+
+        const focusState = await page.evaluate(() => {
+            const cy = (window as any).cy;
+            if (!cy) return null;
+            return {
+                islandDimmed: cy.$id('island').hasClass('dimmed'),
+                othersDimmed: cy.nodes().filter((n: any) => n.id() !== 'island').every((n: any) => n.hasClass('dimmed'))
+            };
+        });
+
+        expect(focusState?.islandDimmed).toBe(false);
+        expect(focusState?.othersDimmed).toBe(true);
+    });
+
     test("should clear focus when clicking background", async ({ page }) => {
         // 1. Focus a node
         await page.evaluate(() => {
@@ -80,14 +140,15 @@ test.describe("Graph Focus Mode", () => {
             if (cy) cy.$id('node-1').emit('tap');
         });
 
+        await page.waitForTimeout(300);
+
         // 2. Click background
         await page.evaluate(() => {
             const cy = (window as any).cy;
             if (cy) cy.emit('tap');
         });
 
-        // Wait for transition
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(300);
 
         const isAnythingDimmed = await page.evaluate(() => {
             const cy = (window as any).cy;

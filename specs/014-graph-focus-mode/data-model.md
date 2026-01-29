@@ -10,8 +10,8 @@ The focus state is entirely CSS/Class-driven. No persistent database entities ar
 
 | Property | Value | Description |
 | :--- | :--- | :--- |
-| `opacity` | `0.15` | Reduced visibility for background context. |
-| `events` | `no` | Optional: disable interaction for dimmed elements to prevent misclicks. |
+| `opacity` | `0.35` | Reduced visibility for background context (A11y balanced). |
+| `events` | `no` | Disable interaction for dimmed elements to prevent misclicks. |
 
 ### Class: `.neighborhood` (Applied to connected nodes/edges)
 

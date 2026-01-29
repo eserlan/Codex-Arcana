@@ -389,7 +389,7 @@ class VaultStore {
       await writable.close();
 
       // Generate and save thumbnail
-      const thumbBlob = await this.generateThumbnail(blob, 128);
+      const thumbBlob = await this.generateThumbnail(blob, 512);
       const thumbHandle = await imagesDir.getFileHandle(thumbFilename, {
         create: true,
       });

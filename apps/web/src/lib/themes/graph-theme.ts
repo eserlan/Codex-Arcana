@@ -91,7 +91,15 @@ export const BASE_STYLE = [
   {
     selector: ".dimmed",
     style: {
-      opacity: 0.15,
+      opacity: 0.35,
+      events: "no",
+    },
+  },
+  {
+    selector: ".neighborhood",
+    style: {
+      opacity: 1,
+      "z-index": 100,
     },
   },
 ] as any[];
