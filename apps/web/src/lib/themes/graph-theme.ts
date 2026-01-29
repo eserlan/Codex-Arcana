@@ -21,15 +21,14 @@ export const BASE_STYLE = [
     },
   },
   {
-    selector: "node[image]",
+    selector: "node[resolvedImage]",
     style: {
-      "background-image": "data(image)",
       "background-fit": "cover",
       "background-clip": "node",
+      "background-image": "data(resolvedImage)",
       width: 48,
       height: 48,
       "border-width": 2,
-      "border-color": "#4ade80", // Brighter border for images
     },
   },
   {
