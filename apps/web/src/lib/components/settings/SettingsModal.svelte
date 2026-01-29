@@ -10,7 +10,11 @@
     const tabs: { id: SettingsTab; label: string; icon: string }[] = [
         { id: "vault", label: "Vault", icon: "icon-[lucide--database]" },
         { id: "sync", label: "Cloud Sync", icon: "icon-[lucide--refresh-cw]" },
-        { id: "intelligence", label: "Intelligence", icon: "icon-[lucide--brain]" },
+        {
+            id: "intelligence",
+            label: "Intelligence",
+            icon: "icon-[lucide--brain]",
+        },
         { id: "schema", label: "Schema", icon: "icon-[lucide--tags]" },
         { id: "about", label: "About", icon: "icon-[lucide--info]" },
     ];
@@ -38,30 +42,43 @@
         transition:fly={{ y: 20, duration: 300 }}
     >
         <!-- Sidebar Navigation -->
-        <nav class="w-16 md:w-48 bg-[#0c0c0c] border-r border-green-900/20 flex flex-col pt-6">
+        <nav
+            class="w-16 md:w-48 bg-[#0c0c0c] border-r border-green-900/20 flex flex-col pt-6"
+        >
             <div class="px-6 mb-8 hidden md:block">
-                <span class="text-[10px] font-mono text-green-900 uppercase tracking-[0.3em]">Configuration</span>
+                <span
+                    class="text-[10px] font-mono text-green-900 uppercase tracking-[0.3em]"
+                    >Configuration</span
+                >
             </div>
-            
+
             <div class="flex flex-col gap-1">
                 {#each tabs as tab}
                     <button
-                        onclick={() => uiStore.activeSettingsTab = tab.id}
-                        class="px-4 md:px-6 py-3 flex items-center gap-3 transition-all relative {uiStore.activeSettingsTab === tab.id 
-                            ? 'text-green-400 bg-green-900/10' 
+                        onclick={() => (uiStore.activeSettingsTab = tab.id)}
+                        class="px-4 md:px-6 py-3 flex items-center gap-3 transition-all relative {uiStore.activeSettingsTab ===
+                        tab.id
+                            ? 'text-green-400 bg-green-900/10'
                             : 'text-green-900 hover:text-green-600 hover:bg-green-900/5'}"
                     >
                         <span class="{tab.icon} w-5 h-5"></span>
-                        <span class="text-xs font-bold uppercase tracking-wider hidden md:block">{tab.label}</span>
-                        
+                        <span
+                            class="text-xs font-bold uppercase tracking-wider hidden md:block"
+                            >{tab.label}</span
+                        >
+
                         {#if uiStore.activeSettingsTab === tab.id}
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+                            <div
+                                class="absolute left-0 top-0 bottom-0 w-1 bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                            ></div>
                         {/if}
                     </button>
                 {/each}
             </div>
 
-            <div class="mt-auto p-4 md:p-6 text-[9px] font-mono text-green-900/40 uppercase hidden md:block">
+            <div
+                class="mt-auto p-4 md:p-6 text-[9px] font-mono text-green-900/40 uppercase hidden md:block"
+            >
                 Version {VERSION} // Build {CODENAME}
             </div>
         </nav>
@@ -69,12 +86,25 @@
         <!-- Content Area -->
         <div class="flex-1 flex flex-col min-w-0 bg-[#050505]">
             <!-- Header -->
-            <div class="px-8 py-6 flex justify-between items-center border-b border-green-900/10">
-                <h2 class="text-lg font-bold text-green-100 uppercase tracking-widest flex items-center gap-3">
-                    <span class="{tabs.find(t => t.id === uiStore.activeSettingsTab)?.icon} text-green-500 opacity-50"></span>
-                    {tabs.find(t => t.id === uiStore.activeSettingsTab)?.label}
+            <div
+                class="px-8 py-6 flex justify-between items-center border-b border-green-900/10"
+            >
+                <h2
+                    class="text-lg font-bold text-green-100 uppercase tracking-widest flex items-center gap-3"
+                >
+                    <span
+                        class="{tabs.find(
+                            (t) => t.id === uiStore.activeSettingsTab,
+                        )?.icon} text-green-500 opacity-50"
+                    ></span>
+                    {tabs.find((t) => t.id === uiStore.activeSettingsTab)
+                        ?.label}
                 </h2>
-                <button onclick={close} class="text-green-900 hover:text-green-500 transition-colors" aria-label="Close Settings">
+                <button
+                    onclick={close}
+                    class="text-green-900 hover:text-green-500 transition-colors"
+                    aria-label="Close Settings"
+                >
                     <span class="icon-[lucide--x] w-6 h-6"></span>
                 </button>
             </div>
@@ -84,23 +114,50 @@
                 {#if uiStore.activeSettingsTab === "vault"}
                     <div class="space-y-6">
                         <section>
-                            <h3 class="text-xs font-bold text-green-500 uppercase mb-3 tracking-widest">Active Archive</h3>
-                            <div class="bg-green-900/5 border border-green-900/20 p-4 rounded font-mono">
-                                <div class="text-[10px] text-green-900 uppercase mb-1">Status</div>
-                                <div class="text-xs text-green-100 mb-4">{vault.rootHandle ? 'Connected to Local File System' : 'No Vault Active'}</div>
-                                
-                                <div class="text-[10px] text-green-900 uppercase mb-1">Entity Count</div>
-                                <div class="text-xs text-green-100">{vault.allEntities.length} tracked entities</div>
+                            <h3
+                                class="text-xs font-bold text-green-500 uppercase mb-3 tracking-widest"
+                            >
+                                Active Archive
+                            </h3>
+                            <div
+                                class="bg-green-900/5 border border-green-900/20 p-4 rounded font-mono"
+                            >
+                                <div
+                                    class="text-[10px] text-green-900 uppercase mb-1"
+                                >
+                                    Status
+                                </div>
+                                <div class="text-xs text-green-100 mb-4">
+                                    {vault.rootHandle
+                                        ? "Connected to Local File System"
+                                        : "No Vault Active"}
+                                </div>
+
+                                <div
+                                    class="text-[10px] text-green-900 uppercase mb-1"
+                                >
+                                    Entity Count
+                                </div>
+                                <div class="text-xs text-green-100">
+                                    {vault.allEntities.length} tracked entities
+                                </div>
                             </div>
                         </section>
 
                         <section>
-                            <h3 class="text-xs font-bold text-green-500 uppercase mb-3 tracking-widest">Maintenance</h3>
-                            <p class="text-[11px] text-green-100/60 mb-4 leading-relaxed">
-                                If your search results or graph connections seem out of sync with your local files, 
-                                you can force a full re-index of your archive.
+                            <h3
+                                class="text-xs font-bold text-green-500 uppercase mb-3 tracking-widest"
+                            >
+                                Maintenance
+                            </h3>
+                            <p
+                                class="text-[11px] text-green-100/60 mb-4 leading-relaxed"
+                            >
+                                If your search results or graph connections seem
+                                out of sync with your local files, you can force
+                                a full re-index of your archive.
                             </p>
-                            <button 
+                            <button
                                 onclick={() => vault.rebuildIndex()}
                                 class="px-6 py-2 bg-green-900/20 border border-green-500/30 text-green-400 hover:bg-green-500 hover:text-black transition-all text-[10px] font-bold tracking-widest uppercase"
                             >
@@ -110,74 +167,141 @@
                     </div>
                 {:else if uiStore.activeSettingsTab === "sync"}
                     <div class="space-y-6">
-                        <p class="text-[11px] text-green-100/60 leading-relaxed">
-                            Configure synchronization with external cloud storage. This allows you to mirror your local-first 
-                            archives to Google Drive for multi-device access and backup.
+                        <p
+                            class="text-[11px] text-green-100/60 leading-relaxed"
+                        >
+                            Configure synchronization with external cloud
+                            storage. This allows you to mirror your local-first
+                            archives to Google Drive for multi-device access and
+                            backup.
                         </p>
                         <!-- We will refactor CloudStatus to be useable here or just move its inner content -->
-                        <div class="bg-green-900/5 border border-green-900/20 p-6 rounded">
+                        <div
+                            class="bg-green-900/5 border border-green-900/20 p-6 rounded"
+                        >
                             <CloudStatus embedMode={true} />
                         </div>
                     </div>
                 {:else if uiStore.activeSettingsTab === "intelligence"}
                     <div class="space-y-6">
-                        <p class="text-[11px] text-green-100/60 leading-relaxed">
-                            Manage AI integration settings. Codex Cryptica uses Google Gemini to provide 
-                            context-aware reasoning, automated tagging, and image generation.
+                        <p
+                            class="text-[11px] text-green-100/60 leading-relaxed"
+                        >
+                            Manage AI integration settings. Codex Cryptica uses
+                            Google Gemini to provide context-aware reasoning,
+                            automated tagging, and image generation.
                         </p>
                         <AISettings />
                     </div>
                 {:else if uiStore.activeSettingsTab === "schema"}
                     <div class="space-y-6">
-                        <p class="text-[11px] text-green-100/60 leading-relaxed">
-                            Define the ontology of your world. Custom categories allow you to color-code 
-                            nodes and group entities by their role in your narrative.
+                        <p
+                            class="text-[11px] text-green-100/60 leading-relaxed"
+                        >
+                            Define the ontology of your world. Custom categories
+                            allow you to color-code nodes and group entities by
+                            their role in your narrative.
                         </p>
-                        <div class="bg-green-900/5 border border-green-900/20 p-6 rounded">
+                        <div
+                            class="bg-green-900/5 border border-green-900/20 p-6 rounded"
+                        >
                             <CategorySettings />
                         </div>
                     </div>
                 {:else if uiStore.activeSettingsTab === "about"}
                     <div class="space-y-8">
                         <section>
-                            <h3 class="text-xs font-bold text-green-500 uppercase mb-4 tracking-widest border-b border-green-900/10 pb-2">Manifest</h3>
-                            <div class="grid grid-cols-2 gap-4 font-mono text-[10px]">
+                            <h3
+                                class="text-xs font-bold text-green-500 uppercase mb-4 tracking-widest border-b border-green-900/10 pb-2"
+                            >
+                                Manifest
+                            </h3>
+                            <div
+                                class="grid grid-cols-2 gap-4 font-mono text-[10px]"
+                            >
                                 <div>
-                                    <div class="text-green-900 uppercase mb-1">Software</div>
-                                    <div class="text-green-100">Codex Cryptica</div>
+                                    <div class="text-green-900 uppercase mb-1">
+                                        Software
+                                    </div>
+                                    <div class="text-green-100">
+                                        Codex Cryptica
+                                    </div>
                                 </div>
                                 <div>
-                                    <div class="text-green-900 uppercase mb-1">Codename</div>
-                                    <div class="text-green-100">Ghost-in-the-Shell</div>
+                                    <div class="text-green-900 uppercase mb-1">
+                                        Codename
+                                    </div>
+                                    <div class="text-green-100">
+                                        Ghost-in-the-Shell
+                                    </div>
                                 </div>
                                 <div>
-                                    <div class="text-green-900 uppercase mb-1">Architecture</div>
-                                    <div class="text-green-100">Local-First / Svelte 5</div>
+                                    <div class="text-green-900 uppercase mb-1">
+                                        Architecture
+                                    </div>
+                                    <div class="text-green-100">
+                                        Local-First / Svelte 5
+                                    </div>
                                 </div>
                                 <div>
-                                    <div class="text-green-900 uppercase mb-1">License</div>
+                                    <div class="text-green-900 uppercase mb-1">
+                                        License
+                                    </div>
                                     <div class="text-green-100">MIT</div>
                                 </div>
                             </div>
                         </section>
 
                         <section>
-                            <h3 class="text-xs font-bold text-green-500 uppercase mb-4 tracking-widest border-b border-green-900/10 pb-2">Legal Compliance</h3>
+                            <h3
+                                class="text-xs font-bold text-green-500 uppercase mb-4 tracking-widest border-b border-green-900/10 pb-2"
+                            >
+                                Legal Compliance
+                            </h3>
                             <div class="flex flex-col gap-3">
-                                <a href="{base}/privacy" class="flex items-center justify-between p-3 bg-green-900/5 border border-green-900/20 hover:border-green-500/50 transition-all rounded group">
-                                    <span class="text-xs text-green-100 uppercase tracking-widest font-bold">Privacy Policy</span>
-                                    <span class="icon-[lucide--external-link] w-4 h-4 text-green-900 group-hover:text-green-400"></span>
+                                <a
+                                    href="{base}/privacy"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex items-center justify-between p-3 bg-green-900/5 border border-green-900/20 hover:border-green-500/50 transition-all rounded group"
+                                >
+                                    <span
+                                        class="text-xs text-green-100 uppercase tracking-widest font-bold"
+                                        >Privacy Policy</span
+                                    >
+                                    <span
+                                        class="icon-[lucide--external-link] w-4 h-4 text-green-900 group-hover:text-green-400"
+                                    ></span>
                                 </a>
-                                <a href="{base}/terms" class="flex items-center justify-between p-3 bg-green-900/5 border border-green-900/20 hover:border-green-500/50 transition-all rounded group">
-                                    <span class="text-xs text-green-100 uppercase tracking-widest font-bold">Terms of Service</span>
-                                    <span class="icon-[lucide--external-link] w-4 h-4 text-green-900 group-hover:text-green-400"></span>
+                                <a
+                                    href="{base}/terms"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex items-center justify-between p-3 bg-green-900/5 border border-green-900/20 hover:border-green-500/50 transition-all rounded group"
+                                >
+                                    <span
+                                        class="text-xs text-green-100 uppercase tracking-widest font-bold"
+                                        >Terms of Service</span
+                                    >
+                                    <span
+                                        class="icon-[lucide--external-link] w-4 h-4 text-green-900 group-hover:text-green-400"
+                                    ></span>
                                 </a>
                             </div>
                         </section>
 
                         <section class="pt-4 text-center">
-                            <div class="text-[10px] font-mono text-green-900/40 uppercase tracking-[0.5em] mb-2">Secure Connection Protocol Active</div>
-                            <div class="text-[8px] font-mono text-green-900/20 uppercase">No telemetry detected // User privacy prioritized</div>
+                            <div
+                                class="text-[10px] font-mono text-green-900/40 uppercase tracking-[0.5em] mb-2"
+                            >
+                                Secure Connection Protocol Active
+                            </div>
+                            <div
+                                class="text-[8px] font-mono text-green-900/20 uppercase"
+                            >
+                                No telemetry detected // User privacy
+                                prioritized
+                            </div>
                         </section>
                     </div>
                 {/if}

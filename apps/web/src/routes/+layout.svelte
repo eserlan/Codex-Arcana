@@ -19,6 +19,10 @@
 	let { children } = $props();
 
 	const isPopup = $derived(page.url.pathname === `${base}/oracle`);
+	const isLegalPage = $derived(
+		page.url.pathname.includes("/privacy") ||
+			page.url.pathname.includes("/terms"),
+	);
 
 	onMount(() => {
 		vault.init();
@@ -83,7 +87,8 @@
 				<VaultControls />
 				<CloudStatus />
 				<button
-					class="w-8 h-8 flex items-center justify-center border transition-all {uiStore.showSettings && uiStore.activeSettingsTab !== 'sync'
+					class="w-8 h-8 flex items-center justify-center border transition-all {uiStore.showSettings &&
+					uiStore.activeSettingsTab !== 'sync'
 						? 'border-green-500 bg-green-900/10 text-green-500'
 						: 'border-green-900/30 hover:border-green-500 text-green-900 hover:text-green-500'}"
 					onclick={() => uiStore.toggleSettings("vault")}
@@ -111,18 +116,24 @@
 			<div class="flex gap-6">
 				<a
 					href="{base}/privacy"
+					target="_blank"
+					rel="noopener noreferrer"
 					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
 					>Privacy Policy</a
 				>
 				<a
 					href="{base}/terms"
+					target="_blank"
+					rel="noopener noreferrer"
 					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
 					>Terms of Service</a
 				>
 			</div>
 		</footer>
 		<SearchModal />
-		<OracleWindow />
+		{#if !isLegalPage}
+			<OracleWindow />
+		{/if}
 		<SettingsModal />
 	{/if}
 </div>
