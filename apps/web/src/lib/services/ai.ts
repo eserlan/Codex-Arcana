@@ -55,7 +55,9 @@ User visualization request: ${query}`;
   }
 
   async generateImage(apiKey: string, prompt: string): Promise<Blob> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateImage?key=${apiKey}`;
+    // We use gemini-2.0-flash which is a multimodal model capable of generating images
+    // via the standard, CORS-friendly generateContent endpoint.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -63,15 +65,18 @@ User visualization request: ${query}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        instances: [
+        contents: [
           {
-            prompt: prompt,
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
           },
         ],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: "1:1",
-          safetySetting: "block_none",
+        generationConfig: {
+          // Instruct the model to generate an image
+          response_modalities: ["IMAGE"],
         },
       }),
     });
@@ -79,15 +84,23 @@ User visualization request: ${query}`;
     if (!response.ok) {
       const err = await response.json();
       const message = err.error?.message || response.statusText;
-      if (message.toLowerCase().includes("safety") || message.toLowerCase().includes("block")) {
-        throw new Error("The Oracle cannot visualize this request due to safety policies.");
+      if (
+        message.toLowerCase().includes("safety") ||
+        message.toLowerCase().includes("block")
+      ) {
+        throw new Error(
+          "The Oracle cannot visualize this request due to safety policies.",
+        );
       }
       throw new Error(`Image Generation Error: ${message}`);
     }
 
     const data = await response.json();
-    const base64Data = data.predictions?.[0]?.bytesBase64Encoded;
-    
+    // In generateContent multimodal responses, the image is returned in the parts
+    const base64Data = data.candidates?.[0]?.content?.parts?.find(
+      (p: any) => p.inlineData,
+    )?.inlineData?.data;
+
     if (!base64Data) {
       throw new Error("No image data returned from AI");
     }

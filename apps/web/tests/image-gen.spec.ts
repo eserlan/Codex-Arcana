@@ -19,16 +19,24 @@ test.describe("Oracle Image Generation", () => {
     });
 
     test("should trigger image generation and display the result", async ({ page }) => {
-        // Mock the Imagen API
-        await page.route("**/models/gemini-2.5-flash-image:generateImage**", async (route) => {
+        // Mock the generateContent API
+        await page.route("**/models/gemini-2.0-flash:generateContent**", async (route) => {
             await route.fulfill({
                 status: 200,
                 contentType: "application/json",
                 body: JSON.stringify({
-                    predictions: [
+                    candidates: [
                         {
-                            bytesBase64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-                            mimeType: "image/png"
+                            content: {
+                                parts: [
+                                    {
+                                        inlineData: {
+                                            data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+                                            mimeType: "image/png"
+                                        }
+                                    }
+                                ]
+                            }
                         }
                     ]
                 })
@@ -95,12 +103,12 @@ test.describe("Oracle Image Generation", () => {
         await expect(page.locator("h2", { hasText: "Test Image Entity" })).toBeVisible();
 
         // 2. Generate an image (mocked)
-        await page.route("**/models/gemini-2.5-flash-image:generateImage**", async (route) => {
+        await page.route("**/models/gemini-2.0-flash:generateContent**", async (route) => {
             await route.fulfill({
                 status: 200,
                 contentType: "application/json",
                 body: JSON.stringify({
-                    predictions: [{ bytesBase64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", mimeType: "image/png" }]
+                    candidates: [{ content: { parts: [{ inlineData: { data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", mimeType: "image/png" } }] } }]
                 })
             });
         });
