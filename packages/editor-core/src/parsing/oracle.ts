@@ -1,9 +1,11 @@
-
 export interface OracleParseResult {
     chronicle: string;
     lore: string;
     wasSplit: boolean;
     method: 'markers' | 'heuristic' | 'none';
+    title?: string;
+    type?: string;
+    wikiLinks?: { target: string, type: string, strength: number, label?: string }[];
 }
 
 /**
@@ -25,24 +27,39 @@ export function parseOracleResponse(text: string): OracleParseResult {
     // We use a non-global regex but with 'i' and 'm' flags.
     const chronicleMarkerRegex = /^(?:#+\s*|\*\*|__)?Chronicle:?(?:\*\*|__|:)?\s*/im;
     const loreMarkerRegex = /^(?:#+\s*|\*\*|__)?Lore:?(?:\*\*|__|:)?\s*/im;
+    const nameMarkerRegex = /^(?:#+\s*|\*\*|__)?(?:Name|Title):?(?:\*\*|__|:)?\s*/im;
+    const typeMarkerRegex = /^(?:#+\s*|\*\*|__)?(?:Type|Category):?(?:\*\*|__|:)?\s*/im;
 
     const hasChronicle = chronicleMarkerRegex.test(text);
     const hasLore = loreMarkerRegex.test(text);
+
+    let extractedTitle: string | undefined;
+    let extractedType: string | undefined;
 
     if (hasChronicle || hasLore) {
         let chronicle = "";
         let lore = "";
 
         const lines = text.split('\n');
-        let currentSection: 'chronicle' | 'lore' | 'preamble' = 'preamble';
-        let chronicleBuffer: string[] = [];
-        let loreBuffer: string[] = [];
-        let preambleBuffer: string[] = [];
+        let currentSection: 'chronicle' | 'lore' | 'preamble' | 'title' | 'type' = 'preamble';
+        const chronicleBuffer: string[] = [];
+        const loreBuffer: string[] = [];
+        const preambleBuffer: string[] = [];
 
         for (const line of lines) {
             const cronMatch = line.match(chronicleMarkerRegex);
             const loreMatch = line.match(loreMarkerRegex);
+            const nameMatch = line.match(nameMarkerRegex);
+            const typeMatch = line.match(typeMarkerRegex);
 
+            if (nameMatch) {
+                extractedTitle = line.substring(nameMatch[0].length).trim();
+                continue;
+            }
+            if (typeMatch) {
+                extractedType = line.substring(typeMatch[0].length).trim().toLowerCase();
+                continue;
+            }
             if (cronMatch) {
                 currentSection = 'chronicle';
                 const content = line.substring(cronMatch[0].length).trim();
@@ -76,6 +93,18 @@ export function parseOracleResponse(text: string): OracleParseResult {
 
         lore = loreBuffer.join('\n').trim();
 
+        // If no explicit title found, try to use preamble if it's very short (1 line) 
+        // OR if it's the chronicle's first line.
+        if (!extractedTitle) {
+            if (preambleBuffer.length === 1 && preambleBuffer[0].length < 100) {
+                extractedTitle = preambleBuffer[0];
+            } else if (chronicleBuffer.length > 0 && chronicleBuffer[0].length < 100) {
+                // Often the first line of chronicle is the name
+                // (But only if we didn't already use preamble as chronicle)
+                // For now let's be conservative.
+            }
+        }
+
         // If lore is still empty but we have preamble/chronicle, 
         // and the text was very long, maybe we missed a split? 
         // (Actually the logic above handles explicit headers).
@@ -88,7 +117,10 @@ export function parseOracleResponse(text: string): OracleParseResult {
             chronicle,
             lore,
             wasSplit,
-            method: 'markers'
+            method: 'markers',
+            title: extractedTitle,
+            type: normalizeType(extractedType),
+            wikiLinks: extractWikiLinks(text)
         };
     }
 
@@ -106,19 +138,72 @@ export function parseOracleResponse(text: string): OracleParseResult {
     if (parts.length > 1) {
         const chronicle = parts[0].trim();
         const lore = parts.slice(1).join('\n\n').trim();
+
+        // Guess title from first line if it's very short
+        if (chronicle.length < 50 && !chronicle.includes('.')) {
+            extractedTitle = chronicle;
+        }
+
         return {
             chronicle,
             lore,
             wasSplit: true,
-            method: 'heuristic'
+            method: 'heuristic',
+            title: extractedTitle,
+            type: guessType(text),
+            wikiLinks: extractWikiLinks(text)
         };
     }
-    ;
     // Fallback: Everything is Lore (safer than everything being Chronicle)
     return {
         chronicle: "",
         lore: text.trim(),
         wasSplit: false,
-        method: 'none'
+        method: 'none',
+        type: guessType(text),
+        wikiLinks: extractWikiLinks(text)
     };
+}
+
+function normalizeType(raw?: string): string | undefined {
+    if (!raw) return undefined;
+    const t = raw.toLowerCase();
+    if (t.includes('person') || t.includes('npc') || t.includes('character')) return 'npc';
+    if (t.includes('place') || t.includes('location') || t.includes('settlement')) return 'location';
+    if (t.includes('faction') || t.includes('guild') || t.includes('group') || t.includes('organization')) return 'faction';
+    if (t.includes('item') || t.includes('artifact') || t.includes('weapon') || t.includes('object')) return 'item';
+    if (t.includes('event') || t.includes('history') || t.includes('war')) return 'event';
+    if (t.includes('creature') || t.includes('monster') || t.includes('beast')) return 'creature';
+    if (t.includes('note') || t.includes('lore')) return 'note';
+    return undefined;
+}
+
+function guessType(text: string): string | undefined {
+    const t = text.toLowerCase();
+    // Simple keyword based guessing
+    if (t.includes(' faction ') || t.includes(' guild ') || t.includes(' organization ')) return 'faction';
+    if (t.includes(' citizen ') || t.includes(' ruler ') || t.includes(' warrior ')) return 'npc';
+    if (t.includes(' located ') || t.includes(' mountain ') || t.includes(' city ')) return 'location';
+    if (t.includes(' artifact ') || t.includes(' forged ') || t.includes(' relic ')) return 'item';
+    return undefined;
+}
+
+function extractWikiLinks(content: string): { target: string, type: string, strength: number, label?: string }[] {
+    const regex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+    const matches = content.matchAll(regex);
+    const connections: { target: string, type: string, strength: number, label?: string }[] = [];
+
+    for (const match of matches) {
+        const target = match[1].trim();
+        const label = match[2]?.trim();
+        const targetId = target.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+
+        connections.push({
+            target: targetId,
+            type: "related_to",
+            strength: 1.0,
+            label: label || target,
+        });
+    }
+    return connections;
 }

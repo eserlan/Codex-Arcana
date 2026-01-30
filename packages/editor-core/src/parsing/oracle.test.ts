@@ -10,7 +10,7 @@ describe('parseOracleResponse', () => {
             wasSplit: false,
             method: 'none'
         });
-        // @ts-ignore
+        // @ts-expect-error - testing null input fallback
         expect(parseOracleResponse(null)).toEqual({
             chronicle: '',
             lore: '',
@@ -86,6 +86,31 @@ They were founded in 1200...`;
         expect(result.wasSplit).toBe(true);
         expect(result.method).toBe('heuristic');
         expect(result.chronicle).toBe('Very long title of some subgroup');
+        expect(result.title).toBe('Very long title of some subgroup');
+    });
+
+    it('should extract explicit name and type', () => {
+        const input = `**Name:** The Black Rose
+**Type:** Faction
+## Chronicle
+A secret society.`;
+        const result = parseOracleResponse(input);
+        expect(result.title).toBe('The Black Rose');
+        expect(result.type).toBe('faction');
+    });
+
+    it('should extract wiki links from text', () => {
+        const input = `Found in [[Iron City]] by [[John Doe|Captain John]].`;
+        const result = parseOracleResponse(input);
+        expect(result.wikiLinks).toHaveLength(2);
+        expect(result.wikiLinks?.[0].target).toBe('iron-city');
+        expect(result.wikiLinks?.[1].label).toBe('Captain John');
+    });
+
+    it('should guess type from keywords', () => {
+        const input = `This is a powerful artifact forged in fire.`;
+        const result = parseOracleResponse(input);
+        expect(result.type).toBe('item');
     });
 
     it('should use heuristic fallback for unstructured text (Strategy 2)', () => {

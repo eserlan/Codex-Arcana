@@ -74,7 +74,7 @@ STANDALONE SEARCH QUERY:`;
     const matchesModel =
       currentModelName === modelName ||
       currentModelName === `models/${modelName}`;
-    
+
     if (this.genAI && this.model && this.currentApiKey === apiKey && matchesModel) return;
 
     console.log(`[AIService] Initializing model: ${modelName}`);
@@ -90,6 +90,14 @@ If the user asks you to expand, describe, or fill in the blanks, you should feel
 When providing information, consider two formats:
 1. Chronicle / Blurb: A short, focused 2-3 sentence summary. (Default if "blurb", "chronicle", or "short desc" is mentioned)
 2. Lore / Notes: An expansive, detailed deep-dive including "hooks", secrets, and background fluff.
+
+SPECIAL COMMANDS:
+- /draw [subject]: Trigger image generation.
+- /create [subject]: The user strictly wants to create a new record. You MUST provide the response in a structured format so the system can extract it:
+  **Name:** [Entity Title]
+  **Type:** [npc | faction | location | item | event | concept]
+  **Chronicle:** [Short summary blurb]
+  **Lore:** [Detailed notes and history]
 
 Only if you have NO information about the subject in either the new context blocks OR the previous messages, and you aren't asked to invent it, say "I cannot find that in your records." 
 
@@ -177,12 +185,45 @@ User visualization request: ${query}`;
     this.init(apiKey, modelName);
     if (!this.model) throw new Error("AI Model not initialized");
 
-    // Create a new session with current history
+    // Create a sanitized history that alternating between user and model, starting with user.
+    // Filter out system messages and ensure content is present.
+    const sanitizedHistory: { role: "user" | "model", parts: { text: string }[] }[] = [];
+
+    for (const m of history) {
+      if (m.role !== "user" && m.role !== "assistant") continue;
+
+      const role = m.role === "assistant" ? "model" : "user";
+      const content = m.content?.trim() || "(empty message)";
+
+      if (sanitizedHistory.length === 0) {
+        if (role === "user") {
+          sanitizedHistory.push({ role, parts: [{ text: content }] });
+        }
+      } else {
+        const last = sanitizedHistory[sanitizedHistory.length - 1];
+        if (last.role === role) {
+          // Merge consecutive messages of the same role
+          last.parts[0].text += "\n\n" + content;
+        } else {
+          sanitizedHistory.push({ role, parts: [{ text: content }] });
+        }
+      }
+    }
+
+    // Ensure the history ends with 'model' if it's not empty, 
+    // because chat.sendMessage will add the current 'user' query.
+    // If it ends with 'user', Gemini might error on consecutive user turns.
+    if (sanitizedHistory.length > 0 && sanitizedHistory[sanitizedHistory.length - 1].role === "user") {
+      // In this case, we have a user message with no assistant response yet.
+      // We can either drop it or keep it and expect the API to handle User-User?
+      // Actually, Gemini is strict: it MUST be User, Model, User, Model.
+      // If we have [User, Model, User], and we send another User, it fails.
+      // So we must pop the last user message if it has no model response.
+      sanitizedHistory.pop();
+    }
+
     const chat = this.model.startChat({
-      history: history.map(m => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }]
-      }))
+      history: sanitizedHistory
     });
 
     try {
@@ -351,14 +392,14 @@ User visualization request: ${query}`;
       if (!entity || excludeTitles.has(entity.title)) return;
 
       // FR-003: Enrichment uses only content (Chronicle). Fusion uses both for primary.
-      const mainContent = isEnrichment 
-        ? (entity.content || "").trim() 
+      const mainContent = isEnrichment
+        ? (entity.content || "").trim()
         : this.getConsolidatedContext(entity);
       if (!mainContent && !isEnrichment) return;
 
       const isActive = id === activeId;
       const prefix = isActive ? "[ACTIVE FILE] " : "";
-      
+
       // 4b. Add Connection Context
       let connectionContext = "";
       const outbound = entity.connections.map((c) => {
@@ -386,7 +427,7 @@ User visualization request: ${query}`;
 
       const header = `--- ${prefix}File: ${entity.title} ---\n`;
       const fullSnippet = `${header}${mainContent}${connectionContext}`;
-      
+
       // Ensure we don't exceed limit
       if (currentTotal + fullSnippet.length > MAX_CHARS) {
         // If it's a primary match, we truncate content but preserve connections
@@ -397,7 +438,7 @@ User visualization request: ${query}`;
             const truncated = mainContent.slice(0, allowed) + "... [truncated content]";
             contextMap.set(id, `${header}${truncated}${connectionContext}`);
             sourceIds.push(id);
-            currentTotal = MAX_CHARS; 
+            currentTotal = MAX_CHARS;
           }
         }
         return;
