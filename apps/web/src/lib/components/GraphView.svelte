@@ -360,9 +360,9 @@
   let selectedEntity = $derived(selectedId ? vault.entities[selectedId] : null);
   let parentEntity = $derived(
     selectedId
-      ? vault.allEntities.find((e) =>
-          e.connections.some((c: any) => c.target === selectedId),
-        )
+      ? (vault.inboundConnections[selectedId]?.[0]?.sourceId 
+          ? vault.entities[vault.inboundConnections[selectedId][0].sourceId] 
+          : null)
       : null,
   );
 

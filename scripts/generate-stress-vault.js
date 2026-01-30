@@ -13,7 +13,7 @@ for (let i = 1; i <= 120; i++) {
   if (i > 1) links.push(`[[node-${Math.floor(Math.random() * (i - 1)) + 1}]]`);
   if (i > 5) links.push(`[[node-${Math.floor(Math.random() * 5) + 1}]]`);
 
-  const content = `--- 
+  const content = `---
 title: Node ${i}
 ---
 

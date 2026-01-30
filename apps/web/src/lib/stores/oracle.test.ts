@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { oracle } from "./oracle.svelte";
 import * as idbUtils from "../utils/idb";
 
@@ -52,6 +52,10 @@ describe("OracleStore", () => {
         }
       });
     }
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("should allow writing to messages directly", () => {

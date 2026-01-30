@@ -7,14 +7,6 @@ import { searchService } from "../services/search";
 import { cacheService } from "../services/cache";
 import { aiService } from "../services/ai";
 
-// Module-level Canvas Pool for thumbnail generation (reduces GC pressure)
-const CanvasPool = {
-  canvas: typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(512, 512) : null,
-  get ctx() {
-    return this.canvas?.getContext('2d');
-  }
-};
-
 export type LocalEntity = Entity & { _fsHandle?: FileSystemHandle; _path?: string | string[] };
 
 class VaultStore {
@@ -60,9 +52,6 @@ class VaultStore {
   }
 
   rootHandle = $state<FileSystemDirectoryHandle | undefined>(undefined);
-  // ... (rest of props)
-
-  // ...
   isAuthorized = $state(false);
 
   private saveQueue = new KeyedTaskQueue();
@@ -295,7 +284,7 @@ class VaultStore {
         );
 
         // Update state incrementally
-        this.entities = { ...this.entities, ...chunkEntities };
+        Object.assign(this.entities, chunkEntities);
       }
 
       this.inboundConnections = newInboundMap;
@@ -447,22 +436,19 @@ class VaultStore {
       img.onload = () => {
         URL.revokeObjectURL(url);
         
-        // Use pooled canvas/context to reduce GC pressure
-        const canvas = CanvasPool.canvas;
-        const ctx = CanvasPool.ctx;
+        // Creating a temporary canvas is negligible compared to image decoding overhead.
+        // This avoids race conditions inherent in pooling a single canvas for async operations.
+        const canvas = typeof OffscreenCanvas !== 'undefined' 
+          ? new OffscreenCanvas(size, size) 
+          : document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
-        if (!ctx || !canvas) {
-          // Fallback to standard canvas if OffscreenCanvas is unavailable or context fails
-          const fallbackCanvas = document.createElement("canvas");
-          const fallbackCtx = fallbackCanvas.getContext("2d");
-          if (!fallbackCtx) {
-            reject(new Error("Failed to initialize canvas context for thumbnail generation"));
-            return;
-          }
-          this.drawOnCanvas(img, fallbackCanvas, fallbackCtx, size, resolve, reject);
-        } else {
-          this.drawOnCanvas(img, canvas, ctx as unknown as CanvasRenderingContext2D, size, resolve, reject);
+        if (!ctx) {
+          reject(new Error("Failed to initialize canvas context for thumbnail generation"));
+          return;
         }
+        
+        this.drawOnCanvas(img, canvas, ctx as any, size, resolve, reject);
       };
 
       img.onerror = (err) => {

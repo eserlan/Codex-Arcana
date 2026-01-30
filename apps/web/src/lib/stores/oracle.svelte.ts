@@ -14,7 +14,7 @@ export interface ChatMessage {
 
 class OracleStore {
   messages = $state<ChatMessage[]>([]);
-  lastUpdated = $state<number>(Date.now());
+  lastUpdated = $state<number>(0);
   isOpen = $state(false);
   isLoading = $state(false);
   apiKey = $state<string | null>(null);
