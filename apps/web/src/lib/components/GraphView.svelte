@@ -26,25 +26,29 @@
   const applyFocus = (id: string | null) => {
     const currentCy = cy;
     if (!currentCy) return;
-    currentCy.batch(() => {
-      if (!id) {
-        currentCy.elements().removeClass("dimmed");
-        currentCy.elements().removeClass("neighborhood");
-      } else {
-        const node = currentCy.$id(id);
-        if (node.length > 0) {
-          const neighborhood = node.neighborhood().add(node);
-          currentCy.elements().addClass("dimmed");
-          currentCy.elements().removeClass("neighborhood");
-          neighborhood.removeClass("dimmed");
-          neighborhood.addClass("neighborhood");
-        } else {
-          // If the target node no longer exists, clear focus/dimming.
+    try {
+      currentCy.batch(() => {
+        if (!id) {
           currentCy.elements().removeClass("dimmed");
           currentCy.elements().removeClass("neighborhood");
+        } else {
+          const node = currentCy.$id(id);
+          if (node.length > 0) {
+            const neighborhood = node.neighborhood().add(node);
+            currentCy.elements().addClass("dimmed");
+            currentCy.elements().removeClass("neighborhood");
+            neighborhood.removeClass("dimmed");
+            neighborhood.addClass("neighborhood");
+          } else {
+            // If the target node no longer exists, clear focus/dimming.
+            currentCy.elements().removeClass("dimmed");
+            currentCy.elements().removeClass("neighborhood");
+          }
         }
-      }
-    });
+      });
+    } catch {
+      // Ignore if cy is partially destroyed
+    }
   };
 
   // Hover state
@@ -189,6 +193,7 @@
   onDestroy(() => {
     if (cy) {
       cy.destroy();
+      cy = undefined;
     }
     if (import.meta.env.DEV) {
       delete (window as any).cy;
@@ -312,10 +317,12 @@
         const shouldRunLayout =
           structuralChange || (!initialLoaded && graph.elements.length > 0);
 
+        let layout: any;
+
         if (shouldRunLayout) {
           // console.log("Running layout/fit. Initial:", !initialLoaded, "Structural:", structuralChange);
 
-          const layout = cy.layout({
+          layout = cy.layout({
             name: "cose",
             animate: true,
             // @ts-expect-error - 'duration' is valid for cose but types might be strict
@@ -328,11 +335,15 @@
           });
 
           layout.one("layoutstop", () => {
-            if (!initialLoaded) {
-              cy?.fit(undefined, 50);
-              initialLoaded = true;
+            if (cy && !initialLoaded) {
+              try {
+                cy.fit(undefined, 50);
+                initialLoaded = true;
+              } catch {
+                // Ignore errors if cy is partially destroyed
+              }
             }
-            if (selectedId) applyFocus(selectedId);
+            if (cy && selectedId) applyFocus(selectedId);
           });
 
           layout.run();
@@ -340,6 +351,10 @@
           // If no layout run, still might need focus update if elements were updated
           if (selectedId) applyFocus(selectedId);
         }
+
+        return () => {
+          if (layout) layout.stop();
+        };
       } catch (err) {
         console.error("Cytoscape Error:", err);
       }
