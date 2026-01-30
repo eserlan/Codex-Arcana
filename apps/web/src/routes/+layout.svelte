@@ -4,6 +4,7 @@
 	import SearchModal from "$lib/components/search/SearchModal.svelte";
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
+	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
 	import TourOverlay from "$lib/components/help/TourOverlay.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
@@ -11,9 +12,13 @@
 	import { searchStore } from "$lib/stores/search";
 	import { helpStore } from "$stores/help.svelte";
 	import { uiStore } from "$stores/ui.svelte";
+	import { guestInfo } from "$lib/stores/guest";
 	import { syncStats } from "$stores/sync-stats";
 	import { cloudConfig } from "$stores/cloud-config";
 	import { workerBridge } from "$lib/cloud-bridge/worker-bridge";
+	import { MemoryAdapter } from "$lib/cloud-bridge/memory-adapter";
+	import { P2PClientAdapter } from "$lib/cloud-bridge/p2p/client-adapter";
+	import { PublicGDriveAdapter } from "$lib/cloud-bridge/google-drive/public-adapter";
 	import { onMount } from "svelte";
 
 	import { page } from "$app/state";
@@ -26,25 +31,106 @@
 			page.url.pathname.includes("/terms"),
 	);
 
+	const shareId = $derived(page.url.searchParams.get("shareId"));
+	let showGuestLogin = $state(false);
+
+	const handleJoin = async (username: string) => {
+		sessionStorage.setItem("guest_username", username);
+		guestInfo.set({ username, joinedAt: new Date() }); // Updated
+		showGuestLogin = false;
+
+		console.log("[Layout] handleJoin called. ShareId:", shareId);
+
+		// P2P Mode
+		console.log("[Layout] P2P Mode detected. ID:", shareId);
+		if (shareId?.startsWith("p2p-")) {
+			const peerId = shareId.replace("p2p-", "");
+			try {
+				const adapter = new P2PClientAdapter(peerId);
+				// P2P adapter handles its own initialization and connecting
+				await vault.initGuest(adapter);
+			} catch (err) {
+				console.error("P2P Join Failed", err);
+				vault.status = "error";
+				vault.errorMessage =
+					"Failed to connect to host. Make sure they are online!";
+			}
+			return;
+		}
+
+		// Google Drive Mode
+		// Basic validation for GDrive ID (length and alphanumeric usually)
+		if (!shareId || shareId.length < 20) {
+			vault.status = "error";
+			vault.errorMessage = "Malformed or invalid share link.";
+			// Re-show login if malformed
+			showGuestLogin = true;
+			return;
+		}
+
+		const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+		if (!apiKey) {
+			console.error("Missing VITE_GOOGLE_API_KEY in environment.");
+			vault.status = "error";
+			vault.errorMessage =
+				"Configuration error: Guest Mode requires a VITE_GOOGLE_API_KEY. Please check your .env file.";
+			return;
+		}
+
+		const publicAdapter = new PublicGDriveAdapter();
+		const memoryAdapter = new MemoryAdapter();
+
+		try {
+			// Pre-fetch graph using public adapter
+			const graph = await publicAdapter.fetchPublicFolder(
+				shareId!,
+				apiKey,
+			);
+			memoryAdapter.hydrate(graph);
+			if (graph.deferredAssets) {
+				memoryAdapter.setDeferredAssets(graph.deferredAssets);
+			}
+			await vault.initGuest(memoryAdapter);
+		} catch (err) {
+			console.error("Guest join failed", err);
+			vault.status = "error";
+			vault.errorMessage =
+				err instanceof Error
+					? err.message
+					: "Unable to load shared vault.";
+		}
+	};
+
 	onMount(() => {
-		const vaultInitPromise = vault.init();
 		categories.init();
 		helpStore.init();
 
-		// Trigger onboarding for new users after vault has initialized
-		vaultInitPromise
-			.then(() => {
-				if (
-					!vault.rootHandle &&
-					!helpStore.hasSeen("initial-onboarding") &&
-					!(window as any).DISABLE_ONBOARDING
-				) {
-					helpStore.startTour("initial-onboarding");
-				}
-			})
-			.catch((error) => {
-				console.error("Vault initialization failed", error);
-			});
+		if (shareId) {
+			// Check if we already have a guest session
+			const savedUser = sessionStorage.getItem("guest_username");
+			if (savedUser) {
+				handleJoin(savedUser);
+			} else {
+				showGuestLogin = true;
+			}
+		} else {
+			// Standard Initialization
+			vault
+				.init()
+				.then(() => {
+					// Trigger onboarding for new users after vault has initialized
+					if (
+						!vault.rootHandle &&
+						!helpStore.hasSeen("initial-onboarding") &&
+						!(window as any).DISABLE_ONBOARDING
+					) {
+						helpStore.startTour("initial-onboarding");
+					}
+				})
+				.catch((error) => {
+					console.error("Vault initialization failed", error);
+				});
+		}
 
 		const handleGlobalError = (event: ErrorEvent) => {
 			// Ignore non-fatal script/asset load failures (common when offline)
@@ -178,7 +264,7 @@
 							? 'icon-[lucide--zap] animate-pulse text-green-500'
 							: 'icon-[lucide--settings]'}"
 					></span>
-					{#if $cloudConfig.enabled && $cloudConfig.connectedEmail && $syncStats.status === 'IDLE'}
+					{#if $cloudConfig.enabled && $cloudConfig.connectedEmail && $syncStats.status === "IDLE"}
 						<span
 							class="absolute top-1 right-1 w-1.5 h-1.5 bg-green-500 rounded-full border border-black animate-pulse"
 						></span>
@@ -227,6 +313,10 @@
 	{/if}
 </div>
 
+{#if showGuestLogin}
+	<GuestLoginModal onJoin={handleJoin} />
+{/if}
+
 {#if uiStore.globalError && !(window as any).DISABLE_ERROR_OVERLAY}
 	<div
 		class="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 text-red-500 font-mono"
@@ -250,9 +340,8 @@
 			</p>
 			{#if uiStore.globalError.stack}
 				<pre
-					class="bg-black/50 p-4 rounded text-[10px] overflow-auto max-h-40 border border-red-900/30 mb-6"
-					>{uiStore.globalError.stack}</pre
-				>
+					class="bg-black/50 p-4 rounded text-[10px] overflow-auto max-h-40 border border-red-900/30 mb-6">{uiStore
+						.globalError.stack}</pre>
 			{/if}
 			<div class="flex gap-4">
 				<button

@@ -302,4 +302,62 @@ export class GoogleDriveAdapter implements ICloudAdapter {
     if (!this.accessToken) throw new Error("Not authenticated");
     await gapi.client.drive.files.delete({ fileId: fileId });
   }
+
+  async shareFolderPublicly(): Promise<string> {
+    if (!this.accessToken) throw new Error("Not authenticated");
+    
+    // Get folder ID from storage or resolve it
+    const about = await gapi.client.drive.about.get({ fields: 'user(emailAddress)' });
+    const email = about.result.user?.emailAddress;
+    const storageKey = `gdrive_folder_id:${email}`;
+    const folderId = localStorage.getItem(storageKey);
+    
+    if (!folderId) throw new Error("No sync folder found.");
+
+    // Create 'anyone' permission
+    await gapi.client.drive.permissions.create({
+      fileId: folderId,
+      resource: {
+        role: "reader",
+        type: "anyone",
+      },
+    });
+
+    // Get the link
+    // We want the ID to construct our own link /?shareId=...
+    // The webViewLink opens in Drive. We want internal link.
+    // The Spec says "System generates a unique URL".
+    // We return the FOLDER ID. The UI wraps it.
+    return folderId;
+  }
+
+  async revokeShare(): Promise<void> {
+    if (!this.accessToken) throw new Error("Not authenticated");
+    
+    const about = await gapi.client.drive.about.get({ fields: 'user(emailAddress)' });
+    const email = about.result.user?.emailAddress;
+    const storageKey = `gdrive_folder_id:${email}`;
+    const folderId = localStorage.getItem(storageKey);
+    
+    if (!folderId) throw new Error("No sync folder found.");
+
+    // List permissions to find and remove all 'anyone' permissions
+    const res = await gapi.client.drive.permissions.list({
+      fileId: folderId,
+    });
+    
+    const permissions = res.result.permissions || [];
+    const anyonePerms = permissions.filter((p: any) => p.type === "anyone" && p.id);
+    
+    if (anyonePerms.length > 0) {
+      await Promise.all(
+        anyonePerms.map((p: any) =>
+          gapi.client.drive.permissions.delete({
+            fileId: folderId,
+            permissionId: p.id!,
+          })
+        )
+      );
+    }
+  }
 }
