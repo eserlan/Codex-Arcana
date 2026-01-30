@@ -422,13 +422,6 @@
 
   <!-- Zoom Controls (Bottom Left) -->
   <div class="absolute bottom-6 left-6 z-20 flex flex-col gap-2 items-start">
-    <!-- Status Indicator -->
-    <div
-      class="border border-green-900/30 bg-black/80 px-4 py-1.5 text-[10px] font-mono text-green-600 uppercase tracking-widest"
-    >
-      <span class="text-green-400 font-bold">Ready</span>
-    </div>
-
     <div class="flex gap-1">
       <button
         class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
