@@ -5,10 +5,12 @@
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
+	import TourOverlay from "$lib/components/help/TourOverlay.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
+	import { helpStore } from "$stores/help.svelte";
 	import { uiStore } from "$stores/ui.svelte";
 	import { syncStats } from "$stores/sync-stats";
 	import { cloudConfig } from "$stores/cloud-config";
@@ -31,6 +33,9 @@
 	let showGuestLogin = $state(false);
 
 	onMount(() => {
+		categories.init();
+		helpStore.init();
+
 		if (shareId) {
 			// Check if we already have a guest session
 			const savedUser = sessionStorage.getItem("guest_username");
@@ -40,39 +45,21 @@
 				showGuestLogin = true;
 			}
 		} else {
-			vault.init();
+			// Standard Initialization
+			vault.init().then(() => {
+				// Trigger onboarding for new users after vault has initialized
+				if (
+					!vault.rootHandle &&
+					!helpStore.hasSeen("initial-onboarding") &&
+					!(window as any).DISABLE_ONBOARDING
+				) {
+					helpStore.startTour("initial-onboarding");
+				}
+			}).catch((error) => {
+				console.error("Vault initialization failed", error);
+			});
 		}
-		categories.init();
 		
-		// ... existing error handlers
-	});
-
-	const handleJoin = async (username: string) => {
-		sessionStorage.setItem("guest_username", username);
-		showGuestLogin = false;
-		
-		// Basic validation for GDrive ID (length and alphanumeric usually)
-		if (!shareId || shareId.length < 20) {
-			vault.status = "error";
-			vault.errorMessage = "Malformed or invalid share link.";
-			return;
-		}
-
-		const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-		const publicAdapter = new PublicGDriveAdapter();
-		const memoryAdapter = new MemoryAdapter();
-		
-		try {
-			// Pre-fetch graph using public adapter
-			const graph = await publicAdapter.fetchPublicFolder(shareId!, apiKey);
-			memoryAdapter.hydrate(graph);
-			await vault.initGuest(memoryAdapter);
-		} catch (err) {
-			console.error("Guest join failed", err);
-			// Vault initGuest handles UI error state
-		}
-	};
-
 		const handleGlobalError = (event: ErrorEvent) => {
 			// Ignore non-fatal script/asset load failures (common when offline)
 			if (
@@ -87,7 +74,10 @@
 				message.includes("Script error") ||
 				message.includes("Load failed") ||
 				message.includes("isHeadless") ||
-				message.includes("notify")
+				message.includes("notify") ||
+				message.includes("INTERNET_DISCONNECTED") ||
+				message.includes("Failed to fetch") ||
+				message.includes("NetworkError")
 			) {
 				return;
 			}
@@ -104,7 +94,8 @@
 			if (
 				message.includes("Failed to fetch") ||
 				message.includes("NetworkError") ||
-				message.includes("Load failed")
+				message.includes("Load failed") ||
+				message.includes("INTERNET_DISCONNECTED")
 			) {
 				return;
 			}
@@ -177,6 +168,7 @@
 						value={$searchStore.query}
 						oninput={(e) =>
 							searchStore.setQuery(e.currentTarget.value)}
+						data-testid="search-input"
 					/>
 				</div>
 			</div>
@@ -245,6 +237,7 @@
 			<OracleWindow />
 		{/if}
 		<SettingsModal />
+		<TourOverlay />
 	{/if}
 </div>
 
@@ -252,9 +245,9 @@
 	<GuestLoginModal onJoin={handleJoin} />
 {/if}
 
-{#if uiStore.globalError}
+{#if uiStore.globalError && !(window as any).DISABLE_ERROR_OVERLAY}
 	<div
-		class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 text-red-500 font-mono"
+		class="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 text-red-500 font-mono"
 	>
 		<div
 			class="max-w-2xl w-full border border-red-900 bg-red-950/20 p-8 rounded shadow-2xl relative"
