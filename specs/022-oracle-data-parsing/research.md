@@ -22,5 +22,5 @@ We will use a multi-stage parsing approach:
   - *Rejected*: Too rigid. A combination of structural analysis (paragraphs) and keyword detection is more robust.
 
 ## Technical Details
-- **Parser Signature**: `export function parseOracleOutput(content: string): { chronicle?: string; lore?: string; }`
+- **Parser Signature**: `export function parseOracleResponse(content: string): OracleParseResult`
 - **Dependency**: None (Pure TypeScript).

@@ -22,6 +22,9 @@ export function parseOracleResponse(text: string): OracleParseResult {
         return { chronicle: "", lore: "", wasSplit: false, method: 'none' };
     }
 
+    // Cache wiki links early to avoid redundant regex calls
+    const wikiLinks = extractWikiLinks(text);
+
     // Strategy 1: Explicit Markers
     // Broaden regex to include markdown bold, headers, and simple "Label:" at start of line
     // We use a non-global regex but with 'i' and 'm' flags.
@@ -120,7 +123,7 @@ export function parseOracleResponse(text: string): OracleParseResult {
             method: 'markers',
             title: extractedTitle,
             type: normalizeType(extractedType),
-            wikiLinks: extractWikiLinks(text)
+            wikiLinks
         };
     }
 
@@ -131,7 +134,23 @@ export function parseOracleResponse(text: string): OracleParseResult {
         // Try splitting by the first sentence or first line if it looks like a headline/summary
         const lines = text.split('\n');
         if (lines.length > 1) {
-            parts = [lines[0], lines.slice(1).join('\n')];
+            const firstLine = lines[0];
+            // If the first line is very long, it's not a title but likely just the start of a paragraph
+            if (firstLine.length > 200) {
+                const sentenceEnd = firstLine.indexOf('. ');
+                if (sentenceEnd !== -1 && sentenceEnd < 200) {
+                    // Split at the first sentence if it's short enough
+                    parts = [
+                        firstLine.substring(0, sentenceEnd + 1),
+                        firstLine.substring(sentenceEnd + 2) + '\n' + lines.slice(1).join('\n')
+                    ];
+                } else {
+                    // Truncate at 200 chars but keep original text in lore
+                    parts = [firstLine.substring(0, 200) + '...', text];
+                }
+            } else {
+                parts = [firstLine, lines.slice(1).join('\n')];
+            }
         }
     }
 
@@ -151,7 +170,7 @@ export function parseOracleResponse(text: string): OracleParseResult {
             method: 'heuristic',
             title: extractedTitle,
             type: guessType(text),
-            wikiLinks: extractWikiLinks(text)
+            wikiLinks
         };
     }
     // Fallback: Everything is Lore (safer than everything being Chronicle)
@@ -161,7 +180,7 @@ export function parseOracleResponse(text: string): OracleParseResult {
         wasSplit: false,
         method: 'none',
         type: guessType(text),
-        wikiLinks: extractWikiLinks(text)
+        wikiLinks
     };
 }
 

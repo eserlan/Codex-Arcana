@@ -291,6 +291,7 @@ class OracleStore {
         await aiService.retrieveContext(
           searchQuery,
           alreadySentTitles,
+          vault,
           lastEntityId,
           isImageRequest,
         );
@@ -339,9 +340,7 @@ class OracleStore {
           if (parsed.title && !vault.isGuest) {
             try {
               const type = (parsed.type || "npc") as any;
-              const id = await vault.createEntity(type, parsed.title);
-
-              vault.updateEntity(id, {
+              const id = await vault.createEntity(type, parsed.title, {
                 content: parsed.chronicle,
                 lore: parsed.lore,
                 connections: parsed.wikiLinks || []
@@ -365,14 +364,18 @@ class OracleStore {
               graph.requestFit();
             } catch (e: any) {
               console.error("[Oracle] Auto-create failed:", e);
+              const errorMsg = `❌ Auto-creation failed: ${e.message}`;
               this.messages = [
                 ...this.messages,
                 {
                   id: crypto.randomUUID(),
                   role: "system",
-                  content: `❌ Auto-creation failed: ${e.message}`
+                  content: errorMsg
                 }
               ];
+              // Also show a global notification for high-visibility failure
+              const { uiStore } = await import("$stores/ui.svelte");
+              uiStore.setGlobalError(errorMsg);
             }
           }
         }

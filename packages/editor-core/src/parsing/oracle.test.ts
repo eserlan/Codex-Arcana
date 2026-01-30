@@ -81,7 +81,7 @@ They were founded in 1200...`;
     });
 
     it('should fallback to single newline split for long text', () => {
-        const input = "Very long title of some subgroup\nThis text is very long and detailed and should be at least three hundred characters long to trigger the single newline fallback mechanism which I am testing right now to make sure that even without double newlines we still get a split if the text is substantial enough to warrant a separate lore entry while keeping the first line as the chronicle summery which is often a title or name.".repeat(1);
+        const input = "Very long title of some subgroup\nThis text is very long and detailed and should be at least three hundred characters long to trigger the single newline fallback mechanism which I am testing right now to make sure that even without double newlines we still get a split if the text is substantial enough to warrant a separate lore entry while keeping the first line as the chronicle summary which is often a title or name.".repeat(1);
         const result = parseOracleResponse(input);
         expect(result.wasSplit).toBe(true);
         expect(result.method).toBe('heuristic');

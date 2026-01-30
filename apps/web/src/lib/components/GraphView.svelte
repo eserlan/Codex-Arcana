@@ -361,7 +361,11 @@
           });
 
           if (validEdges.length > 0) {
-            cy.add(validEdges);
+            try {
+              cy.add(validEdges);
+            } catch (e) {
+              console.warn("Failed to add some edges to graph", e);
+            }
           }
         }
 

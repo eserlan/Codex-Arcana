@@ -100,19 +100,12 @@
     if (!parsed.title || vault.isGuest) return;
     try {
       const type = (parsed.type || "npc") as any;
-      const id = await vault.createEntity(type, parsed.title);
-
-      const updates: Partial<{
-        content: string;
-        lore: string;
-        connections: any[];
-      }> = {
+      const id = await vault.createEntity(type, parsed.title, {
         content: parsed.chronicle,
         lore: parsed.lore,
         connections: parsed.wikiLinks || [],
-      };
+      });
 
-      vault.updateEntity(id, updates);
       vault.selectedEntityId = id;
       vault.activeDetailTab = "status";
       isSaved = true;

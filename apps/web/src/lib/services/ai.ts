@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
 import { searchService } from "./search";
-import { vault } from "../stores/vault.svelte";
+
 
 export const TIER_MODES = {
   lite: "gemini-2.5-flash-lite",
@@ -213,13 +213,12 @@ User visualization request: ${query}`;
     // Ensure the history ends with 'model' if it's not empty, 
     // because chat.sendMessage will add the current 'user' query.
     // If it ends with 'user', Gemini might error on consecutive user turns.
+    let prefixContext = "";
     if (sanitizedHistory.length > 0 && sanitizedHistory[sanitizedHistory.length - 1].role === "user") {
       // In this case, we have a user message with no assistant response yet.
-      // We can either drop it or keep it and expect the API to handle User-User?
-      // Actually, Gemini is strict: it MUST be User, Model, User, Model.
-      // If we have [User, Model, User], and we send another User, it fails.
-      // So we must pop the last user message if it has no model response.
-      sanitizedHistory.pop();
+      // We pop it and add it to the current query context to preserve intent.
+      const lastUser = sanitizedHistory.pop();
+      prefixContext = `[PREVIOUS USER MESSAGE]:\n${lastUser!.parts[0].text}\n\n`;
     }
 
     const chat = this.model.startChat({
@@ -228,8 +227,8 @@ User visualization request: ${query}`;
 
     try {
       const finalQuery = context
-        ? `[NEW LORE CONTEXT]\n${context}\n\n[USER QUERY]\n${query}`
-        : query;
+        ? `[NEW LORE CONTEXT]\n${context}\n\n${prefixContext}[USER QUERY]\n${query}`
+        : `${prefixContext}${query}`;
 
       const result = await chat.sendMessageStream(finalQuery);
 
@@ -252,15 +251,15 @@ User visualization request: ${query}`;
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  private findExplicitSubject(query: string): string | undefined {
+  private findExplicitSubject(query: string, entities: Record<string, any>): string | undefined {
     const queryLower = query.toLowerCase();
-    const entities = Object.values(vault.entities);
+    const entityList = Object.values(entities);
 
     // Find entities whose titles are explicitly mentioned in the query
     // For very short titles (length <= 2), require a word-boundary match to avoid false positives.
     // Sort by title length descending to match "The Forbidden Woods" before "The" or "Woods"
-    const matches = entities
-      .filter(e => {
+    const matches = entityList
+      .filter((e: any) => {
         const titleLower = e.title.toLowerCase();
         if (titleLower.length > 2) {
           return queryLower.includes(titleLower);
@@ -268,7 +267,7 @@ User visualization request: ${query}`;
         const pattern = new RegExp(`\\b${this.escapeRegExp(titleLower)}\\b`);
         return pattern.test(queryLower);
       })
-      .sort((a, b) => b.title.length - a.title.length);
+      .sort((a: any, b: any) => b.title.length - a.title.length);
 
     return matches[0]?.id;
   }
@@ -299,6 +298,7 @@ User visualization request: ${query}`;
   async retrieveContext(
     query: string,
     excludeTitles: Set<string>,
+    vault: any, // Injected dependency to avoid checking cycle
     lastEntityId?: string,
     isImage: boolean = false,
   ): Promise<{ content: string; primaryEntityId?: string; sourceIds: string[] }> {
@@ -349,6 +349,7 @@ User visualization request: ${query}`;
               "they",
               "with",
               "from",
+              "from",
             ].includes(w),
         );
 
@@ -361,7 +362,7 @@ User visualization request: ${query}`;
     const activeId = vault.selectedEntityId;
 
     // 3. Identification of primary target
-    const explicitSubject = this.findExplicitSubject(query);
+    const explicitSubject = this.findExplicitSubject(query, vault.entities);
     const topSearchResult = results[0];
     const isHighConfidenceSearch =
       topSearchResult && topSearchResult.score >= 0.6;
@@ -402,7 +403,7 @@ User visualization request: ${query}`;
 
       // 4b. Add Connection Context
       let connectionContext = "";
-      const outbound = entity.connections.map((c) => {
+      const outbound = (entity.connections || []).map((c: any) => {
         const targetEntity = vault.entities[c.target];
         const target =
           targetEntity && targetEntity.title
@@ -411,7 +412,7 @@ User visualization request: ${query}`;
         return `- ${entity.title} → ${c.label || c.type} → ${target}`;
       });
 
-      const inbound = (vault.inboundConnections[id] || []).map((item) => {
+      const inbound = (vault.inboundConnections[id] || []).map((item: any) => {
         const sourceEntity = vault.entities[item.sourceId];
         const source =
           sourceEntity && sourceEntity.title
@@ -490,7 +491,7 @@ User visualization request: ${query}`;
     let finalContent = Array.from(contextMap.values()).join("\n\n");
     if (contextMap.size === 0 && excludeTitles.size === 0) {
       const allTitles = Object.values(vault.entities)
-        .map((e) => e.title)
+        .map((e: any) => e.title)
         .join(", ");
       if (allTitles) {
         finalContent = `--- Available Records ---\nYou have records on the following subjects: ${allTitles}. None specifically matched, but they are available.`;
