@@ -12,7 +12,7 @@
 
   let container: HTMLElement;
   let cy: Core | undefined = $state();
-  let currentLayout: any = $state();
+  let currentLayout: any;
 
   let graphStyle = $derived([...BASE_STYLE, ...getTypeStyles(categories.list)]);
 
@@ -349,7 +349,7 @@
           });
 
           currentLayout.one("layoutstop", () => {
-            if (cy && !initialLoaded) {
+            if (cy && (!initialLoaded || (structuralChange && !selectedId))) {
               try {
                 cy.fit(undefined, 50);
                 initialLoaded = true;
