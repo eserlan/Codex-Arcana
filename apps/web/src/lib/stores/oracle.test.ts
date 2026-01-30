@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { oracle } from "./oracle.svelte";
-import * as idbUtils from "../utils/idb";
 
-// Mock BroadcastChannel
+// Define the class at the top level so it's accessible to types
 class MockBroadcastChannel {
   name: string;
   onmessage: ((event: MessageEvent) => void) | null = null;
@@ -12,7 +10,18 @@ class MockBroadcastChannel {
   postMessage = vi.fn();
   close = vi.fn();
 }
-global.BroadcastChannel = MockBroadcastChannel as any;
+
+// Hoist mocks to run before imports
+vi.hoisted(() => {
+  if (typeof window === "undefined") {
+    (global as any).window = {};
+  }
+
+  (global as any).BroadcastChannel = MockBroadcastChannel;
+});
+
+import { oracle } from "./oracle.svelte";
+import * as idbUtils from "../utils/idb";
 
 // Mock dependencies
 vi.mock("../utils/idb", () => ({
@@ -167,5 +176,61 @@ describe("OracleStore", () => {
     vi.advanceTimersByTime(10);
     await oracle.setTier("advanced");
     expect(oracle.lastUpdated).toBeGreaterThan(initialTime);
+  });
+
+  it("should skip sync if lastUpdated matches", () => {
+    const channel = (oracle as any).channel as MockBroadcastChannel;
+    oracle.messages = [{ id: "1", role: "user", content: "local" }];
+    const timestamp = 123456789;
+    oracle.lastUpdated = timestamp;
+
+    // Simulate incoming SYNC_STATE message with same timestamp
+    const event = {
+      data: {
+        type: "SYNC_STATE",
+        data: {
+          messages: [{ id: "2", role: "user", content: "remote" }],
+          lastUpdated: timestamp,
+          isLoading: false,
+          apiKey: null,
+          tier: "lite"
+        }
+      }
+    };
+
+    if (channel.onmessage) {
+      channel.onmessage(event as MessageEvent);
+    }
+
+    // Messages should NOT have changed because timestamp matched
+    expect(oracle.messages[0].content).toBe("local");
+  });
+
+  it("should perform sync if lastUpdated differs", () => {
+    const channel = (oracle as any).channel as MockBroadcastChannel;
+    oracle.messages = [{ id: "1", role: "user", content: "local" }];
+    oracle.lastUpdated = 100;
+
+    // Simulate incoming SYNC_STATE message with different timestamp
+    const event = {
+      data: {
+        type: "SYNC_STATE",
+        data: {
+          messages: [{ id: "2", role: "user", content: "remote" }],
+          lastUpdated: 200,
+          isLoading: false,
+          apiKey: "new-key",
+          tier: "lite"
+        }
+      }
+    };
+
+    if (channel.onmessage) {
+      channel.onmessage(event as MessageEvent);
+    }
+
+    // Messages SHOULD have changed
+    expect(oracle.messages[0].content).toBe("remote");
+    expect(oracle.apiKey).toBe("new-key");
   });
 });

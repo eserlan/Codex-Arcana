@@ -472,7 +472,7 @@
       class="absolute z-50 pointer-events-none"
       style:top="{hoverPosition.y}px"
       style:left="{hoverPosition.x}px"
-      style="transform: translate(-50%, -115%);"
+      style:transform="translate(-50%, -115%)"
       transition:fade={{ duration: 150 }}
     >
       <div
@@ -480,10 +480,10 @@
         in:fly={{ y: 10, duration: 200 }}
       >
         <div
-          class="text-xs font-bold text-green-400 tracking-wider uppercase mb-2 border-b border-green-900/50 pb-1 flex justify-between"
+          class="text-xs font-bold text-[var(--color-text-primary)] tracking-wider uppercase mb-2 border-b border-green-900/50 pb-1 flex justify-between"
         >
           <span>{hoveredEntity.title}</span>
-          <span class="text-[10px] text-green-700">{hoveredEntity.type}</span>
+          <span class="text-[10px] text-[var(--color-text-muted)]">{hoveredEntity.type}</span>
         </div>
         <div
           class="text-sm text-green-100/90 font-mono leading-relaxed prose prose-invert prose-p:my-1 prose-headings:text-green-400 prose-headings:text-xs prose-strong:text-green-300 prose-em:text-green-200"
