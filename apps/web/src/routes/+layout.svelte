@@ -30,15 +30,43 @@
 		categories.init();
 
 		const handleGlobalError = (event: ErrorEvent) => {
+			// Ignore non-fatal script/asset load failures (common when offline)
+			if (
+				event.target instanceof HTMLScriptElement ||
+				event.target instanceof HTMLLinkElement
+			) {
+				return;
+			}
+
+			const message = event.message || "";
+			if (
+				message.includes("Script error") ||
+				message.includes("Load failed")
+			) {
+				return;
+			}
+
 			console.error("[Fatal Error]", event);
 			uiStore.setGlobalError(event.message, event.error?.stack);
 		};
 
 		const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+			const reason = event.reason;
+			const message = reason?.message || "";
+
+			// Filter out common network errors that aren't fatal to the app logic
+			if (
+				message.includes("Failed to fetch") ||
+				message.includes("NetworkError") ||
+				message.includes("Load failed")
+			) {
+				return;
+			}
+
 			console.error("[Fatal Rejection]", event);
 			uiStore.setGlobalError(
-				event.reason?.message || "Unhandled Promise Rejection",
-				event.reason?.stack,
+				message || "Unhandled Promise Rejection",
+				reason?.stack,
 			);
 		};
 
