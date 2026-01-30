@@ -41,7 +41,8 @@
 			if (
 				message.includes("Script error") ||
 				message.includes("Load failed") ||
-				message.includes("isHeadless")
+				message.includes("isHeadless") ||
+				message.includes("notify")
 			) {
 				return;
 			}

@@ -12,6 +12,7 @@
 
   let container: HTMLElement;
   let cy: Core | undefined = $state();
+  let currentLayout: any = $state();
 
   let graphStyle = $derived([...BASE_STYLE, ...getTypeStyles(categories.list)]);
 
@@ -191,6 +192,13 @@
   });
 
   onDestroy(() => {
+    if (currentLayout) {
+      try {
+        currentLayout.stop();
+      } catch {
+        // Ignore
+      }
+    }
     if (cy) {
       cy.destroy();
       cy = undefined;
@@ -317,12 +325,18 @@
         const shouldRunLayout =
           structuralChange || (!initialLoaded && graph.elements.length > 0);
 
-        let layout: any;
-
         if (shouldRunLayout) {
+          if (currentLayout) {
+            try {
+              currentLayout.stop();
+            } catch {
+              // Ignore
+            }
+          }
+
           // console.log("Running layout/fit. Initial:", !initialLoaded, "Structural:", structuralChange);
 
-          layout = cy.layout({
+          currentLayout = cy.layout({
             name: "cose",
             animate: true,
             // @ts-expect-error - 'duration' is valid for cose but types might be strict
@@ -334,7 +348,7 @@
             randomize: !initialLoaded,
           });
 
-          layout.one("layoutstop", () => {
+          currentLayout.one("layoutstop", () => {
             if (cy && !initialLoaded) {
               try {
                 cy.fit(undefined, 50);
@@ -344,16 +358,23 @@
               }
             }
             if (cy && selectedId) applyFocus(selectedId);
+            currentLayout = undefined;
           });
 
-          layout.run();
+          currentLayout.run();
         } else {
           // If no layout run, still might need focus update if elements were updated
           if (selectedId) applyFocus(selectedId);
         }
 
         return () => {
-          if (layout) layout.stop();
+          if (currentLayout) {
+            try {
+              currentLayout.stop();
+            } catch {
+              // Ignore
+            }
+          }
         };
       } catch (err) {
         console.error("Cytoscape Error:", err);
