@@ -80,16 +80,7 @@ export class WorkerDriveAdapter implements ICloudAdapter {
     if (!this.folderId)
       throw new Error("WorkerDriveAdapter: folderId is required");
 
-    const method = existingId ? "PATCH" : "POST";
-    const baseUrl = existingId ? `${UPLOAD_BASE}/${existingId}` : UPLOAD_BASE;
-    const url = new URL(baseUrl);
-    url.searchParams.append("uploadType", "multipart");
-
     const mimeType = this.getMimeType(path);
-    const boundary = "CodexSyncBoundary" + crypto.randomUUID().replace(/-/g, "");
-    const delimiter = `--${boundary}\r\n`;
-    const closeDelimiter = `\r\n--${boundary}--`;
-
     const metadata = {
       name: path.split("/").filter(Boolean).pop() || "unknown",
       mimeType: mimeType,
@@ -99,41 +90,47 @@ export class WorkerDriveAdapter implements ICloudAdapter {
       },
     };
 
-    // Convert content to Blob if it isn't already
-    const contentBlob =
-      content instanceof Blob ? content : new Blob([content], { type: mimeType });
+    // Resumable upload Step 1: Initialize session
+    const method = existingId ? "PATCH" : "POST";
+    const baseUrl = existingId ? `${UPLOAD_BASE}/${existingId}` : UPLOAD_BASE;
+    const initUrl = new URL(baseUrl);
+    initUrl.searchParams.append("uploadType", "resumable");
 
-    // Construct the multipart body
-    // Part 1: Metadata (JSON)
-    // Part 2: Content (Binary)
-    const multipartBody = new Blob(
-      [
-        delimiter,
-        "Content-Type: application/json; charset=UTF-8\r\n\r\n",
-        JSON.stringify(metadata),
-        "\r\n",
-        delimiter,
-        `Content-Type: ${mimeType}\r\n\r\n`,
-        contentBlob,
-        closeDelimiter,
-      ],
-      { type: `multipart/related; boundary=${boundary}` },
-    );
-
-    const res = await fetch(url.toString(), {
+    const initRes = await fetch(initUrl.toString(), {
       method,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Upload-Content-Type": mimeType,
       },
-      body: multipartBody,
+      body: JSON.stringify(metadata),
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`GDrive Upload Error: ${res.statusText} - ${errorText}`);
+    if (!initRes.ok) {
+      const errorText = await initRes.text();
+      throw new Error(`GDrive Upload Session Error: ${initRes.statusText} - ${errorText}`);
     }
 
-    const file = await res.json();
+    const sessionUri = initRes.headers.get("Location");
+    if (!sessionUri) {
+      throw new Error("GDrive Upload Error: No Location header returned for resumable session");
+    }
+
+    // Step 2: Upload the actual content to the session URI
+    const contentBlob =
+      content instanceof Blob ? content : new Blob([content], { type: mimeType });
+
+    const uploadRes = await fetch(sessionUri, {
+      method: "PUT",
+      body: contentBlob,
+    });
+
+    if (!uploadRes.ok) {
+      const errorText = await uploadRes.text();
+      throw new Error(`GDrive Content Upload Error: ${uploadRes.statusText} - ${errorText}`);
+    }
+
+    const file = await uploadRes.json();
 
     return {
       id: file.id,
