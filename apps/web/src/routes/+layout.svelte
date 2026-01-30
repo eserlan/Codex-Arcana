@@ -1,7 +1,6 @@
 <script lang="ts">
 	import "../app.css";
 	import VaultControls from "$lib/components/VaultControls.svelte";
-	import CloudStatus from "$lib/components/settings/CloudStatus.svelte";
 	import SearchModal from "$lib/components/search/SearchModal.svelte";
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
@@ -139,7 +138,6 @@
 				class="flex items-center gap-2 md:gap-4 shrink-0 order-2 md:order-3"
 			>
 				<VaultControls />
-				<CloudStatus />
 				<button
 					class="w-8 h-8 flex items-center justify-center border transition-all {uiStore.showSettings &&
 					uiStore.activeSettingsTab !== 'sync'

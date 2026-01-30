@@ -53,7 +53,7 @@ describe("AIService Context Retrieval", () => {
                 const entity = (vault as any).entities[id];
                 const pattern = new RegExp(`\\b${entity.title}\\b`, "i");
                 if (pattern.test(q)) {
-                    results.push({ id, title: entity.title, score: 0.9, matchType: "title", path: "" });
+                    results.push({ id, title: entity.title, score: 0.9, matchType: "title" as const, path: "" });
                 }
             }
             return results;
