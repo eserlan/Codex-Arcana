@@ -1,6 +1,6 @@
 <script lang="ts">
     import { helpStore } from "$stores/help.svelte";
-    import { parse } from "marked";
+    import { marked } from "marked";
     import DOMPurify from "isomorphic-dompurify";
     import { slide } from "svelte/transition";
 
@@ -8,6 +8,15 @@
 
     const toggle = (id: string) => {
         expandedId = expandedId === id ? null : id;
+    };
+
+    const parseContent = (content: string) => {
+        try {
+            return DOMPurify.sanitize(marked.parse(content) as string);
+        } catch (e) {
+            console.error("Failed to parse help article", e);
+            return content;
+        }
     };
 </script>
 
@@ -20,6 +29,7 @@
             class="w-full bg-black border border-green-900/50 hover:border-green-700 focus:border-green-500 focus:ring-1 focus:ring-green-500/50 rounded py-2 pl-10 pr-4 text-sm font-mono text-gray-100 transition-all placeholder:text-green-900/50"
             value={helpStore.searchQuery}
             oninput={(e) => helpStore.setSearchQuery(e.currentTarget.value)}
+            aria-label="Search documentation"
         />
     </div>
 
@@ -29,6 +39,7 @@
                 <button 
                     onclick={() => toggle(article.id)}
                     class="w-full px-4 py-3 flex justify-between items-center hover:bg-green-900/10 transition-colors text-left"
+                    aria-expanded={expandedId === article.id}
                 >
                     <div class="flex flex-col">
                         <span class="text-xs font-bold text-green-400 uppercase tracking-wider">{article.title}</span>
@@ -47,7 +58,7 @@
                         transition:slide
                     >
                         <div class="text-xs text-green-100/80 leading-relaxed prose prose-invert prose-p:my-2 prose-headings:text-green-500 prose-headings:text-xs prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-widest prose-headings:mt-4 prose-headings:mb-2 prose-strong:text-green-400 prose-code:text-green-300">
-                            {@html DOMPurify.sanitize(parse(article.content) as string)}
+                            {@html parseContent(article.content)}
                         </div>
                     </div>
                 {/if}
@@ -66,6 +77,7 @@
             <button 
                 onclick={() => helpStore.startTour("initial-onboarding")}
                 class="p-3 border border-green-900/30 rounded bg-green-900/5 hover:bg-green-900/10 transition-all flex items-center gap-3 group"
+                aria-label="Restart welcome tour"
             >
                 <span class="icon-[lucide--map] w-5 h-5 text-green-700 group-hover:text-green-500"></span>
                 <span class="text-[10px] font-bold text-green-100 uppercase tracking-wider">Restart Welcome Tour</span>

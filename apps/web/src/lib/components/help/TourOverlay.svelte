@@ -36,11 +36,25 @@
     onMount(() => {
         window.addEventListener("resize", handleResize);
         window.addEventListener("scroll", handleResize, true);
+        window.addEventListener("keydown", handleKeydown);
         return () => {
             window.removeEventListener("resize", handleResize);
             window.removeEventListener("scroll", handleResize, true);
+            window.removeEventListener("keydown", handleKeydown);
         };
     });
+
+    const handleKeydown = (e: KeyboardEvent) => {
+        if (!helpStore.activeTour) return;
+        
+        if (e.key === "Escape") {
+            helpStore.skipTour();
+        } else if (e.key === "ArrowRight") {
+            helpStore.nextStep();
+        } else if (e.key === "ArrowLeft") {
+            helpStore.prevStep();
+        }
+    };
 
     // Derived values for the mask
     const isDisabled = $derived.by(() => {
@@ -57,16 +71,40 @@
         const w = targetRect.width + padding * 2;
         const h = targetRect.height + padding * 2;
 
+        // Clamp spotlight rectangle to viewport bounds
+        const viewportWidth =
+            typeof window !== "undefined"
+                ? window.innerWidth || document.documentElement.clientWidth
+                : 0;
+        const viewportHeight =
+            typeof window !== "undefined"
+                ? window.innerHeight || document.documentElement.clientHeight
+                : 0;
+
+        if (!viewportWidth || !viewportHeight) {
+            return "";
+        }
+
+        const left = Math.max(0, x);
+        const top = Math.max(0, y);
+        const right = Math.min(viewportWidth, x + w);
+        const bottom = Math.min(viewportHeight, y + h);
+
+        // If clamping results in an invalid rectangle, skip the mask.
+        if (right <= left || bottom <= top) {
+            return "";
+        }
+
         // SVG mask approach for maximum compatibility and sharpness
         return `clip-path: polygon(
             0% 0%, 
             0% 100%, 
-            ${x}px 100%, 
-            ${x}px ${y}px, 
-            ${x + w}px ${y}px, 
-            ${x + w}px ${y + h}px, 
-            ${x}px ${y + h}px, 
-            ${x}px 100%, 
+            ${left}px 100%, 
+            ${left}px ${top}px, 
+            ${right}px ${top}px, 
+            ${right}px ${bottom}px, 
+            ${left}px ${bottom}px, 
+            ${left}px 100%, 
             100% 100%, 
             100% 0%
         );`;
@@ -75,7 +113,7 @@
 
 {#if helpStore.activeTour && !isDisabled}
     <div
-        class="fixed inset-0 z-[80] bg-black/60 backdrop-blur-[2px] transition-all duration-300"
+        class="fixed inset-0 z-[900] bg-black/60 backdrop-blur-[2px] transition-all duration-300"
         style={maskStyle}
         transition:fade
         role="presentation"

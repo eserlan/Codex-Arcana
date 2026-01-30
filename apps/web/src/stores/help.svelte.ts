@@ -36,9 +36,7 @@ class HelpStore {
     private index: any;
 
     constructor() {
-        if (browser) {
-            this.init();
-        }
+        // Init handled explicitly in layout
     }
 
     init() {
@@ -70,14 +68,19 @@ class HelpStore {
     }
 
     private buildIndex() {
+        if (this.index) return;
+        
         // Initialize FlexSearch
         this.index = new FlexSearch.Document({
             document: {
                 id: "id",
-                index: ["title", "tags", "content"],
+                index: [
+                    { field: "title", tokenize: "forward" },
+                    { field: "tags", tokenize: "forward" },
+                    { field: "content", tokenize: "forward" }
+                ],
                 store: true,
-            },
-            tokenize: "forward",
+            }
         });
 
         HELP_ARTICLES.forEach((article) => this.index.add(article));

@@ -27,14 +27,24 @@
 	);
 
 	onMount(() => {
-		vault.init();
+		const vaultInitPromise = vault.init();
 		categories.init();
 		helpStore.init();
 
-		// Trigger onboarding for new users
-		if (!vault.rootHandle && !helpStore.hasSeen("initial-onboarding") && !(window as any).DISABLE_ONBOARDING) {
-			helpStore.startTour("initial-onboarding");
-		}
+		// Trigger onboarding for new users after vault has initialized
+		vaultInitPromise
+			.then(() => {
+				if (
+					!vault.rootHandle &&
+					!helpStore.hasSeen("initial-onboarding") &&
+					!(window as any).DISABLE_ONBOARDING
+				) {
+					helpStore.startTour("initial-onboarding");
+				}
+			})
+			.catch((error) => {
+				console.error("Vault initialization failed", error);
+			});
 
 		const handleGlobalError = (event: ErrorEvent) => {
 			// Ignore non-fatal script/asset load failures (common when offline)

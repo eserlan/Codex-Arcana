@@ -1,7 +1,7 @@
 <script lang="ts">
     import { helpStore } from "$stores/help.svelte";
     import { fly } from "svelte/transition";
-    import { parse } from "marked";
+    import { marked } from "marked";
     import DOMPurify from "isomorphic-dompurify";
     import type { GuideStep } from "$lib/config/help-content";
 
@@ -12,6 +12,15 @@
         current: number;
         total: number;
     }>();
+
+    const parseContent = (content: string) => {
+        try {
+            return DOMPurify.sanitize(marked.parse(content) as string);
+        } catch (e) {
+            console.error("Failed to parse guide content", e);
+            return content;
+        }
+    };
 
     let tooltipStyle = $derived.by(() => {
         if (!targetRect || step.targetSelector === "body") {
@@ -85,6 +94,7 @@
             onclick={() => helpStore.skipTour()}
             class="text-green-900 hover:text-green-500 transition-colors"
             title="Skip Tour"
+            aria-label="Skip Tour"
         >
             <span class="icon-[lucide--x] w-4 h-4"></span>
         </button>
@@ -94,7 +104,7 @@
     <div class="p-5">
         <h3 class="text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">{step.title}</h3>
         <div class="text-green-100/80 text-xs leading-relaxed prose prose-invert prose-p:my-1 prose-strong:text-green-400 prose-code:text-green-300">
-            {@html DOMPurify.sanitize(parse(step.content) as string)}
+            {@html parseContent(step.content)}
         </div>
     </div>
 
@@ -103,6 +113,7 @@
         <button 
             onclick={() => helpStore.skipTour()}
             class="text-[10px] text-green-900 hover:text-green-700 uppercase font-bold tracking-widest transition-colors"
+            aria-label="Dismiss tour"
         >
             Dismiss
         </button>
@@ -112,6 +123,7 @@
                 <button 
                     onclick={() => helpStore.prevStep()}
                     class="px-3 py-1 border border-green-900/50 text-green-500 hover:bg-green-900/20 text-[10px] uppercase font-bold transition-all"
+                    aria-label="Go to previous step"
                 >
                     Back
                 </button>
@@ -119,6 +131,7 @@
             <button 
                 onclick={() => helpStore.nextStep()}
                 class="px-4 py-1 bg-green-600 hover:bg-green-500 text-black text-[10px] uppercase font-bold transition-all shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                aria-label={isLast ? "Finish tour" : "Go to next step"}
             >
                 {isLast ? "Finish" : "Next"}
             </button>

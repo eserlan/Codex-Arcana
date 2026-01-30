@@ -5,7 +5,8 @@
   import { graph } from "$lib/stores/graph.svelte";
   import { vault } from "$lib/stores/vault.svelte";
   import { categories } from "$lib/stores/categories.svelte";
-  import { parse } from "marked";
+  import { marked } from "marked";
+  import DOMPurify from "isomorphic-dompurify";
   import type { Core, NodeSingular } from "cytoscape";
   import { BASE_STYLE, getTypeStyles } from "$lib/themes/graph-theme";
   import Minimap from "$lib/components/graph/Minimap.svelte";
@@ -520,7 +521,7 @@
           class="text-sm text-green-100/90 font-mono leading-relaxed prose prose-invert prose-p:my-1 prose-headings:text-green-400 prose-headings:text-xs prose-strong:text-green-300 prose-em:text-green-200"
         >
           {@html hoveredEntity.content
-            ? parse(hoveredEntity.content)
+            ? DOMPurify.sanitize(marked.parse(hoveredEntity.content) as string)
             : '<span class="italic text-green-900">No data available</span>'}
         </div>
 
