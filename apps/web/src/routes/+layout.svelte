@@ -40,7 +40,8 @@
 			const message = event.message || "";
 			if (
 				message.includes("Script error") ||
-				message.includes("Load failed")
+				message.includes("Load failed") ||
+				message.includes("isHeadless")
 			) {
 				return;
 			}
