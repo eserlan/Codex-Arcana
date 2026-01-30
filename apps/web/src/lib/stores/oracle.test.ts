@@ -6,6 +6,12 @@ vi.hoisted(() => {
     (global as any).window = {};
   }
 
+  if (typeof navigator === "undefined") {
+    (global as any).navigator = { onLine: true };
+  } else {
+    (global as any).navigator.onLine = true;
+  }
+
   class MockBroadcastChannel {
     name: string;
     onmessage: ((event: MessageEvent) => void) | null = null;
