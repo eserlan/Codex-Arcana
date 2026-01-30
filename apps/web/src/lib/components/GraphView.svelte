@@ -5,10 +5,12 @@
   import { graph } from "$lib/stores/graph.svelte";
   import { vault } from "$lib/stores/vault.svelte";
   import { categories } from "$lib/stores/categories.svelte";
-  import { parse } from "marked";
+  import { marked } from "marked";
+  import DOMPurify from "isomorphic-dompurify";
   import type { Core, NodeSingular } from "cytoscape";
   import { BASE_STYLE, getTypeStyles } from "$lib/themes/graph-theme";
   import Minimap from "$lib/components/graph/Minimap.svelte";
+  import FeatureHint from "$lib/components/help/FeatureHint.svelte";
 
   let container: HTMLElement;
   let cy: Core | undefined = $state();
@@ -75,6 +77,7 @@
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    if (vault.isGuest) return;
     if (e.key.toLowerCase() === "c" && !e.ctrlKey && !e.metaKey && !e.altKey) {
       // Don't toggle if user is typing in an input (though we don't have many here yet)
       if (
@@ -165,6 +168,7 @@
 
       // Right-click on edge to edit label
       cy.on("cxttap", "edge", (evt) => {
+        if (vault.isGuest) return;
         const edge = evt.target;
         const sourceId = edge.data("source");
         const targetId = edge.data("target");
@@ -477,6 +481,7 @@
       </button>
 
       <!-- Connect Mode Toggle -->
+      {#if !vault.isGuest}
       <button
         class="w-8 h-8 flex items-center justify-center border transition {connectMode
           ? 'border-yellow-500 bg-yellow-500/20 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]'
@@ -486,6 +491,7 @@
       >
         <span class="icon-[lucide--link] w-4 h-4"></span>
       </button>
+      {/if}
     </div>
   </div>
 
@@ -493,6 +499,7 @@
   <div
     class="absolute inset-0 z-10 w-full h-full"
     bind:this={container}
+    data-testid="graph-canvas"
   ></div>
 
   <!-- Hover Tooltip -->
@@ -518,7 +525,7 @@
           class="text-sm text-green-100/90 font-mono leading-relaxed prose prose-invert prose-p:my-1 prose-headings:text-green-400 prose-headings:text-xs prose-strong:text-green-300 prose-em:text-green-200"
         >
           {@html hoveredEntity.content
-            ? parse(hoveredEntity.content)
+            ? DOMPurify.sanitize(marked.parse(hoveredEntity.content) as string)
             : '<span class="italic text-green-900">No data available</span>'}
         </div>
 
@@ -540,7 +547,7 @@
   <!-- Connection Hints -->
   {#if connectMode}
     <div
-      class="absolute top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+      class="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 pointer-events-auto"
     >
       {#if !sourceId}
         <div
@@ -555,6 +562,8 @@
           > SELECT TARGET TO LINK
         </div>
       {/if}
+
+      <FeatureHint hintId="connect-mode" />
     </div>
   {/if}
 
