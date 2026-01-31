@@ -6,7 +6,7 @@
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
-	import EntityReadModal from "$lib/components/modals/EntityReadModal.svelte";
+	import ZenModeModal from "$lib/components/modals/ZenModeModal.svelte";
 	import TourOverlay from "$lib/components/help/TourOverlay.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { graph } from "$lib/stores/graph.svelte";
@@ -316,7 +316,7 @@
 			<OracleWindow />
 		{/if}
 		<SettingsModal />
-		<EntityReadModal />
+		<ZenModeModal />
 		<TourOverlay />
 	{/if}
 </div>

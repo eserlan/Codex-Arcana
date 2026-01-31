@@ -5,13 +5,14 @@ class UIStore {
     activeSettingsTab = $state<SettingsTab>("vault");
     globalError = $state<{ message: string; stack?: string } | null>(null);
 
-    // Read Mode State (Standardized to what's on GitHub, but supporting both naming conventions)
-    showReadModal = $state(false);
-    readModalEntityId = $state<string | null>(null);
+    // Zen Mode State
+    showZenMode = $state(false);
+    zenModeEntityId = $state<string | null>(null);
 
-    // Aliases for compatibility with remote branch code
-    get readModeNodeId() { return this.readModalEntityId; }
-    set readModeNodeId(value: string | null) { this.readModalEntityId = value; }
+    // Compatibility aliases (can be deprecated later)
+    get readModeNodeId() { return this.zenModeEntityId; }
+    set readModeNodeId(value: string | null) { this.zenModeEntityId = value; }
+    get showReadModal() { return this.showZenMode; }
 
     setGlobalError(message: string, stack?: string) {
         this.globalError = { message, stack };
@@ -39,23 +40,31 @@ class UIStore {
         }
     }
 
+    openZenMode(entityId: string) {
+        this.zenModeEntityId = entityId;
+        this.showZenMode = true;
+    }
+
+    closeZenMode() {
+        this.showZenMode = false;
+        this.zenModeEntityId = null;
+    }
+
+    // Compatibility methods
     openReadModal(entityId: string) {
-        this.readModalEntityId = entityId;
-        this.showReadModal = true;
+        this.openZenMode(entityId);
     }
 
     closeReadModal() {
-        this.showReadModal = false;
-        this.readModalEntityId = null;
+        this.closeZenMode();
     }
 
-    // Compatibility methods for remote branch
     openReadMode(nodeId: string) {
-        this.openReadModal(nodeId);
+        this.openZenMode(nodeId);
     }
 
     closeReadMode() {
-        this.closeReadModal();
+        this.closeZenMode();
     }
 }
 

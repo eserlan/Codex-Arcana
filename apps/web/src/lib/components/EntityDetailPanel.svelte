@@ -250,10 +250,10 @@
                 <div class="flex items-center gap-1">
                     {#if !isEditing}
                         <button
-                            onclick={() => uiStore.openReadModal(entity.id)}
+                            onclick={() => uiStore.openZenMode(entity.id)}
                             class="text-green-700 hover:text-green-400 transition flex items-center justify-center p-1"
-                            aria-label="Enter Read Mode"
-                            title="Read Mode (Focused View)"
+                            aria-label="Enter Zen Mode"
+                            title="Zen Mode (Full Screen)"
                         >
                             <span class="icon-[lucide--maximize-2] w-5 h-5"></span>
                         </button>

@@ -8,7 +8,7 @@
     import TemporalEditor from "$lib/components/timeline/TemporalEditor.svelte";
     import type { Entity } from "schema";
 
-    let entityId = $derived(uiStore.readModalEntityId);
+    let entityId = $derived(uiStore.zenModeEntityId);
     let entity = $derived(entityId ? vault.entities[entityId] : null);
 
     let isEditing = $state(false);
@@ -106,7 +106,7 @@
         if (isEditing) {
             if (!confirm("Discard unsaved changes?")) return;
         }
-        uiStore.closeReadModal();
+        uiStore.closeZenMode();
         isEditing = false;
     };
 
@@ -115,7 +115,7 @@
             if (!confirm("Discard unsaved changes to navigate?")) return;
             isEditing = false;
         }
-        uiStore.readModalEntityId = id;
+        uiStore.zenModeEntityId = id;
     };
 
     const getTemporalLabel = (type: string, field: "start" | "end") => {
@@ -196,12 +196,12 @@
 
 <svelte:window
     onkeydown={(e) => {
-        if (e.key === "Escape" && uiStore.showReadModal && !showLightbox)
+        if (e.key === "Escape" && uiStore.showZenMode && !showLightbox)
             handleClose();
     }}
 />
 
-{#if uiStore.showReadModal && entity}
+{#if uiStore.showZenMode && entity}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div

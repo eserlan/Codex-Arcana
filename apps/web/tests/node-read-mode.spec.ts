@@ -49,7 +49,7 @@ test.describe('Node Read Mode', () => {
         await expect(page.getByRole('heading', { level: 2 }).filter({ hasText: 'Hero' })).toBeVisible();
 
         // 2. Click "Read Mode" button (book icon)
-        await page.getByTitle('Read Mode (Focused View)').click();
+        await page.getByTitle('Zen Mode (Full Screen)').click();
 
         // 3. Verify Modal Open
         const modal = page.locator('[role="dialog"]');
