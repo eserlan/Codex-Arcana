@@ -3,6 +3,7 @@
     import { fly, fade } from "svelte/transition";
     import { vault } from "$lib/stores/vault.svelte";
     import { oracle } from "$lib/stores/oracle.svelte";
+    import { ui } from "$lib/stores/ui.svelte";
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
 
     let { entity, onClose } = $props<{
@@ -175,6 +176,15 @@
                         {entity.title}
                     </h2>
                 {/if}
+
+                <button
+                    onclick={() => ui.openReadMode(entity!.id)}
+                    class="text-green-700 hover:text-green-500 transition flex items-center justify-center p-1 mr-2"
+                    aria-label="Read Mode"
+                    title="Read Mode"
+                >
+                    <span class="icon-[lucide--book-open] w-6 h-6"></span>
+                </button>
 
                 <button
                     onclick={onClose}

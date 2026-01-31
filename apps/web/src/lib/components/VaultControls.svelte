@@ -1,5 +1,6 @@
 <script lang="ts">
     import { vault } from "$lib/stores/vault.svelte";
+    import { categories } from "$lib/stores/categories.svelte";
     import { cloudConfig } from "$lib/stores/cloud-config";
     import ShareModal from "$lib/components/ShareModal.svelte";
 

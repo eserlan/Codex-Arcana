@@ -3,11 +3,11 @@ import { parseMarkdown, sanitizeId } from "../../utils/markdown";
 
 export class PublicGDriveAdapter implements ICloudShareProvider {
   async shareFilePublicly(fileId: string): Promise<string> {
-    throw new Error("PublicGDriveAdapter is strictly for fetching. Use authenticated adapter for sharing.");
+    throw new Error(`PublicGDriveAdapter is strictly for fetching. Use authenticated adapter for sharing. (File: ${fileId})`);
   }
 
   async revokeShare(fileId: string): Promise<void> {
-     throw new Error("PublicGDriveAdapter is strictly for fetching. Use authenticated adapter for revoking.");
+     throw new Error(`PublicGDriveAdapter is strictly for fetching. Use authenticated adapter for revoking. (File: ${fileId})`);
   }
 
   async fetchPublicFile(fileId: string, apiKey: string): Promise<Blob> {

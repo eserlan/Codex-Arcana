@@ -17,6 +17,7 @@ Auto-generated from all feature plans. Last updated: 2026-01-26
 - IndexedDB (Chat History), Markdown (Vault) (019-oracle-rag-improvements)
 - TypeScript 5.x / Node.js 20+ + Svelte 5 (UI Framework), `packages/editor-core` (for content handling logic) (022-oracle-data-parsing)
 - OPFS (Markdown files with YAML frontmatter) (022-oracle-data-parsing)
+- TypeScript 5.x / Node.js 20+ + Svelte 5 (Runes) + `marked` (Markdown rendering), `isomorphic-dompurify` (Sanitization) (027-node-read-mode)
 
 - TypeScript 5.x, Node.js 20+ (dev), Browser Runtime + `googleapis` or `gapi-script` (003-gdrive-mirroring)
 - OPFS (Origin Private File System) / IndexedDB (Metadata) (003-gdrive-mirroring)
@@ -47,9 +48,9 @@ npm test; npm run lint
 TypeScript: Follow standard conventions
 
 ## Recent Changes
+- 027-node-read-mode: Added TypeScript 5.x / Node.js 20+ + Svelte 5 (Runes) + `marked` (Markdown rendering), `isomorphic-dompurify` (Sanitization)
+- 027-node-read-mode: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 - 022-oracle-data-parsing: Added TypeScript 5.x / Node.js 20+ + Svelte 5 (UI Framework), `packages/editor-core` (for content handling logic)
-- 019-oracle-rag-improvements: Added TypeScript 5.x / Node.js 20+ + @google/generative-ai FlexSearch, Svelte 5
-- 018-perf-improvements: Added TypeScript 5.x, Node.js 20+ + Svelte 5, Cytoscape.js, `@google/generative-ai`
 
 
 <!-- MANUAL ADDITIONS START -->

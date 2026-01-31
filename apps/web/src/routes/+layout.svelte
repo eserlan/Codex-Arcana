@@ -5,6 +5,7 @@
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
+	import NodeReadModal from "$lib/components/modals/NodeReadModal.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
@@ -44,35 +45,6 @@
 		}
 		categories.init();
 		
-		// ... existing error handlers
-	});
-
-	const handleJoin = async (username: string) => {
-		sessionStorage.setItem("guest_username", username);
-		showGuestLogin = false;
-		
-		// Basic validation for GDrive ID (length and alphanumeric usually)
-		if (!shareId || shareId.length < 20) {
-			vault.status = "error";
-			vault.errorMessage = "Malformed or invalid share link.";
-			return;
-		}
-
-		const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-		const publicAdapter = new PublicGDriveAdapter();
-		const memoryAdapter = new MemoryAdapter();
-		
-		try {
-			// Pre-fetch graph using public adapter
-			const graph = await publicAdapter.fetchPublicFolder(shareId!, apiKey);
-			memoryAdapter.hydrate(graph);
-			await vault.initGuest(memoryAdapter);
-		} catch (err) {
-			console.error("Guest join failed", err);
-			// Vault initGuest handles UI error state
-		}
-	};
-
 		const handleGlobalError = (event: ErrorEvent) => {
 			// Ignore non-fatal script/asset load failures (common when offline)
 			if (
@@ -139,6 +111,32 @@
 			);
 		};
 	});
+
+	const handleJoin = async (username: string) => {
+		sessionStorage.setItem("guest_username", username);
+		showGuestLogin = false;
+		
+		// Basic validation for GDrive ID (length and alphanumeric usually)
+		if (!shareId || shareId.length < 20) {
+			vault.status = "error";
+			vault.errorMessage = "Malformed or invalid share link.";
+			return;
+		}
+
+		const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+		const publicAdapter = new PublicGDriveAdapter();
+		const memoryAdapter = new MemoryAdapter();
+		
+		try {
+			// Pre-fetch graph using public adapter
+			const graph = await publicAdapter.fetchPublicFolder(shareId!, apiKey);
+			memoryAdapter.hydrate(graph);
+			await vault.initGuest(memoryAdapter);
+		} catch (err: any) {
+			console.error("Guest join failed", err);
+			// Vault initGuest handles UI error state
+		}
+	};
 
 	const handleKeydown = (event: KeyboardEvent) => {
 		if ((event.metaKey || event.ctrlKey) && event.key === "k") {
@@ -245,6 +243,7 @@
 			<OracleWindow />
 		{/if}
 		<SettingsModal />
+		<NodeReadModal />
 	{/if}
 </div>
 
