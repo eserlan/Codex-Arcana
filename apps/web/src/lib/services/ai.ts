@@ -220,6 +220,7 @@ User visualization request: ${query}`;
       const lastUser = sanitizedHistory.pop();
       prefixContext = `[PREVIOUS UNANSWERED QUERY]:\n${lastUser!.parts[0].text}\n\n`;
     }
+    }
 
     const chat = this.model.startChat({
       history: sanitizedHistory
