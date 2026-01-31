@@ -44,56 +44,104 @@
 
         try {
             // Render Markdown
-            const chronicleHtml = DOMPurify.sanitize(await marked.parse(entity.content || ""));
-            const loreHtml = entity.lore ? DOMPurify.sanitize(await marked.parse(entity.lore)) : "";
+            const chronicleHtml = DOMPurify.sanitize(
+                await marked.parse(entity.content || ""),
+            );
+            const loreHtml = entity.lore
+                ? DOMPurify.sanitize(await marked.parse(entity.lore))
+                : "";
 
-            // Construct HTML
-            let html = `<h1>${entity.title}</h1>`;
-            
+            let imageHtml = "";
+            let imageBlob: Blob | null = null;
+
             if (resolvedImageUrl) {
-                // Try to convert blob URL to data URI for portability if possible, 
-                // or just use the URL (though blobs won't work across windows usually).
-                // For local copy-paste within app or to docs that support it, this is best effort.
-                // Ideally we'd fetch the blob and convert to base64.
                 try {
                     const response = await fetch(resolvedImageUrl);
-                    const blob = await response.blob();
-                    const reader = new FileReader();
-                    const base64 = await new Promise<string>((resolve) => {
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.readAsDataURL(blob);
+                    const originalBlob = await response.blob();
+
+                    // Convert to PNG for maximum compatibility with Doc editors
+                    const img = new Image();
+                    img.src = URL.createObjectURL(originalBlob);
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
                     });
-                    html += `<img src="${base64}" alt="${entity.title}" style="max-width: 100%; height: auto;" /><br/>`;
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0);
+
+                    // Get PNG Data URI for HTML inlining
+                    const pngDataUri = canvas.toDataURL("image/png");
+                    imageHtml = `<img src="${pngDataUri}" alt="${entity.title}" style="max-width: 100%;" /><br/>`;
+
+                    // Also get as Blob for potential direct clipboard inclusion
+                    imageBlob = await new Promise<Blob | null>((resolve) =>
+                        canvas.toBlob(resolve, "image/png"),
+                    );
+
+                    URL.revokeObjectURL(img.src);
                 } catch (e) {
-                    console.warn("Could not inline image for copy", e);
+                    console.warn("Could not process image for copy", e);
                 }
             }
 
-            html += `<h2>Chronicle</h2>${chronicleHtml}`;
-            if (loreHtml) {
-                html += `<h2>Lore</h2>${loreHtml}`;
-            }
+            // Construct HTML Document
+            const html = `
+                <html>
+                <body>
+                    <h1 style="font-family: serif;">${entity.title}</h1>
+                    ${imageHtml}
+                    <h2 style="font-family: serif; color: #166534;">Chronicle</h2>
+                    <div style="font-family: sans-serif; line-height: 1.6;">${chronicleHtml}</div>
+                    ${
+                        loreHtml
+                            ? `<h2 style="font-family: serif; color: #92400e;">Deep Lore</h2>
+                               <div style="font-family: sans-serif; line-height: 1.6; font-style: italic;">${loreHtml}</div>`
+                            : ""
+                    }
+                </body>
+                </html>
+            `;
 
             // Construct Plain Text
-            let text = `Title: ${entity.title}\n\n`;
-            text += `Chronicle:\n${entity.content || ""}\n\n`;
+            let text = `${entity.title}\n\n`;
+            text += `CHRONICLE:\n${entity.content || ""}\n\n`;
             if (entity.lore) {
-                text += `Lore:\n${entity.lore}\n`;
+                text += `DEEP LORE:\n${entity.lore}\n`;
             }
 
-            const blobHtml = new Blob([html], { type: "text/html" });
-            const blobText = new Blob([text], { type: "text/plain" });
+            const clipboardData: Record<string, Blob> = {
+                "text/html": new Blob([html], { type: "text/html" }),
+                "text/plain": new Blob([text], { type: "text/plain" }),
+            };
 
-            const data = [new ClipboardItem({ 
-                "text/html": blobHtml, 
-                "text/plain": blobText 
-            })];
+            // Note: Most browsers only support one 'image/png' in ClipboardItem 
+            // and it might conflict with text/html in some implementations, 
+            // but including it is standard for rich copy.
+            if (imageBlob) {
+                clipboardData["image/png"] = imageBlob;
+            }
+
+            const data = [new ClipboardItem(clipboardData)];
 
             await navigator.clipboard.write(data);
             isCopied = true;
             setTimeout(() => (isCopied = false), 2000);
         } catch (err) {
             console.error("Failed to copy", err);
+            // Fallback to plain text if rich copy fails
+            try {
+                await navigator.clipboard.writeText(
+                    `${entity.title}\n\n${entity.content || ""}`,
+                );
+                isCopied = true;
+                setTimeout(() => (isCopied = false), 2000);
+            } catch (innerErr) {
+                console.error("Total copy failure", innerErr);
+            }
         }
     };
 
