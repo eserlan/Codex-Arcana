@@ -64,6 +64,28 @@
         editLore = markdown;
     };
 
+    const getTemporalLabel = (type: string, field: "date" | "start" | "end") => {
+        const t = type.toLowerCase();
+
+        if (field === "date") return "Occurrence";
+
+        if (field === "start") {
+            if (["npc", "creature", "character", "monster"].some(x => t.includes(x))) return "Born";
+            if (["faction", "location", "city", "organization", "guild"].some(x => t.includes(x))) return "Founded";
+            if (["item", "artifact", "object", "weapon"].some(x => t.includes(x))) return "Created";
+            return "Started";
+        }
+
+        if (field === "end") {
+            if (["npc", "creature", "character", "monster"].some(x => t.includes(x))) return "Died";
+            if (["faction", "location", "city", "organization", "guild"].some(x => t.includes(x))) return "Dissolved";
+            if (["item", "artifact", "object", "weapon"].some(x => t.includes(x))) return "Destroyed";
+            return "Ended";
+        }
+
+        return "Date";
+    };
+
     const handleDelete = async () => {
         if (!entity) return;
         if (confirm(`Are you sure you want to permanently delete "${entity.title}"? This cannot be undone.`)) {
@@ -345,22 +367,22 @@
                             </div>
                         </div>
                     {:else if entity.date || entity.start_date || entity.end_date}
-                        <div class="flex flex-wrap gap-4 text-[10px] font-mono border-b border-green-900/20 pb-4">
+                        <div class="flex flex-wrap gap-x-6 gap-y-2 text-xs font-mono border-b border-green-900/20 pb-4">
                             {#if entity.date}
-                                <div class="flex flex-col">
-                                    <span class="text-green-900 uppercase">Occurrence</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-green-500 font-bold uppercase">{getTemporalLabel(entity.type, 'date')}:</span>
                                     <span class="text-green-100">{entity.date.label || `${entity.date.year}/${entity.date.month ?? 1}/${entity.date.day ?? 1}`}</span>
                                 </div>
                             {/if}
                             {#if entity.start_date}
-                                <div class="flex flex-col">
-                                    <span class="text-green-900 uppercase">Started / Born</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-green-500 font-bold uppercase">{getTemporalLabel(entity.type, 'start')}:</span>
                                     <span class="text-green-100">{entity.start_date.label || `${entity.start_date.year}/${entity.start_date.month ?? 1}/${entity.start_date.day ?? 1}`}</span>
                                 </div>
                             {/if}
                             {#if entity.end_date}
-                                <div class="flex flex-col">
-                                    <span class="text-green-900 uppercase">Ended / Deceased</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-green-500 font-bold uppercase">{getTemporalLabel(entity.type, 'end')}:</span>
                                     <span class="text-green-100">{entity.end_date.label || `${entity.end_date.year}/${entity.end_date.month ?? 1}/${entity.end_date.day ?? 1}`}</span>
                                 </div>
                             {/if}
