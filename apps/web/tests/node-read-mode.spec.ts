@@ -94,4 +94,24 @@ test.describe('Node Read Mode', () => {
         await expect(modal).toBeVisible();
         await expect(modal.getByTestId('entity-title')).toHaveText('Hero');
     });
+
+    test('Open Zen Mode via Keyboard Shortcut (Ctrl+ArrowUp)', async ({ page }) => {
+        await page.goto('http://localhost:5173/');
+        await page.getByRole('button', { name: 'OPEN VAULT' }).click();
+        await expect(page.getByTestId('entity-count')).toHaveText('2 ENTITIES', { timeout: 20000 });
+
+        // 1. Select "Hero"
+        await page.keyboard.press('Control+k');
+        await page.getByPlaceholder('Search notes...').fill('Hero');
+        await page.getByTestId('search-result').filter({ hasText: 'Hero' }).click();
+        await expect(page.getByRole('heading', { level: 2 }).filter({ hasText: 'Hero' })).toBeVisible();
+
+        // 2. Press Ctrl+ArrowUp
+        await page.keyboard.press('Control+ArrowUp');
+
+        // 3. Verify Modal Open
+        const modal = page.locator('[role="dialog"]');
+        await expect(modal).toBeVisible();
+        await expect(modal.getByTestId('entity-title')).toHaveText('Hero');
+    });
 });
