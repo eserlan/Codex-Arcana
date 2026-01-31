@@ -4,6 +4,7 @@
     import CloudStatus from "./CloudStatus.svelte";
     import AISettings from "./AISettings.svelte";
     import EraEditor from "../timeline/EraEditor.svelte";
+    import ThemeSelector from "./ThemeSelector.svelte";
     import CategorySettings from "./CategorySettings.svelte";
     import HelpTab from "../help/HelpTab.svelte";
     import { vault } from "$lib/stores/vault.svelte";
@@ -19,6 +20,7 @@
             icon: "icon-[lucide--brain]",
         },
         { id: "schema", label: "Schema", icon: "icon-[lucide--tags]" },
+        { id: "aesthetics", label: "Aesthetics", icon: "icon-[lucide--palette]" },
         { id: "help", label: "Help", icon: "icon-[lucide--help-circle]" },
         { id: "about", label: "About", icon: "icon-[lucide--info]" },
     ];
@@ -292,6 +294,18 @@
                         >
                             <CategorySettings />
                         </div>
+                    </div>
+                {:else if uiStore.activeSettingsTab === "aesthetics"}
+                    <div
+                        role="tabpanel"
+                        id="settings-panel-aesthetics"
+                        aria-labelledby="settings-tab-aesthetics"
+                        class="space-y-6"
+                    >
+                        <p class="text-[11px] text-green-100/60 leading-relaxed">
+                            Shift the visual dimension of your workspace. Zen Templates redefine the interface aesthetic to match your world's genre.
+                        </p>
+                        <ThemeSelector />
                     </div>
                 {:else if uiStore.activeSettingsTab === "help"}
                     <div

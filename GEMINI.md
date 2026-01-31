@@ -23,6 +23,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-26
 - OPFS / Local Directory (Markdown files with YAML frontmatter) (024-delete-nodes)
 - TypeScript 5.x / Node.js 20+ + Svelte 5, Turborepo, Vitest, Playwright (026-world-timeline)
 - OPFS / Local File System (Markdown + YAML Frontmatter) (026-world-timeline)
+- TypeScript 5.x / Node.js 20+ + Svelte 5, Cytoscape.js, Tailwind CSS 4.x, `idb` (for settings) (028-styling-templates)
+- Vault Metadata (Markdown Frontmatter or `.codex/config.json`) (028-styling-templates)
 
 - TypeScript 5.x, Node.js 20+ (dev), Browser Runtime + `googleapis` or `gapi-script` (003-gdrive-mirroring)
 - OPFS (Origin Private File System) / IndexedDB (Metadata) (003-gdrive-mirroring)
@@ -53,9 +55,9 @@ npm test; npm run lint
 TypeScript: Follow standard conventions
 
 ## Recent Changes
+- 028-styling-templates: Added TypeScript 5.x / Node.js 20+ + Svelte 5, Cytoscape.js, Tailwind CSS 4.x, `idb` (for settings)
 - 026-world-timeline: Added TypeScript 5.x / Node.js 20+ + Svelte 5, Turborepo, Vitest, Playwright
 - 024-delete-nodes: Added TypeScript 5.x / Node.js 20+ + Svelte 5, Cytoscape.js, FlexSearch, `editor-core`
-- 022-oracle-data-parsing: Added TypeScript 5.x / Node.js 20+ + Svelte 5 (UI Framework), `packages/editor-core` (for content handling logic)
 
 
 

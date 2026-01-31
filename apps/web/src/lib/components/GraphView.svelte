@@ -8,7 +8,8 @@
   import { marked } from "marked";
   import DOMPurify from "isomorphic-dompurify";
   import type { Core, NodeSingular } from "cytoscape";
-  import { BASE_STYLE, getTypeStyles } from "$lib/themes/graph-theme";
+  import { getGraphStyle } from "graph-engine";
+  import { themeStore } from "$lib/stores/theme.svelte";
   import Minimap from "$lib/components/graph/Minimap.svelte";
   import TimelineControls from "$lib/components/graph/TimelineControls.svelte";
   import TimelineOverlay from "$lib/components/graph/TimelineOverlay.svelte";
@@ -19,8 +20,7 @@
   let currentLayout: any;
 
   let graphStyle = $derived([
-    ...BASE_STYLE,
-    ...getTypeStyles(categories.list),
+    ...getGraphStyle(themeStore.activeTheme, categories.list),
     ...(graph.timelineMode
       ? [
           {

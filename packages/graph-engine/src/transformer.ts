@@ -102,3 +102,122 @@ export class GraphTransformer {
     });
   }
 }
+
+export const getGraphStyle = (template: StylingTemplate, categories: Category[]) => {
+  const { tokens, graph } = template;
+
+  const baseStyle = [
+    {
+      selector: "node",
+      style: {
+        "background-color": tokens.background,
+        "border-width": graph.nodeBorderWidth,
+        "border-color": tokens.primary,
+        width: 32,
+        height: 32,
+        shape: graph.nodeShape,
+        label: "data(label)",
+        color: tokens.text,
+        "font-family": tokens.fontBody,
+        "font-size": 10,
+        "text-valign": "bottom",
+        "text-margin-y": 8,
+        "text-max-width": 80,
+        "text-wrap": "wrap",
+        "transition-property": "opacity",
+        "transition-duration": 200,
+      },
+    },
+    {
+      selector: "node[resolvedImage]",
+      style: {
+        "background-fit": "cover",
+        "background-clip": "node",
+        "background-image": "data(resolvedImage)",
+        width: 48,
+        height: 48,
+        "border-width": graph.nodeBorderWidth + 1,
+        "border-color": tokens.primary,
+      },
+    },
+    {
+      selector: "node:selected",
+      style: {
+        "background-color": tokens.surface,
+        "border-color": tokens.primary,
+        "border-width": graph.nodeBorderWidth + 1,
+        color: "#fff",
+        "text-outline-color": "#000",
+        "text-outline-width": 2,
+        "overlay-color": tokens.primary,
+        "overlay-padding": 8,
+        "overlay-opacity": 0.3,
+      },
+    },
+    {
+      selector: ".selected-source",
+      style: {
+        "border-width": graph.nodeBorderWidth + 1,
+        "border-color": "#facc15", // Keep yellow for functional clarity
+        "background-color": tokens.surface,
+      },
+    },
+    {
+      selector: "edge",
+      style: {
+        width: 1,
+        "line-color": graph.edgeColor,
+        "line-style": graph.edgeStyle,
+        "target-arrow-color": graph.edgeColor,
+        "curve-style": "bezier",
+        "target-arrow-shape": "triangle",
+        "arrow-scale": 0.6,
+        opacity: 0.6,
+        label: "data(label)",
+        "text-rotation": "autorotate",
+        "font-size": 8,
+        "font-family": tokens.fontBody,
+        color: tokens.text,
+        "text-background-color": tokens.background,
+        "text-background-opacity": 0.8,
+        "text-background-padding": "2px",
+        "text-margin-y": -8,
+        "transition-property": "opacity",
+        "transition-duration": 200,
+      },
+    },
+    {
+      selector: "edge:selected",
+      style: {
+        "line-color": tokens.primary,
+        "target-arrow-color": tokens.primary,
+        width: 2,
+        opacity: 1,
+      },
+    },
+    {
+      selector: ".dimmed",
+      style: {
+        opacity: 0.35,
+        events: "no",
+      },
+    },
+    {
+      selector: ".neighborhood",
+      style: {
+        opacity: 1,
+        "z-index": 100,
+      },
+    },
+  ];
+
+  const categoryStyles = categories.map((cat) => ({
+    selector: `node[type="${cat.id}"]`,
+    style: {
+      "border-color": cat.color,
+      "border-width": graph.nodeBorderWidth + 2,
+    },
+  }));
+
+  return [...baseStyle, ...categoryStyles];
+};

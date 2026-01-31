@@ -72,12 +72,12 @@
         {/if}
 
         <div
-            class="text-[10px] md:text-xs text-gray-500 tracking-wider uppercase hidden sm:block"
+            class="text-[10px] md:text-xs text-theme-muted tracking-wider uppercase hidden sm:block"
         >
             {#if vault.status === "loading"}
-                <span class="animate-pulse text-green-500">LOADING...</span>
+                <span class="animate-pulse text-theme-primary">LOADING...</span>
             {:else if vault.status === "saving"}
-                <span class="text-amber-500">SAVING...</span>
+                <span class="text-theme-accent">SAVING...</span>
             {:else if vault.status === "error"}
                 <span
                     class="text-red-400 font-bold text-xs bg-red-900/20 px-2 py-1 rounded border border-red-900/50"
@@ -85,17 +85,17 @@
                     {vault.errorMessage || "ERROR"}
                 </span>
             {:else if vault.allEntities.length > 0 || vault.rootHandle}
-                <span class="text-green-600" data-testid="entity-count"
+                <span class="text-theme-secondary" data-testid="entity-count"
                     >{vault.allEntities.length} ENTITIES</span
                 >
             {:else}
-                <span class="text-gray-600">NO VAULT</span>
+                <span class="text-theme-muted">NO VAULT</span>
             {/if}
         </div>
 
         {#if vault.isGuest}
             <button
-                class="px-3 md:px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-black rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap flex items-center gap-2"
+                class="px-3 md:px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap flex items-center gap-2"
                 onclick={() => {
                     const url = new URL(
                         window.location.origin + window.location.pathname,
@@ -109,7 +109,7 @@
             </button>
         {:else if !vault.rootHandle}
             <button
-                class="px-3 md:px-4 py-1.5 bg-green-600 hover:bg-green-500 text-black rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap"
+                class="px-3 md:px-4 py-1.5 bg-theme-primary hover:bg-theme-secondary text-theme-bg rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap"
                 onclick={() => vault.openDirectory()}
                 data-testid="open-vault-button"
             >
@@ -117,14 +117,14 @@
             </button>
         {:else if !vault.isAuthorized}
             <button
-                class="px-3 md:px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-black rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap"
+                class="px-3 md:px-4 py-1.5 bg-theme-accent hover:bg-theme-accent/80 text-theme-bg rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap"
                 onclick={() => vault.requestPermission()}
             >
                 GRANT ACCESS
             </button>
         {:else}
             <button
-                class="px-3 md:px-4 py-1.5 border border-green-900 text-green-600 hover:text-green-400 hover:border-green-700 rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap flex items-center gap-2"
+                class="px-3 md:px-4 py-1.5 border border-theme-border text-theme-secondary hover:text-theme-primary hover:border-theme-primary rounded text-[10px] md:text-xs font-bold tracking-widest transition whitespace-nowrap flex items-center gap-2"
                 onclick={() => (showForm = !showForm)}
                 data-testid="new-entity-button"
             >
@@ -136,14 +136,14 @@
                 {showForm ? "CANCEL" : "NEW"}
             </button>
             <button
-                class="px-2 py-1.5 border border-green-900/50 text-green-700 hover:text-green-500 hover:border-green-700 rounded text-sm transition flex items-center justify-center"
+                class="px-2 py-1.5 border border-theme-border text-theme-muted hover:text-theme-primary hover:border-theme-primary rounded text-sm transition flex items-center justify-center"
                 onclick={() => vault.refresh()}
                 title="Reload from disk"
             >
                 <span class="icon-[lucide--refresh-cw] w-3.5 h-3.5"></span>
             </button>
             <button
-                class="px-2 py-1.5 border border-green-900/50 text-blue-500 hover:text-blue-400 hover:border-blue-700 rounded text-sm transition flex items-center justify-center"
+                class="px-2 py-1.5 border border-theme-border text-blue-500 hover:text-blue-400 hover:border-blue-700 rounded text-sm transition flex items-center justify-center"
                 onclick={() => (showShare = true)}
                 title="Share Campaign"
             >
@@ -167,7 +167,7 @@
                 CLOSE
             </button>
             <button
-                class="px-3 py-1.5 border border-green-900/50 text-amber-700 hover:text-amber-500 hover:border-amber-700 rounded text-[10px] transition hidden xs:flex items-center gap-1.5"
+                class="px-3 py-1.5 border border-theme-border text-theme-accent hover:text-theme-accent/80 hover:border-theme-accent rounded text-[10px] transition hidden xs:flex items-center gap-1.5"
                 onclick={() => vault.rebuildIndex()}
                 title="Clear cache and re-index all vault files. Use if search seems out of sync."
             >
@@ -187,16 +187,16 @@
                 e.preventDefault();
                 handleCreate();
             }}
-            class="flex gap-2 p-3 bg-black/50 rounded border border-green-900/30"
+            class="flex gap-2 p-3 bg-theme-surface rounded border border-theme-border"
         >
             <input
                 bind:value={newTitle}
                 placeholder="Entry Title..."
-                class="px-3 py-1.5 text-xs bg-black/50 border border-green-800 text-gray-100 rounded flex-1 focus:outline-none focus:border-green-500 placeholder-green-900/50"
+                class="px-3 py-1.5 text-xs bg-theme-bg border border-theme-border text-theme-text rounded flex-1 focus:outline-none focus:border-theme-primary placeholder-theme-muted/50"
             />
             <select
                 bind:value={newType}
-                class="px-2 py-1.5 text-xs bg-black border border-green-800 text-gray-300 rounded focus:outline-none focus:border-green-500"
+                class="px-2 py-1.5 text-xs bg-theme-bg border border-theme-border text-theme-text rounded focus:outline-none focus:border-theme-primary"
             >
                 {#each categories.list as cat}
                     <option value={cat.id}>{cat.label}</option>
@@ -204,7 +204,7 @@
             </select>
             <button
                 type="submit"
-                class="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-black rounded text-xs font-bold tracking-widest disabled:opacity-50 transition"
+                class="px-4 py-1.5 bg-theme-primary hover:bg-theme-secondary text-theme-bg rounded text-xs font-bold tracking-widest disabled:opacity-50 transition"
                 disabled={!newTitle.trim()}
             >
                 ADD

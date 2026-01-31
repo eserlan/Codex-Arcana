@@ -1,0 +1,86 @@
+import { THEMES, DEFAULT_THEME } from "schema";
+import type { StylingTemplate } from "schema";
+import { browser } from "$app/environment";
+
+const STORAGE_KEY = "codex-cryptica-active-theme";
+
+class ThemeStore {
+  currentThemeId = $state(DEFAULT_THEME.id);
+  previewThemeId = $state<string | null>(null);
+
+  activeTheme = $derived(
+    this.previewThemeId 
+      ? THEMES[this.previewThemeId] 
+      : THEMES[this.currentThemeId] || DEFAULT_THEME
+  );
+
+  constructor() {
+    $effect.root(() => {
+      $effect(() => {
+        this.applyTheme(this.activeTheme);
+      });
+    });
+  }
+
+  init() {
+    if (browser) {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored && THEMES[stored]) {
+        this.currentThemeId = stored;
+      }
+    }
+  }
+
+  setTheme(id: string) {
+    if (THEMES[id]) {
+      this.currentThemeId = id;
+      if (browser) {
+        localStorage.setItem(STORAGE_KEY, id);
+      }
+    }
+  }
+
+  previewTheme(id: string | null) {
+    this.previewThemeId = id;
+  }
+
+  private applyTheme(theme: StylingTemplate) {
+    if (typeof document === "undefined") return;
+
+    const root = document.documentElement;
+    const tokens = theme.tokens;
+
+    root.style.setProperty("--color-bg-primary", tokens.background);
+    root.style.setProperty("--color-bg-surface", tokens.surface);
+    root.style.setProperty("--color-accent-primary", tokens.primary);
+    root.style.setProperty("--color-accent-dim", tokens.secondary);
+    root.style.setProperty("--color-accent-dark", tokens.secondary);
+    root.style.setProperty("--color-accent-deep", tokens.background);
+    root.style.setProperty("--color-border-primary", tokens.border);
+    
+    root.style.setProperty("--color-text-primary", tokens.text);
+    root.style.setProperty("--color-text-muted", tokens.secondary);
+    root.style.setProperty("--color-text-dim", tokens.secondary);
+    
+    root.style.setProperty("--color-theme-accent", tokens.accent);
+    
+    root.style.setProperty("--color-oracle-primary", tokens.accent);
+    root.style.setProperty("--color-oracle-dim", `color-mix(in srgb, ${tokens.accent}, ${tokens.background} 30%)`);
+    root.style.setProperty("--color-oracle-dark", `color-mix(in srgb, ${tokens.accent}, ${tokens.background} 60%)`);
+    
+    root.style.setProperty("--font-header", tokens.fontHeader);
+    root.style.setProperty("--font-body", tokens.fontBody);
+
+    root.style.setProperty("--theme-border-width", `${theme.graph.nodeBorderWidth}px`);
+    root.style.setProperty("--theme-glow", theme.id === 'cyberpunk' ? `0 0 15px ${tokens.primary}44` : 'none');
+    root.style.setProperty("--theme-border-radius", theme.id === 'modern' ? '12px' : '2px');
+
+    if (tokens.texture) {
+      root.style.setProperty("--bg-texture", `url('/themes/${tokens.texture}')`);
+    } else {
+      root.style.setProperty("--bg-texture", "none");
+    }
+  }
+}
+
+export const themeStore = new ThemeStore();

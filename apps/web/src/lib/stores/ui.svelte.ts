@@ -1,4 +1,4 @@
-export type SettingsTab = "vault" | "sync" | "intelligence" | "schema" | "about" | "help";
+export type SettingsTab = "vault" | "sync" | "intelligence" | "schema" | "aesthetics" | "about" | "help";
 
 class UIStore {
     showSettings = $state(false);

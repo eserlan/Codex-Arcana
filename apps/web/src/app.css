@@ -1,13 +1,79 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Fira+Code:wght@300;500;700&family=Inter:wght@300;400;700&family=Orbitron:wght@400;700&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
 @plugin "@iconify/tailwind4";
 
 @theme {
-
   --breakpoint-xs: 475px;
 
+  --color-theme-bg: var(--color-bg-primary);
+  --color-theme-primary: var(--color-accent-primary);
+  --color-theme-secondary: var(--color-accent-dim);
+  --color-theme-border: var(--color-border-primary);
+  --color-theme-text: var(--color-text-primary);
+  --color-theme-muted: var(--color-text-muted);
+
+  /* Override Tailwind colors to make existing UI theme-aware */
+  --color-green-50: color-mix(in srgb, var(--color-accent-primary), transparent 95%);
+  --color-green-100: color-mix(in srgb, var(--color-accent-primary), transparent 90%);
+  --color-green-200: color-mix(in srgb, var(--color-accent-primary), transparent 70%);
+  --color-green-300: color-mix(in srgb, var(--color-accent-primary), transparent 40%);
+  --color-green-400: var(--color-accent-primary);
+  --color-green-500: var(--color-accent-primary);
+  --color-green-600: var(--color-accent-dim);
+  --color-green-700: var(--color-accent-dark);
+  --color-green-800: var(--color-accent-dark);
+  --color-green-900: var(--color-accent-deep);
+  --color-green-950: var(--color-bg-primary);
+
+  /* Override Gray scales to ensure readability across light/dark themes */
+  --color-gray-100: var(--color-text-primary);
+  --color-gray-200: var(--color-text-primary);
+  --color-gray-300: var(--color-text-muted);
+  --color-gray-400: var(--color-text-muted);
+  --color-gray-500: var(--color-text-dim);
+  --color-gray-600: var(--color-text-dim);
+  --color-gray-700: var(--color-border-primary);
+  --color-gray-800: var(--color-bg-primary);
+  --color-gray-900: var(--color-bg-primary);
+
+  --color-zinc-100: var(--color-text-primary);
+  --color-zinc-300: var(--color-text-muted);
+  --color-zinc-500: var(--color-text-dim);
+  --color-zinc-800: var(--color-bg-primary);
+  --color-zinc-900: var(--color-bg-primary);
+
+  --color-slate-100: var(--color-text-primary);
+  --color-slate-300: var(--color-text-muted);
+  --color-slate-500: var(--color-text-dim);
+  --color-slate-800: var(--color-bg-primary);
+  --color-slate-900: var(--color-bg-primary);
+
+  /* Override Blue for Shared/Inbound elements */
+  --color-blue-400: color-mix(in srgb, var(--color-accent-primary), blue 20%);
+  --color-blue-500: color-mix(in srgb, var(--color-accent-primary), blue 30%);
+  --color-blue-600: color-mix(in srgb, var(--color-accent-dim), blue 30%);
+
+  /* Override Red for Delete/Danger elements */
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+
+  /* Amber/Gold for Lore and Accents */
+  --color-amber-400: var(--color-theme-accent);
+  --color-amber-500: var(--color-theme-accent);
+  --color-amber-600: color-mix(in srgb, var(--color-theme-accent), black 20%);
+
+  /* Custom oracle colors */
+  --color-oracle-primary: var(--color-oracle-primary);
+  --color-oracle-dim: var(--color-oracle-dim);
+  --color-oracle-dark: var(--color-oracle-dark);
+
+  --font-header: var(--font-header);
+  --font-body: var(--font-body);
 }
-
-
 
 @layer base {
   :root {
@@ -21,12 +87,39 @@
     --color-text-primary: #4ade80;
     --color-text-muted: #15803d;
     --color-text-dim: #166534;
+
+    --color-theme-accent: #facc15;
     
+    --font-header: 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    
+    --bg-texture: none;
+
     --color-warning: #eab308;
     --color-danger: #ef4444;
 
     --color-oracle-primary: #a855f7;
     --color-oracle-dim: #7e22ce;
     --color-oracle-dark: #581c87;
+  }
+
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    background-image: var(--bg-texture);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-header);
+  }
+
+  /* Ensure icons inherit color and are transitionable */
+  [class^="icon-"], [class*=" icon-"] {
+    transition: color 0.3s ease;
   }
 }
