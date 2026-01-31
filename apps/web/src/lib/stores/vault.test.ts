@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { vault } from "./vault.svelte";
+import { oracle } from "./oracle.svelte";
+import { searchService } from "../services/search";
+import { workerBridge } from "../cloud-bridge/worker-bridge";
 import * as fsUtils from "../utils/fs";
 import * as idbUtils from "../utils/idb";
 
@@ -17,6 +20,21 @@ vi.mock("../services/search", () => ({
     clear: vi.fn().mockResolvedValue(undefined),
     init: vi.fn().mockResolvedValue(undefined),
   },
+}));
+
+vi.mock("./oracle.svelte", () => ({
+  oracle: {
+    clearMessages: vi.fn(),
+    messages: [],
+    tier: "lite",
+    apiKey: null
+  }
+}));
+
+vi.mock("../cloud-bridge/worker-bridge", () => ({
+  workerBridge: {
+    reset: vi.fn()
+  }
 }));
 
 vi.mock("../utils/idb", () => ({
@@ -209,6 +227,41 @@ describe("VaultStore", () => {
     expect(vault.entities["test-entity"]?.thumbnail).toContain("-thumb.webp");
   });
 
+  it("should cleanup old images when replacing with new ones", async () => {
+    const mockWritable = { write: vi.fn(), close: vi.fn() };
+    const mockFileHandle = { createWritable: vi.fn().mockResolvedValue(mockWritable) };
+    const mockImagesDir = { 
+      getFileHandle: vi.fn().mockResolvedValue(mockFileHandle),
+      removeEntry: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vault.rootHandle = {
+      getDirectoryHandle: vi.fn().mockResolvedValue(mockImagesDir),
+    } as any;
+
+    // Entity already has an image
+    vault.entities["replace-entity"] = {
+      id: "replace-entity",
+      title: "Replace Entity",
+      type: "npc",
+      image: "./images/old-photo.png",
+      thumbnail: "./images/old-thumb.webp",
+      connections: [],
+      metadata: {},
+    } as any;
+
+    const blob = new Blob(["new-image"], { type: "image/png" });
+    await vault.saveImageToVault(blob, "replace-entity");
+
+    // Verify old files were removed
+    expect(mockImagesDir.removeEntry).toHaveBeenCalledWith("old-photo.png");
+    expect(mockImagesDir.removeEntry).toHaveBeenCalledWith("old-thumb.webp");
+    
+    // Verify new paths were set
+    expect(vault.entities["replace-entity"]?.image).toContain("replace-entity-");
+    expect(vault.entities["replace-entity"]?.image).not.toContain("old-photo.png");
+  });
+
   it("should resolve local paths to blob URLs", async () => {
     const mockFile = new File(["data"], "image.png", { type: "image/png" });
     const mockFileHandle = { getFile: vi.fn().mockResolvedValue(mockFile) };
@@ -248,10 +301,11 @@ describe("VaultStore", () => {
     });
   });
 
-  it("should delete entity", async () => {
+  it("should delete entity and clear selection", async () => {
     const mockFileHandle = { kind: "file" };
     const mockRootHandle = { removeEntry: vi.fn() };
     vault.rootHandle = mockRootHandle as any;
+    vault.selectedEntityId = "test";
 
     vault.entities["test"] = {
       id: "test",
@@ -264,6 +318,79 @@ describe("VaultStore", () => {
 
     expect(mockRootHandle.removeEntry).toHaveBeenCalledWith("test.md");
     expect(vault.entities["test"]).toBeUndefined();
+    expect(vault.selectedEntityId).toBeNull();
+  });
+
+  it("should reset services and state on close", async () => {
+    vault.isAuthorized = true;
+    vault.entities = { "test": { id: "test" } as any };
+    
+    await vault.close();
+
+    expect(vault.isAuthorized).toBe(false);
+    expect(Object.keys(vault.entities)).toHaveLength(0);
+    expect(searchService.clear).toHaveBeenCalled();
+    expect(oracle.clearMessages).toHaveBeenCalled();
+    expect(workerBridge.reset).toHaveBeenCalled();
+  });
+
+  it("should delete entity and associated media files", async () => {
+    const mockFileHandle = { kind: "file" };
+    const mockImagesDir = { removeEntry: vi.fn().mockResolvedValue(undefined) };
+    const mockRootHandle = { 
+      removeEntry: vi.fn().mockResolvedValue(undefined),
+      getDirectoryHandle: vi.fn().mockResolvedValue(mockImagesDir)
+    };
+    vault.rootHandle = mockRootHandle as any;
+
+    vault.entities["media-node"] = {
+      id: "media-node",
+      connections: [],
+      image: "./images/photo.png",
+      thumbnail: "./images/thumb.webp",
+      _fsHandle: mockFileHandle,
+      _path: ["media-node.md"],
+    } as any;
+
+    await vault.deleteEntity("media-node");
+
+    expect(mockRootHandle.removeEntry).toHaveBeenCalledWith("media-node.md");
+    expect(mockImagesDir.removeEntry).toHaveBeenCalledWith("photo.png");
+    expect(mockImagesDir.removeEntry).toHaveBeenCalledWith("thumb.webp");
+    expect(vault.entities["media-node"]).toBeUndefined();
+  });
+
+  it("should cleanup relational references when an entity is deleted", async () => {
+    const mockFileHandle = { kind: "file" };
+    const mockRootHandle = { removeEntry: vi.fn().mockResolvedValue(undefined) };
+    vault.rootHandle = mockRootHandle as any;
+
+    // Entity A points to B
+    vault.entities["a"] = {
+      id: "a",
+      title: "Node A",
+      connections: [{ target: "b", type: "related_to", strength: 1 }],
+      _fsHandle: mockFileHandle,
+    } as any;
+
+    vault.entities["b"] = {
+      id: "b",
+      title: "Node B",
+      connections: [],
+      _fsHandle: mockFileHandle,
+      _path: ["b.md"],
+    } as any;
+
+    // Rebuild map so system knows about the connection
+    (vault as any).rebuildInboundMap();
+
+    await vault.deleteEntity("b");
+
+    expect(vault.entities["b"]).toBeUndefined();
+    // A's connection to B should be gone
+    expect(vault.entities["a"]?.connections).toHaveLength(0);
+    // Should have scheduled a save for A
+    expect(fsUtils.writeFile).toHaveBeenCalled();
   });
 
   it("should parse wiki-links with labels correctly", async () => {

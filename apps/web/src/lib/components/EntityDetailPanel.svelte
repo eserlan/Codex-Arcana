@@ -55,6 +55,19 @@
         editLore = markdown;
     };
 
+    const handleDelete = async () => {
+        if (!entity) return;
+        if (confirm(`Are you sure you want to permanently delete "${entity.title}"? This cannot be undone.`)) {
+            try {
+                await vault.deleteEntity(entity.id);
+                onClose();
+            } catch (err: any) {
+                console.error("Failed to delete entity", err);
+                alert(`Error: ${err.message}`);
+            }
+        }
+    };
+
     // Lightbox state
     let showLightbox = $state(false);
     let isDraggingOver = $state(false);
@@ -143,7 +156,8 @@
             (item) => ({
                 ...item.connection,
                 isOutbound: false,
-                displayTitle: vault.entities[item.sourceId]?.title || item.sourceId,
+                displayTitle:
+                    vault.entities[item.sourceId]?.title || item.sourceId,
                 targetId: item.sourceId,
             }),
         );
@@ -151,6 +165,12 @@
         return [...outbound, ...inbound];
     });
 </script>
+
+<svelte:window
+    onkeydown={(e) => {
+        if (e.key === "Escape" && showLightbox) showLightbox = false;
+    }}
+/>
 
 {#if entity}
     <div
@@ -360,13 +380,17 @@
                                                 <span class="text-green-700"
                                                     >{entity.title}</span
                                                 >
-                                                <span class="relation-arrow icon-[lucide--move-right]"></span>
+                                                <span
+                                                    class="relation-arrow icon-[lucide--move-right]"
+                                                ></span>
                                                 <strong
                                                     class="text-gray-300 group-hover:text-green-400 transition"
                                                     >{conn.label ||
                                                         conn.type}</strong
                                                 >
-                                                <span class="relation-arrow icon-[lucide--move-right]"></span>
+                                                <span
+                                                    class="relation-arrow icon-[lucide--move-right]"
+                                                ></span>
                                                 <span class="text-gray-300"
                                                     >{conn.displayTitle}</span
                                                 >
@@ -374,13 +398,17 @@
                                                 <span class="text-gray-300"
                                                     >{conn.displayTitle}</span
                                                 >
-                                                <span class="relation-arrow icon-[lucide--move-right]"></span>
+                                                <span
+                                                    class="relation-arrow icon-[lucide--move-right]"
+                                                ></span>
                                                 <strong
                                                     class="text-gray-300 group-hover:text-green-400 transition"
                                                     >{conn.label ||
                                                         conn.type}</strong
                                                 >
-                                                <span class="relation-arrow icon-[lucide--move-right]"></span>
+                                                <span
+                                                    class="relation-arrow icon-[lucide--move-right]"
+                                                ></span>
                                                 <span class="text-green-700"
                                                     >{entity.title}</span
                                                 >
@@ -462,6 +490,12 @@
                 </div>
                 <div class="flex gap-2">
                     {#if !vault.isGuest}
+                        <button
+                            onclick={handleDelete}
+                            class="border border-red-900/50 text-red-700 hover:text-red-500 hover:border-red-700 text-[10px] font-bold px-3 py-2 rounded tracking-widest transition"
+                        >
+                            DELETE
+                        </button>
                         <button
                             onclick={startEditing}
                             class="border border-green-900 text-green-600 hover:text-green-400 hover:border-green-700 text-xs font-bold px-4 py-2 rounded tracking-widest transition"

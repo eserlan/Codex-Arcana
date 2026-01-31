@@ -13,16 +13,19 @@ Auto-generated from all feature plans. Last updated: 2026-01-26
 - OPFS (Vault), IndexedDB (Metadata Store) (017-sync-refinement)
 - TypeScript 5.x, Node.js 20+ + Svelte 5, Cytoscape.js, `@google/generative-ai` (018-perf-improvements)
 - OPFS (Origin Private File System), IndexedDB (via `idb`) (018-perf-improvements)
-- TypeScript 5.x / Node.js 20+ + @google/generative-ai FlexSearch, Svelte 5 (019-oracle-rag-improvements)
+- TypeScript 5.x / Node.js 20+ + @google/generative-ai, FlexSearch, Svelte 5 (019-oracle-rag-improvements)
 - IndexedDB (Chat History), Markdown (Vault) (019-oracle-rag-improvements)
+- TypeScript 5.x / Node.js 20+ + Svelte 5, FlexSearch, marked (markdown parsing) (020-help-guide-system)
+- LocalStorage (progress tracking), Static JSON/Markdown (content) (020-help-guide-system)
 - TypeScript 5.x / Node.js 20+ + Svelte 5 (UI Framework), `packages/editor-core` (for content handling logic) (022-oracle-data-parsing)
 - OPFS (Markdown files with YAML frontmatter) (022-oracle-data-parsing)
-- TypeScript 5.x / Node.js 20+ + Svelte 5 (Runes) + `marked` (Markdown rendering), `isomorphic-dompurify` (Sanitization) (027-node-read-mode)
+- TypeScript 5.x / Node.js 20+ + Svelte 5, Cytoscape.js, FlexSearch, `editor-core` (024-delete-nodes)
+- OPFS / Local Directory (Markdown files with YAML frontmatter) (024-delete-nodes)
 
 - TypeScript 5.x, Node.js 20+ (dev), Browser Runtime + `googleapis` or `gapi-script` (003-gdrive-mirroring)
 - OPFS (Origin Private File System) / IndexedDB (Metadata) (003-gdrive-mirroring)
 - FlexSearch (004-fuzzy-search)
-- <!-- Import failed: sveltejs/adapter-static - ENOENT: no such file or directory, access '/home/espen_erlandsen/dev/Codex-Arcana/sveltejs/adapter-static' --> (005-gh-pages-deploy)
+- @sveltejs/adapter-static (005-gh-pages-deploy)
 - IndexedDB Caching (007-scalability-hardening)
 - Google Gemini API (008-lore-oracle)
 - Tailwind CSS 4.x / Svelte 5 (009-mobile-ux-sync-feedback)
@@ -48,10 +51,13 @@ npm test; npm run lint
 TypeScript: Follow standard conventions
 
 ## Recent Changes
-- 027-node-read-mode: Added TypeScript 5.x / Node.js 20+ + Svelte 5 (Runes) + `marked` (Markdown rendering), `isomorphic-dompurify` (Sanitization)
-- 027-node-read-mode: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+- 024-delete-nodes: Added TypeScript 5.x / Node.js 20+ + Svelte 5, Cytoscape.js, FlexSearch, `editor-core`
 - 022-oracle-data-parsing: Added TypeScript 5.x / Node.js 20+ + Svelte 5 (UI Framework), `packages/editor-core` (for content handling logic)
+- 020-help-guide-system: Added TypeScript 5.x / Node.js 20+ + Svelte 5, FlexSearch, marked (markdown parsing)
+- 019-oracle-rag-improvements: Added TypeScript 5.x / Node.js 20+ + @google/generative-ai, FlexSearch, Svelte 5
+- 018-perf-improvements: Added TypeScript 5.x, Node.js 20+ + Svelte 5, Cytoscape.js, `@google/generative-ai`
+- 017-sync-refinement: Added TypeScript 5.x, Node.js 20+ + Google Drive API v3, Svelte 5, `idb`; OPFS (Vault), IndexedDB (Metadata Store)
+
 
 
 <!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->

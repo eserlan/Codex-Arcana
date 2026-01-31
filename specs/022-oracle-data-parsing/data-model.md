@@ -15,8 +15,8 @@ Represents the split content from an Oracle generation.
 
 ### Marker Detection
 The parser searches for the following regex patterns (case-insensitive):
-- `/(?:^|\n)(?:##?|\*\*)\s*(Chronicle|Summary)\s*(?::|?:\r?\n))+(.*?)((?=\n(?:##?|\*\*))|$)/si`
-- `/(?:^|\n)(?:##?|\*\*)\s*(Lore|History|Details)\s*(?::|?:\r?\n))+(.*?)((?=\n(?:##?|\*\*))|$)/si`
+- `/(?:^|\n)(?:##?|\*\*)\s*(Chronicle|Summary)\s*(?::)?(?:\r?\n)+(.*?)((?=\n(?:##?|\*\*))|$)/si`
+- `/(?:^|\n)(?:##?|\*\*)\s*(Lore|History|Details)\s*(?::)?(?:\r?\n)+(.*?)((?=\n(?:##?|\*\*))|$)/si`
 
 ### Heuristic Fallback
 If no markers are found:

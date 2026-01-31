@@ -5,10 +5,12 @@
   import { graph } from "$lib/stores/graph.svelte";
   import { vault } from "$lib/stores/vault.svelte";
   import { categories } from "$lib/stores/categories.svelte";
-  import { parse } from "marked";
+  import { marked } from "marked";
+  import DOMPurify from "isomorphic-dompurify";
   import type { Core, NodeSingular } from "cytoscape";
   import { BASE_STYLE, getTypeStyles } from "$lib/themes/graph-theme";
   import Minimap from "$lib/components/graph/Minimap.svelte";
+  import FeatureHint from "$lib/components/help/FeatureHint.svelte";
 
   let container: HTMLElement;
   let cy: Core | undefined = $state();
@@ -75,6 +77,7 @@
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    if (vault.isGuest) return;
     if (e.key.toLowerCase() === "c" && !e.ctrlKey && !e.metaKey && !e.altKey) {
       // Don't toggle if user is typing in an input (though we don't have many here yet)
       if (
@@ -165,6 +168,7 @@
 
       // Right-click on edge to edit label
       cy.on("cxttap", "edge", (evt) => {
+        if (vault.isGuest) return;
         const edge = evt.target;
         const sourceId = edge.data("source");
         const targetId = edge.data("target");
@@ -224,23 +228,26 @@
       const currentElements = graph.elements;
       const timeout = setTimeout(async () => {
         try {
-          const nodesToResolve = currentElements.filter((el): el is any => 
-            el.group === "nodes" && !!(el.data.thumbnail || el.data.image)
+          const nodesToResolve = currentElements.filter(
+            (el): el is any =>
+              el.group === "nodes" && !!(el.data.thumbnail || el.data.image),
           );
 
           // Batch processing in chunks of 20 to avoid microtask flooding
           const CHUNK_SIZE = 20;
           for (let i = 0; i < nodesToResolve.length; i += CHUNK_SIZE) {
             const chunk = nodesToResolve.slice(i, i + CHUNK_SIZE);
-            await Promise.all(chunk.map(async (el) => {
-              const data = el.data as any;
-              const resolvedUrl = await vault.resolveImagePath(
-                (data.thumbnail || data.image)!,
-              );
-              if (resolvedUrl) {
-                cy?.$id(data.id).data("resolvedImage", resolvedUrl);
-              }
-            }));
+            await Promise.all(
+              chunk.map(async (el) => {
+                const data = el.data as any;
+                const resolvedUrl = await vault.resolveImagePath(
+                  (data.thumbnail || data.image)!,
+                );
+                if (resolvedUrl) {
+                  cy?.$id(data.id).data("resolvedImage", resolvedUrl);
+                }
+              }),
+            );
           }
         } catch (error) {
           console.error("Failed to resolve node images", error);
@@ -278,6 +285,21 @@
     }
   });
 
+  // Manual fit request listener
+  $effect(() => {
+    if (cy && graph.fitRequest > 0) {
+      const _req = graph.fitRequest; // track dependency
+      cy.animate({
+        fit: {
+          eles: cy.elements(),
+          padding: 50,
+        },
+        duration: 800,
+        easing: "ease-out-cubic",
+      });
+    }
+  });
+
   $effect(() => {
     if (cy && graph.elements) {
       // console.log("GraphView Effect Triggered. Elements:", graph.elements.length);
@@ -297,13 +319,54 @@
           cy.remove(removedElements);
         }
 
-        // 2. Add new elements
+        // 2. Add new elements safely
         const newElements = graph.elements.filter(
           (el) => !currentIds.has(el.data.id),
         );
 
         if (newElements.length > 0) {
-          cy.add(newElements);
+          // Split into nodes and edges
+          const newNodes = newElements.filter((el) => !("source" in el.data));
+          const newEdges = newElements.filter((el) => "source" in el.data);
+
+          // Always add nodes first
+          if (newNodes.length > 0) {
+            cy.add(newNodes);
+          }
+
+          // Then add edges, but ONLY if both source and target exist in the graph
+          // (either they were already there, or we just added them)
+          const validEdges = newEdges.filter((edge) => {
+            // Force type check or cast to access source/target safely
+            const edgeData = edge.data as {
+              source?: string;
+              target?: string;
+              id: string;
+            };
+            const sourceId = edgeData.source!;
+            const targetId = edgeData.target!;
+
+            if (!cy) return false;
+
+            const sourceExists = cy.$id(sourceId).nonempty();
+            const targetExists = cy.$id(targetId).nonempty();
+
+            if (!sourceExists || !targetExists) {
+              console.warn(
+                `Skipping orphan edge ${edge.data.id}: ${sourceId} -> ${targetId} (${sourceExists ? "target missing" : "source missing"})`,
+              );
+              return false;
+            }
+            return true;
+          });
+
+          if (validEdges.length > 0) {
+            try {
+              cy.add(validEdges);
+            } catch (e) {
+              console.warn("Failed to add some edges to graph", e);
+            }
+          }
         }
 
         // 3. Update existing elements (labels, etc) - Data Sync only
@@ -396,9 +459,9 @@
   let selectedEntity = $derived(selectedId ? vault.entities[selectedId] : null);
   let parentEntity = $derived(
     selectedId
-      ? (vault.inboundConnections[selectedId]?.[0]?.sourceId 
-          ? vault.entities[vault.inboundConnections[selectedId][0].sourceId] 
-          : null)
+      ? vault.inboundConnections[selectedId]?.[0]?.sourceId
+        ? vault.entities[vault.inboundConnections[selectedId][0].sourceId]
+        : null
       : null,
   );
 
@@ -477,15 +540,17 @@
       </button>
 
       <!-- Connect Mode Toggle -->
-      <button
-        class="w-8 h-8 flex items-center justify-center border transition {connectMode
-          ? 'border-yellow-500 bg-yellow-500/20 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]'
-          : 'border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300'}"
-        onclick={toggleConnectMode}
-        title="Connect Mode (C)"
-      >
-        <span class="icon-[lucide--link] w-4 h-4"></span>
-      </button>
+      {#if !vault.isGuest}
+        <button
+          class="w-8 h-8 flex items-center justify-center border transition {connectMode
+            ? 'border-yellow-500 bg-yellow-500/20 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]'
+            : 'border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300'}"
+          onclick={toggleConnectMode}
+          title="Connect Mode (C)"
+        >
+          <span class="icon-[lucide--link] w-4 h-4"></span>
+        </button>
+      {/if}
     </div>
   </div>
 
@@ -493,6 +558,7 @@
   <div
     class="absolute inset-0 z-10 w-full h-full"
     bind:this={container}
+    data-testid="graph-canvas"
   ></div>
 
   <!-- Hover Tooltip -->
@@ -512,13 +578,15 @@
           class="text-xs font-bold text-[var(--color-text-primary)] tracking-wider uppercase mb-2 border-b border-green-900/50 pb-1 flex justify-between"
         >
           <span>{hoveredEntity.title}</span>
-          <span class="text-[10px] text-[var(--color-text-muted)]">{hoveredEntity.type}</span>
+          <span class="text-[10px] text-[var(--color-text-muted)]"
+            >{hoveredEntity.type}</span
+          >
         </div>
         <div
           class="text-sm text-green-100/90 font-mono leading-relaxed prose prose-invert prose-p:my-1 prose-headings:text-green-400 prose-headings:text-xs prose-strong:text-green-300 prose-em:text-green-200"
         >
           {@html hoveredEntity.content
-            ? parse(hoveredEntity.content)
+            ? DOMPurify.sanitize(marked.parse(hoveredEntity.content) as string)
             : '<span class="italic text-green-900">No data available</span>'}
         </div>
 
@@ -540,7 +608,7 @@
   <!-- Connection Hints -->
   {#if connectMode}
     <div
-      class="absolute top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+      class="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 pointer-events-auto"
     >
       {#if !sourceId}
         <div
@@ -555,6 +623,8 @@
           > SELECT TARGET TO LINK
         </div>
       {/if}
+
+      <FeatureHint hintId="connect-mode" />
     </div>
   {/if}
 

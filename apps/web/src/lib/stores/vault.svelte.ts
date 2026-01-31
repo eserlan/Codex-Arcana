@@ -1,11 +1,17 @@
 import { parseMarkdown, stringifyEntity, sanitizeId } from "../utils/markdown";
 import { walkDirectory, readFile, writeFile } from "../utils/fs";
-import { getPersistedHandle, persistHandle } from "../utils/idb";
+import { getPersistedHandle, persistHandle, clearPersistedHandle } from "../utils/idb";
 import { KeyedTaskQueue } from "../utils/queue";
 import type { Entity, Connection } from "schema";
 import { searchService } from "../services/search";
 import { cacheService } from "../services/cache";
 import { aiService } from "../services/ai";
+<<<<<<< HEAD
+=======
+import { oracle } from "./oracle.svelte";
+import { graph } from "./graph.svelte";
+import { workerBridge } from "../cloud-bridge/worker-bridge";
+>>>>>>> origin/main
 import type { IStorageAdapter } from "../cloud-bridge/types";
 
 export type LocalEntity = Entity & { _fsHandle?: FileSystemHandle; _path?: string | string[] };
@@ -20,6 +26,9 @@ class VaultStore {
   isGuest = $state(false);
   storageAdapter: IStorageAdapter | null = null;
 
+  isGuest = $state(false);
+  storageAdapter: IStorageAdapter | null = null;
+
   /**
    * Bidirectional Adjacency List
    * Maps target entity IDs to an array of source entities that point to them.
@@ -29,6 +38,22 @@ class VaultStore {
   /**
    * Incremental Adjacency Map Updates (O(1))
    */
+  private rebuildInboundMap() {
+    const newInboundMap: Record<string, { sourceId: string; connection: Connection }[]> = {};
+    for (const entity of Object.values(this.entities)) {
+      for (const conn of entity.connections) {
+        const targetId = conn.target;
+        // Only index inbound connections for valid targets that exist in the entity map
+        if (!targetId || !this.entities[targetId]) {
+          continue;
+        }
+        if (!newInboundMap[targetId]) newInboundMap[targetId] = [];
+        newInboundMap[targetId].push({ sourceId: entity.id, connection: conn });
+      }
+    }
+    this.inboundConnections = newInboundMap;
+  }
+
   private addInboundConnection(sourceId: string, connection: Connection) {
     const targetId = connection.target;
     if (!this.inboundConnections[targetId]) {
@@ -61,6 +86,10 @@ class VaultStore {
   private saveQueue = new KeyedTaskQueue();
   private loadingLore = new Set<string>();
 
+  get pendingSaveCount() {
+    return this.saveQueue.totalPendingCount;
+  }
+
   constructor() {
     // Initialization happens via init() called from the root component
   }
@@ -86,6 +115,42 @@ class VaultStore {
     }
   }
 
+<<<<<<< HEAD
+=======
+  /**
+   * Detaches the current vault, clearing all in-memory campaign data 
+   * and removing persistent directory references.
+   */
+  async close() {
+    this.status = "loading";
+    try {
+      // 1. Clear Services
+      await searchService.clear();
+      oracle.clearMessages();
+      workerBridge.reset();
+
+      // 2. Clear Persistence
+      await clearPersistedHandle();
+
+      // 3. Clear Memory
+      this.entities = {};
+      this.inboundConnections = {};
+      this.rootHandle = undefined;
+      this.isAuthorized = false;
+      this.selectedEntityId = null;
+      this.isGuest = false;
+      this.storageAdapter = null;
+      this.errorMessage = null;
+
+      this.clearImageCache();
+    } catch (err) {
+      console.error("Failed to close vault", err);
+    } finally {
+      this.status = "idle";
+    }
+  }
+
+>>>>>>> origin/main
   async initGuest(adapter: IStorageAdapter) {
     this.isGuest = true;
     this.storageAdapter = adapter;
@@ -94,6 +159,7 @@ class VaultStore {
       await adapter.init();
       const graph = await adapter.loadGraph();
       if (graph) {
+<<<<<<< HEAD
         // Convert plain entities to LocalEntity (path might be virtual)
         const localEntities: Record<string, LocalEntity> = {};
         for (const [id, entity] of Object.entries(graph.entities)) {
@@ -117,6 +183,22 @@ class VaultStore {
         this.status = "error";
     } finally {
         if (this.status !== "error") this.status = "idle";
+=======
+        // Convert plain entities to LocalEntity
+        const localEntities: Record<string, LocalEntity> = {};
+        for (const [id, entity] of Object.entries(graph.entities)) {
+          localEntities[id] = { ...entity, _path: `${id}.md` };
+        }
+        this.entities = localEntities;
+        this.rebuildInboundMap();
+      }
+    } catch (err: any) {
+      console.error("Failed to init guest vault", err);
+      this.errorMessage = err.message || "Failed to load shared campaign";
+      this.status = "error";
+    } finally {
+      if (this.status !== "error") this.status = "idle";
+>>>>>>> origin/main
     }
   }
 
@@ -347,6 +429,11 @@ class VaultStore {
     )
       return path;
 
+    // In Guest Mode, delegate to the storage adapter
+    if (this.isGuest && this.storageAdapter) {
+      return await this.storageAdapter.resolvePath(path);
+    }
+
     // Check cache
     if (this.imageBlobCache.has(path)) {
       // Re-insert to mark as recently used (basic LRU)
@@ -429,6 +516,19 @@ class VaultStore {
         create: true,
       });
 
+      // Cleanup old images if they exist
+      const entity = this.entities[entityId];
+      if (entity) {
+        const deleteOldFile = async (path: string) => {
+          const filename = path.split("/").pop();
+          if (filename) {
+            await imagesDir.removeEntry(filename).catch(() => {});
+          }
+        };
+        if (entity.image) await deleteOldFile(entity.image);
+        if (entity.thumbnail) await deleteOldFile(entity.thumbnail);
+      }
+
       const timestamp = Date.now();
       const hash = crypto.randomUUID().split("-")[0];
       const baseFilename = `${entityId}-${timestamp}-${hash}`;
@@ -475,11 +575,11 @@ class VaultStore {
 
       img.onload = () => {
         URL.revokeObjectURL(url);
-        
+
         // Creating a temporary canvas is negligible compared to image decoding overhead.
         // This avoids race conditions inherent in pooling a single canvas for async operations.
-        const canvas = typeof OffscreenCanvas !== 'undefined' 
-          ? new OffscreenCanvas(size, size) 
+        const canvas = typeof OffscreenCanvas !== 'undefined'
+          ? new OffscreenCanvas(size, size)
           : document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
@@ -487,7 +587,7 @@ class VaultStore {
           reject(new Error("Failed to initialize canvas context for thumbnail generation"));
           return;
         }
-        
+
         this.drawOnCanvas(img, canvas, ctx as any, size, resolve, reject);
       };
 
@@ -540,6 +640,17 @@ class VaultStore {
     }).catch(reject);
   }
 
+  // Subscription for P2P Broadcast
+  private subscribers: ((entity: Entity) => void)[] = [];
+
+  subscribe(fn: (entity: Entity) => void) {
+    this.subscribers.push(fn);
+    // Return unsubscribe
+    return () => {
+      this.subscribers = this.subscribers.filter(s => s !== fn);
+    };
+  }
+
   updateEntity(id: string, updates: Partial<Entity>): boolean {
     const entity = this.entities[id];
     if (!entity) return false;
@@ -549,8 +660,8 @@ class VaultStore {
 
     // Granular Cache Invalidation: Only clear if the title suggests style relevance
     const styleKeywords = ["art style", "visual aesthetic", "world guide", "style"];
-    const isPossiblyStyle = styleKeywords.some(kw => 
-      entity.title.toLowerCase().includes(kw) || 
+    const isPossiblyStyle = styleKeywords.some(kw =>
+      entity.title.toLowerCase().includes(kw) ||
       (updates.title && updates.title.toLowerCase().includes(kw))
     );
 
@@ -562,7 +673,19 @@ class VaultStore {
     return true;
   }
 
+  // Called by P2P Client to merge updates from host silently
+  ingestRemoteUpdate(entity: Entity) {
+    // Just update in memory, do not schedule save
+    console.log('[Vault] Ingesting remote update for:', entity.title);
+    this.entities[entity.id] = entity;
+    // We might need to handle connections if they changed
+    // But for now simple entity replacement is enough for data consistency
+  }
+
   scheduleSave(entity: Entity) {
+    // Notify subscribers (e.g. P2P Host)
+    this.subscribers.forEach(fn => fn(entity));
+
     this.status = "saving";
     this.saveQueue.enqueue(entity.id, async () => {
       await this.saveToDisk(entity);
@@ -575,7 +698,11 @@ class VaultStore {
 
   async saveToDisk(entity: Entity) {
     if (this.isGuest) {
+<<<<<<< HEAD
       console.warn("Save blocked in Guest Mode");
+=======
+      // Allow save queue to process but do nothing
+>>>>>>> origin/main
       return;
     }
     const handle = (entity as LocalEntity)._fsHandle as FileSystemFileHandle;
@@ -615,7 +742,11 @@ class VaultStore {
     }
   }
 
+<<<<<<< HEAD
   async createEntity(type: Entity["type"], title: string): Promise<string> {
+=======
+  async createEntity(type: Entity["type"], title: string, initialData?: Partial<Entity>): Promise<string> {
+>>>>>>> origin/main
     if (this.isGuest) throw new Error("Cannot create entities in Guest Mode");
     const id = sanitizeId(title);
     if (this.entities[id]) {
@@ -633,10 +764,13 @@ class VaultStore {
       id,
       type,
       title,
-      content: "",
-      tags: [],
-      connections: [],
-      metadata: {},
+      content: initialData?.content || "",
+      tags: initialData?.tags || [],
+      connections: initialData?.connections || [],
+      metadata: initialData?.metadata || {},
+      lore: initialData?.lore,
+      image: initialData?.image,
+      thumbnail: initialData?.thumbnail,
       _fsHandle: handle,
       _path: [filename],
     };
@@ -644,49 +778,113 @@ class VaultStore {
     await writeFile(handle, stringifyEntity(newEntity));
 
     this.entities[id] = newEntity;
+    this.rebuildInboundMap();
 
     // Index new entity
     await searchService.index({
       id,
       title,
-      content: "",
+      content: newEntity.content,
       type,
       path: filename,
       updatedAt: Date.now()
     });
 
-    // Note: new entities have no connections, so no inbound update needed
     return id;
   }
 
   async deleteEntity(id: string): Promise<void> {
+<<<<<<< HEAD
     if (this.isGuest) return; // Silent fail or throw? Silent is safer for UI.
+=======
+    if (this.isGuest) throw new Error("Cannot delete entities in Guest Mode");
+
+    // 1. Delete file
+>>>>>>> origin/main
     const entity = this.entities[id];
     if (!entity) return;
 
-    const handle = entity._fsHandle as FileSystemFileHandle;
-    const path = entity._path as string[];
+    try {
+      const handle = entity._fsHandle as FileSystemFileHandle;
+      const path = entity._path as string[];
 
-    if (handle && this.rootHandle) {
-      if (path && path.length === 1) {
-        await this.rootHandle.removeEntry(path[0]);
-      } else {
-        if (handle.remove) await handle.remove(); // .remove() is a non-standard convenience in some impls, but our type allows removeEntry on dir
+      if (handle && this.rootHandle) {
+        // Use standard remove() if available, else fallback to removeEntry on root for top-level files
+        if (typeof (handle as any).remove === 'function') {
+          await (handle as any).remove();
+        } else if (path && path.length === 1) {
+          await this.rootHandle.removeEntry(path[0]);
+        } else {
+          throw new Error("Deletion of nested files is not supported in this environment.");
+        }
       }
+
+      // Remove from index
+      await searchService.remove(id);
+
+      // 2. Delete associated media
+      if (entity.image || entity.thumbnail) {
+        try {
+          const imagesDir = await this.rootHandle?.getDirectoryHandle("images", { create: false });
+          if (imagesDir) {
+            const deleteFile = async (path: string) => {
+              const filename = path.split("/").pop();
+              if (filename) {
+                await imagesDir.removeEntry(filename).catch(() => { });
+              }
+            };
+            if (entity.image) await deleteFile(entity.image);
+            if (entity.thumbnail) await deleteFile(entity.thumbnail);
+          }
+        } catch (err) {
+          console.warn("Failed to cleanup media files during entity deletion", err);
+        }
+      }
+
+      // 3. Relational Cleanup
+      const inbound = this.inboundConnections[id] || [];
+      for (const item of inbound) {
+        const sourceId = item.sourceId;
+        const source = this.entities[sourceId];
+        if (source) {
+          // Remove the connection from the source entity
+          const updatedSource = {
+            ...source,
+            connections: source.connections.filter(c => c.target !== id)
+          };
+          this.entities[sourceId] = updatedSource;
+          // Persist the change
+          this.scheduleSave(updatedSource);
+        }
+      }
+
+      // Remove its connections from the inbound map
+      for (const conn of entity.connections) {
+        this.removeInboundConnection(id, conn.target);
+      }
+
+      // Also remove any inbound connections POINTING to this entity
+      delete this.inboundConnections[id];
+
+      if (this.selectedEntityId === id) {
+        this.selectedEntityId = null;
+      }
+
+      delete this.entities[id];
+      this.status = "idle";
+      graph.requestFit();
+    } catch (err: any) {
+      console.error("Failed to delete entity", err);
+      this.status = "error";
+      this.errorMessage = err.message;
+      
+      // Show global error notification
+      import("../../stores/ui.svelte").then(({ uiStore }) => {
+        uiStore.setGlobalError(`Failed to delete "${entity.title}": ${err.message}`);
+      });
+
+      throw err;
     }
-
-    // Remove from index
-    await searchService.remove(id);
-
-    // Remove its connections from the inbound map
-    for (const conn of entity.connections) {
-      this.removeInboundConnection(id, conn.target);
-    }
-
-    // Also remove any inbound connections POINTING to this entity
-    delete this.inboundConnections[id];
-
-    delete this.entities[id];
   }
 
   async refresh() {
@@ -753,7 +951,7 @@ class VaultStore {
     updated.connections[connIndex] = updatedConnection;
 
     this.entities[sourceId] = updated;
-    
+
     // Update inbound map
     this.removeInboundConnection(sourceId, targetId);
     this.addInboundConnection(sourceId, updatedConnection);
