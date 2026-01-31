@@ -762,10 +762,13 @@ class VaultStore {
       const path = entity._path as string[];
 
       if (handle && this.rootHandle) {
-        if (path && path.length === 1) {
+        // Use standard remove() if available, else fallback to removeEntry on root for top-level files
+        if (typeof (handle as any).remove === 'function') {
+          await (handle as any).remove();
+        } else if (path && path.length === 1) {
           await this.rootHandle.removeEntry(path[0]);
         } else {
-          if (handle.remove) await handle.remove(); // .remove() is a non-standard convenience in some impls, but our type allows removeEntry on dir
+          throw new Error("Deletion of nested files is not supported in this environment.");
         }
       }
 
@@ -832,6 +835,8 @@ class VaultStore {
       import("../../stores/ui.svelte").then(({ uiStore }) => {
         uiStore.setGlobalError(`Failed to delete "${entity.title}": ${err.message}`);
       });
+
+      throw err;
     }
   }
 
