@@ -5,6 +5,7 @@
     import { oracle } from "$lib/stores/oracle.svelte";
     import { ui } from "$lib/stores/ui.svelte";
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
+    import TemporalEditor from "$lib/components/timeline/TemporalEditor.svelte";
 
     let { entity, onClose } = $props<{
         entity: Entity | null;
@@ -16,6 +17,9 @@
     let editContent = $state("");
     let editLore = $state("");
     let editImage = $state("");
+    let editDate = $state<Entity["date"]>();
+    let editStartDate = $state<Entity["start_date"]>();
+    let editEndDate = $state<Entity["end_date"]>();
     let resolvedImageUrl = $state("");
 
     const startEditing = () => {
@@ -24,6 +28,9 @@
         editContent = entity.content || "";
         editLore = entity.lore || "";
         editImage = entity.image || "";
+        editDate = entity.date;
+        editStartDate = entity.start_date;
+        editEndDate = entity.end_date;
         isEditing = true;
     };
 
@@ -39,6 +46,9 @@
                 content: editContent,
                 lore: editLore,
                 image: editImage,
+                date: editDate,
+                start_date: editStartDate,
+                end_date: editEndDate,
                 type: entity.type, // Explicitly preserve type
             });
             isEditing = false;
@@ -53,6 +63,37 @@
 
     const handleLoreUpdate = (markdown: string) => {
         editLore = markdown;
+    };
+
+    const getTemporalLabel = (type: string, field: "date" | "start" | "end") => {
+        const t = type.toLowerCase();
+
+        if (field === "date") return "Occurrence";
+
+        if (field === "start") {
+            if (["npc", "creature", "character", "monster"].some(x => t.includes(x))) return "Born";
+            if (["faction", "location", "city", "organization", "guild"].some(x => t.includes(x))) return "Founded";
+            if (["item", "artifact", "object", "weapon"].some(x => t.includes(x))) return "Created";
+            return "Started";
+        }
+
+        if (field === "end") {
+            if (["npc", "creature", "character", "monster"].some(x => t.includes(x))) return "Died";
+            if (["faction", "location", "city", "organization", "guild"].some(x => t.includes(x))) return "Dissolved";
+            if (["item", "artifact", "object", "weapon"].some(x => t.includes(x))) return "Destroyed";
+            return "Ended";
+        }
+
+        return "Date";
+    };
+
+    const formatDate = (date: Entity["date"]) => {
+        if (!date || date.year === undefined) return "";
+        if (date.label) return date.label;
+        let str = `${date.year}`;
+        if (date.month !== undefined) str += `/${date.month}`;
+        if (date.day !== undefined) str += `/${date.day}`;
+        return str;
     };
 
     const handleDelete = async () => {
@@ -326,6 +367,43 @@
         <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {#if vault.activeDetailTab === "status"}
                 <div class="space-y-8">
+                    <!-- Temporal Metadata -->
+                    {#if isEditing}
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <TemporalEditor 
+                                    bind:value={editStartDate} 
+                                    label={getTemporalLabel(entity.type, 'start')} 
+                                />
+                                <TemporalEditor 
+                                    bind:value={editEndDate} 
+                                    label={getTemporalLabel(entity.type, 'end')} 
+                                />
+                            </div>
+                        </div>
+                    {:else if (entity.date?.year !== undefined) || (entity.start_date?.year !== undefined) || (entity.end_date?.year !== undefined)}
+                        <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-mono border-b border-green-900/20 pb-4">
+                            {#if entity.date?.year !== undefined}
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-green-400 font-bold uppercase">{getTemporalLabel(entity.type, 'date')}:</span>
+                                    <span class="text-green-100">{formatDate(entity.date)}</span>
+                                </div>
+                            {/if}
+                            {#if entity.start_date?.year !== undefined}
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-green-400 font-bold uppercase">{getTemporalLabel(entity.type, 'start')}:</span>
+                                    <span class="text-green-100">{formatDate(entity.start_date)}</span>
+                                </div>
+                            {/if}
+                            {#if entity.end_date?.year !== undefined}
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-green-400 font-bold uppercase">{getTemporalLabel(entity.type, 'end')}:</span>
+                                    <span class="text-green-100">{formatDate(entity.end_date)}</span>
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
+
                     <!-- Chronicle / Content -->
                     <div>
                         <h3

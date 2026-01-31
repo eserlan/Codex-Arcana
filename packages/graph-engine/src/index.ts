@@ -1,5 +1,7 @@
 import cytoscape from "cytoscape";
 export * from "./transformer";
+export * from "./layouts/timeline";
+export * from "./renderer/overlays";
 
 export interface GraphOptions {
   container?: HTMLElement;

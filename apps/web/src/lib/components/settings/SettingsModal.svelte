@@ -3,6 +3,7 @@
     import { fly, fade } from "svelte/transition";
     import CloudStatus from "./CloudStatus.svelte";
     import AISettings from "./AISettings.svelte";
+    import EraEditor from "../timeline/EraEditor.svelte";
     import CategorySettings from "./CategorySettings.svelte";
     import HelpTab from "../help/HelpTab.svelte";
     import { vault } from "$lib/stores/vault.svelte";
@@ -247,16 +248,30 @@
                         role="tabpanel"
                         id="settings-panel-intelligence"
                         aria-labelledby="settings-tab-intelligence"
-                        class="space-y-6"
+                        class="space-y-8"
                     >
-                        <p
-                            class="text-[11px] text-green-100/60 leading-relaxed"
-                        >
-                            Manage AI integration settings. Codex Cryptica uses
-                            Google Gemini to provide context-aware reasoning,
-                            automated tagging, and image generation.
-                        </p>
-                        <AISettings />
+                        <section>
+                            <p
+                                class="text-[11px] text-green-100/60 leading-relaxed"
+                            >
+                                Manage AI integration settings. Codex Cryptica uses
+                                Google Gemini to provide context-aware reasoning,
+                                automated tagging, and image generation.
+                            </p>
+                            <AISettings />
+                        </section>
+
+                        <section>
+                            <h3
+                                class="text-xs font-bold text-purple-500 uppercase mb-3 tracking-widest"
+                            >
+                                World Eras
+                            </h3>
+                            <p class="text-[11px] text-green-100/60 leading-relaxed mb-4">
+                                Define chronological boundaries for your world's history. These will be visualized on the timeline graph.
+                            </p>
+                            <EraEditor />
+                        </section>
                     </div>
                 {:else if uiStore.activeSettingsTab === "schema"}
                     <div

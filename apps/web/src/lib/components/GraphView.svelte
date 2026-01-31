@@ -10,6 +10,8 @@
   import type { Core, NodeSingular } from "cytoscape";
   import { BASE_STYLE, getTypeStyles } from "$lib/themes/graph-theme";
   import Minimap from "$lib/components/graph/Minimap.svelte";
+  import TimelineControls from "$lib/components/graph/TimelineControls.svelte";
+  import TimelineOverlay from "$lib/components/graph/TimelineOverlay.svelte";
   import FeatureHint from "$lib/components/help/FeatureHint.svelte";
 
   let container: HTMLElement;
@@ -68,6 +70,35 @@
   } | null>(null);
   let edgeEditInput = $state("");
 
+  const applyCurrentLayout = () => {
+    if (!cy) return;
+    if (currentLayout) {
+      try {
+        currentLayout.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (graph.timelineMode) {
+      graph.applyTimelineLayout(cy);
+    } else {
+      currentLayout = cy.layout({
+        name: "cose",
+        animate: true,
+        // @ts-expect-error - duration is valid for cose
+        duration: 800,
+        padding: 50,
+        componentSpacing: 100,
+        randomize: !initialLoaded,
+      });
+      currentLayout.one("layoutstop", () => {
+        currentLayout = undefined;
+      });
+      currentLayout.run();
+    }
+  };
+
   const toggleConnectMode = () => {
     connectMode = !connectMode;
     if (!connectMode) {
@@ -78,6 +109,15 @@
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (vault.isGuest) return;
+    if (e.key.toLowerCase() === "t" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      )
+        return;
+      graph.toggleTimeline();
+      applyCurrentLayout();
+    }
     if (e.key.toLowerCase() === "c" && !e.ctrlKey && !e.metaKey && !e.altKey) {
       // Don't toggle if user is typing in an input (though we don't have many here yet)
       if (
@@ -261,6 +301,16 @@
   // Center on selection when it changes externally
   $effect(() => {
     if (cy) {
+      // Re-apply timeline layout if mode or axis changes
+      const _mode = graph.timelineMode;
+      const _axis = graph.timelineAxis;
+      const _scale = graph.timelineScale;
+      applyCurrentLayout();
+    }
+  });
+
+  $effect(() => {
+    if (cy) {
       applyFocus(selectedId);
     }
     if (cy && selectedId) {
@@ -389,42 +439,10 @@
           structuralChange || (!initialLoaded && graph.elements.length > 0);
 
         if (shouldRunLayout) {
-          if (currentLayout) {
-            try {
-              currentLayout.stop();
-            } catch {
-              // Ignore
-            }
+          applyCurrentLayout();
+          if (cy) {
+            initialLoaded = true;
           }
-
-          // console.log("Running layout/fit. Initial:", !initialLoaded, "Structural:", structuralChange);
-
-          currentLayout = cy.layout({
-            name: "cose",
-            animate: true,
-            // @ts-expect-error - 'duration' is valid for cose but types might be strict
-            duration: 800,
-            padding: 50,
-            componentSpacing: 100,
-            // Randomize only on first load to let cose find a good shape.
-            // On updates, keep existing positions as starting point.
-            randomize: !initialLoaded,
-          });
-
-          currentLayout.one("layoutstop", () => {
-            if (cy && (!initialLoaded || (structuralChange && !selectedId))) {
-              try {
-                cy.fit(undefined, 50);
-                initialLoaded = true;
-              } catch {
-                // Ignore errors if cy is partially destroyed
-              }
-            }
-            if (cy && selectedId) applyFocus(selectedId);
-            currentLayout = undefined;
-          });
-
-          currentLayout.run();
         } else {
           // If no layout run, still might need focus update if elements were updated
           if (selectedId) applyFocus(selectedId);
@@ -517,11 +535,25 @@
     {#if cy}
       <Minimap {cy} absolute={false} width={192} height={128} />
     {/if}
+
+    {#if graph.timelineMode}
+      <div
+        class="bg-purple-900/40 backdrop-blur border border-purple-500/30 px-3 py-1 flex items-center gap-2 text-[9px] font-mono tracking-[0.2em] text-purple-300 shadow-lg uppercase pointer-events-auto"
+        transition:fade
+      >
+        <span class="icon-[lucide--history] w-3 h-3 animate-pulse"></span>
+        Chronological Synchrony Active ({graph.timelineAxis === "x"
+          ? "Horizontal"
+          : "Vertical"})
+      </div>
+    {/if}
   </div>
 
   <!-- Zoom Controls (Bottom Left) -->
   <div class="absolute bottom-6 left-6 z-20 flex flex-col gap-2 items-start">
-    <div class="flex gap-1">
+    <div class="flex gap-1 items-center">
+      <TimelineControls onApply={applyCurrentLayout} />
+      <div class="h-6 w-px bg-green-900/30 mx-2"></div>
       <button
         class="w-8 h-8 flex items-center justify-center border border-green-900/50 bg-black/80 text-green-500 hover:bg-green-900/20 hover:text-green-300 transition"
         onclick={() => cy?.zoom(cy.zoom() * 1.2)}
@@ -560,6 +592,10 @@
     bind:this={container}
     data-testid="graph-canvas"
   ></div>
+
+  {#if cy}
+    <TimelineOverlay {cy} />
+  {/if}
 
   <!-- Hover Tooltip -->
   {#if hoveredEntityId && hoverPosition && hoveredEntity}

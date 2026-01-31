@@ -12,6 +12,25 @@ export const CategorySchema = z.object({
 
 export type Category = z.infer<typeof CategorySchema>;
 
+export const TemporalMetadataSchema = z.object({
+  year: z.number(),
+  month: z.number().min(1).max(12).optional(),
+  day: z.number().min(1).max(31).optional(),
+  label: z.string().optional(),
+});
+
+export type TemporalMetadata = z.infer<typeof TemporalMetadataSchema>;
+
+export const EraSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  start_year: z.number(),
+  end_year: z.number().optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").optional(),
+});
+
+export type Era = z.infer<typeof EraSchema>;
+
 export const EntityTypeSchema = z.string();
 
 export const EntitySchema = z.object({
@@ -24,6 +43,9 @@ export const EntitySchema = z.object({
   lore: z.string().optional(), // Extended lore & rich notes
   image: z.string().optional(),
   thumbnail: z.string().optional(),
+  date: TemporalMetadataSchema.optional(),
+  start_date: TemporalMetadataSchema.optional(),
+  end_date: TemporalMetadataSchema.optional(),
   metadata: z
     .object({
       coordinates: z.object({ x: z.number(), y: z.number() }).optional(),
