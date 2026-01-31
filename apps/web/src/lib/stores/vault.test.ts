@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { vault } from "./vault.svelte";
+import { oracle } from "./oracle.svelte";
+import { searchService } from "../services/search";
 import * as fsUtils from "../utils/fs";
 import * as idbUtils from "../utils/idb";
 
@@ -17,6 +19,13 @@ vi.mock("../services/search", () => ({
     clear: vi.fn().mockResolvedValue(undefined),
     init: vi.fn().mockResolvedValue(undefined),
   },
+}));
+
+vi.mock("./oracle.svelte", () => ({
+  oracle: {
+    clearMessages: vi.fn(),
+    messages: []
+  }
 }));
 
 vi.mock("../utils/idb", () => ({
@@ -301,6 +310,18 @@ describe("VaultStore", () => {
     expect(mockRootHandle.removeEntry).toHaveBeenCalledWith("test.md");
     expect(vault.entities["test"]).toBeUndefined();
     expect(vault.selectedEntityId).toBeNull();
+  });
+
+  it("should reset services and state on close", async () => {
+    vault.isAuthorized = true;
+    vault.entities = { "test": { id: "test" } as any };
+    
+    await vault.close();
+
+    expect(vault.isAuthorized).toBe(false);
+    expect(Object.keys(vault.entities)).toHaveLength(0);
+    expect(searchService.clear).toHaveBeenCalled();
+    expect(oracle.clearMessages).toHaveBeenCalled();
   });
 
   it("should delete entity and associated media files", async () => {
