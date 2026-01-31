@@ -20,15 +20,17 @@ if [ ! -t 0 ]; then
     
     # ONLY notify if the special speckit.implement marker is present
     if [[ "$PROMPT" == *"GEMINI_CMD: specify.implement"* ]]; then
-      # Optional: Only notify if the response indicates completion
-      # if [[ "$RESPONSE" == *"Implementation Completed"* || "$RESPONSE" == *"All tasks completed"* ]]; then
+      # Try to find the feature name from the implementation plan matching current branch
+      BRANCH=$(git branch --show-current)
+      FEATURE_NAME=$(grep -h "^# Implementation Plan:" "specs/${BRANCH}/plan.md" 2>/dev/null | head -n 1 | sed 's/# Implementation Plan: //')
       
-      MESSAGE="✅ **Speckit Implementation Turn Completed**
+      if [ -z "$FEATURE_NAME" ]; then
+        FEATURE_NAME="Current Feature"
+      fi
 
-The implementation turn for the current feature has finished."
-      # else
-      #   exit 0 # Silent exit for intermediate turns
-      # fi
+      MESSAGE="🚀 **Implementation Complete: ${FEATURE_NAME}**
+
+The implementation of **${FEATURE_NAME}** has finished. All systems are operational."
     else
       exit 0 # Silent exit for any other command
     fi
