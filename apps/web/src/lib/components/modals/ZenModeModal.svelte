@@ -12,7 +12,7 @@
     let entity = $derived(entityId ? vault.entities[entityId] : null);
 
     let isEditing = $state(false);
-    let activeTab = $state<"status" | "lore" | "inventory">("status");
+    let activeTab = $state<"overview" | "inventory">("overview");
     let showLightbox = $state(false);
 
     // Edit State
@@ -325,21 +325,12 @@
             >
                 <button
                     class="py-3 text-xs font-bold tracking-widest transition-colors border-b-2 {activeTab ===
-                    'status'
+                    'overview'
                         ? 'text-green-400 border-green-400'
                         : 'text-gray-500 border-transparent hover:text-gray-300'}"
-                    onclick={() => (activeTab = "status")}
+                    onclick={() => (activeTab = "overview")}
                 >
-                    STATUS & DATA
-                </button>
-                <button
-                    class="py-3 text-xs font-bold tracking-widest transition-colors border-b-2 {activeTab ===
-                    'lore'
-                        ? 'text-green-400 border-green-400'
-                        : 'text-gray-500 border-transparent hover:text-gray-300'}"
-                    onclick={() => (activeTab = "lore")}
-                >
-                    LORE & ARCHIVES
+                    OVERVIEW
                 </button>
                 <button
                     class="py-3 text-xs font-bold tracking-widest transition-colors border-b-2 {activeTab ===
@@ -354,7 +345,7 @@
 
             <!-- Main Body -->
             <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
-                {#if activeTab === "status"}
+                {#if activeTab === "overview"}
                     <!-- Left Sidebar (Image & Meta) -->
                     <div
                         class="w-full md:w-80 lg:w-96 border-r border-green-900/20 p-6 overflow-y-auto custom-scrollbar bg-[#0a0a0a]"
@@ -463,9 +454,9 @@
                         {/if}
                     </div>
 
-                    <!-- Right Content (Temporal & Chronicle) -->
+                    <!-- Right Content (Temporal & Chronicle & Lore) -->
                     <div class="flex-1 p-8 overflow-y-auto custom-scrollbar">
-                        <div class="max-w-3xl mx-auto space-y-8">
+                        <div class="max-w-3xl mx-auto space-y-12">
                             <!-- Temporal Data -->
                             {#if isEditing}
                                 <div
@@ -539,7 +530,7 @@
                             <!-- Chronicle -->
                             <div>
                                 <h2
-                                    class="text-xl font-serif font-bold text-green-500 mb-4 flex items-center gap-2"
+                                    class="text-xl font-serif font-bold text-green-500 mb-4 flex items-center gap-2 border-b border-green-900/30 pb-2"
                                 >
                                     <span
                                         class="icon-[lucide--book-open] w-5 h-5"
@@ -560,36 +551,35 @@
                                     />
                                 {/if}
                             </div>
-                        </div>
-                    </div>
-                {:else if activeTab === "lore"}
-                    <div class="flex-1 p-8 overflow-y-auto custom-scrollbar">
-                        <div class="max-w-3xl mx-auto">
-                            <h2
-                                class="text-xl font-serif font-bold text-amber-600 mb-6 flex items-center gap-2"
-                            >
-                                <span class="icon-[lucide--scroll] w-5 h-5"
-                                ></span>
-                                Deep Lore & Secrets
-                            </h2>
 
-                            {#if isEditing}
-                                <MarkdownEditor
-                                    content={editLore}
-                                    editable={true}
-                                    onUpdate={(md) => (editLore = md)}
-                                />
-                            {:else}
-                                <div
-                                    class="bg-amber-950/10 border border-amber-900/20 p-6 rounded-lg min-h-[300px]"
+                            <!-- Deep Lore -->
+                            <div>
+                                <h2
+                                    class="text-xl font-serif font-bold text-amber-600 mb-4 flex items-center gap-2 border-b border-amber-900/30 pb-2"
                                 >
+                                    <span
+                                        class="icon-[lucide--scroll] w-5 h-5"
+                                    ></span>
+                                    Deep Lore & Secrets
+                                </h2>
+                                {#if isEditing}
                                     <MarkdownEditor
-                                        content={entity.lore ||
-                                            "No deep lore recorded."}
-                                        editable={false}
+                                        content={editLore}
+                                        editable={true}
+                                        onUpdate={(md) => (editLore = md)}
                                     />
-                                </div>
-                            {/if}
+                                {:else}
+                                    <div
+                                        class="bg-amber-950/10 border border-amber-900/20 p-6 rounded-lg min-h-[100px]"
+                                    >
+                                        <MarkdownEditor
+                                            content={entity.lore ||
+                                                "No deep lore recorded."}
+                                            editable={false}
+                                        />
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 {:else if activeTab === "inventory"}
