@@ -12,6 +12,7 @@ export interface GraphNode {
     date?: TemporalMetadata;
     start_date?: TemporalMetadata;
     end_date?: TemporalMetadata;
+    dateLabel?: string;
   };
   position?: { x: number; y: number };
 }
@@ -30,6 +31,15 @@ export interface GraphEdge {
 
 export type GraphElement = GraphNode | GraphEdge;
 
+const formatDate = (date?: TemporalMetadata) => {
+  if (!date || date.year === undefined) return "";
+  if (date.label) return date.label;
+  let str = `${date.year}`;
+  if (date.month !== undefined) str += `/${date.month}`;
+  if (date.day !== undefined) str += `/${date.day}`;
+  return str;
+};
+
 export class GraphTransformer {
   static entitiesToElements(entities: Entity[]): GraphElement[] {
     // Create a Set of valid entity IDs for O(1) lookups
@@ -37,6 +47,8 @@ export class GraphTransformer {
 
     return entities.flatMap((entity) => {
       const elements: GraphElement[] = [];
+
+      const dateLabel = formatDate(entity.date || entity.start_date || entity.end_date);
 
       // Create Node
       const nodeData: GraphNode["data"] = {
@@ -47,6 +59,7 @@ export class GraphTransformer {
         date: entity.date,
         start_date: entity.start_date,
         end_date: entity.end_date,
+        dateLabel,
       };
       if (entity.image) nodeData.image = entity.image;
       if (entity.thumbnail) nodeData.thumbnail = entity.thumbnail;

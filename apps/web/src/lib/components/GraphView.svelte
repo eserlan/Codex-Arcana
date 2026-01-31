@@ -18,7 +18,33 @@
   let cy: Core | undefined = $state();
   let currentLayout: any;
 
-  let graphStyle = $derived([...BASE_STYLE, ...getTypeStyles(categories.list)]);
+  let graphStyle = $derived([
+    ...BASE_STYLE,
+    ...getTypeStyles(categories.list),
+    ...(graph.timelineMode
+      ? [
+          {
+            selector: "node[dateLabel]",
+            style: {
+              label: "data(dateLabel)\n[ data(label) ]",
+              "text-wrap": "wrap",
+              "text-max-width": 120,
+              "text-valign": "top",
+              "text-margin-y": -10,
+              "line-height": 1.4,
+              "text-background-color": "#000",
+              "text-background-opacity": 0.7,
+              "text-background-padding": "4px",
+              "text-border-color": "#15803d",
+              "text-border-width": 1,
+              "text-border-opacity": 0.8,
+              "font-size": 9,
+              "font-weight": "bold",
+            },
+          },
+        ]
+      : []),
+  ]);
 
   let connectMode = $state(false);
   let sourceId = $state<string | null>(null);
