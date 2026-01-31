@@ -1,11 +1,13 @@
 import { parseMarkdown, stringifyEntity, sanitizeId } from "../utils/markdown";
 import { walkDirectory, readFile, writeFile } from "../utils/fs";
-import { getPersistedHandle, persistHandle } from "../utils/idb";
+import { getPersistedHandle, persistHandle, clearPersistedHandle } from "../utils/idb";
 import { KeyedTaskQueue } from "../utils/queue";
 import type { Entity, Connection } from "schema";
 import { searchService } from "../services/search";
 import { cacheService } from "../services/cache";
 import { aiService } from "../services/ai";
+import { oracle } from "./oracle.svelte";
+import { workerBridge } from "../cloud-bridge/worker-bridge";
 import type { IStorageAdapter } from "../cloud-bridge/types";
 
 export type LocalEntity = Entity & { _fsHandle?: FileSystemHandle; _path?: string | string[] };
@@ -77,6 +79,10 @@ class VaultStore {
   private saveQueue = new KeyedTaskQueue();
   private loadingLore = new Set<string>();
 
+  get pendingSaveCount() {
+    return this.saveQueue.totalPendingCount;
+  }
+
   constructor() {
     // Initialization happens via init() called from the root component
   }
@@ -97,6 +103,39 @@ class VaultStore {
       }
     } catch (err) {
       console.error("Failed to init vault", err);
+    } finally {
+      this.status = "idle";
+    }
+  }
+
+  /**
+   * Detaches the current vault, clearing all in-memory campaign data 
+   * and removing persistent directory references.
+   */
+  async close() {
+    this.status = "loading";
+    try {
+      // 1. Clear Services
+      await searchService.clear();
+      oracle.clearMessages();
+      workerBridge.reset();
+
+      // 2. Clear Persistence
+      await clearPersistedHandle();
+
+      // 3. Clear Memory
+      this.entities = {};
+      this.inboundConnections = {};
+      this.rootHandle = undefined;
+      this.isAuthorized = false;
+      this.selectedEntityId = null;
+      this.isGuest = false;
+      this.storageAdapter = null;
+      this.errorMessage = null;
+
+      this.clearImageCache();
+    } catch (err) {
+      console.error("Failed to close vault", err);
     } finally {
       this.status = "idle";
     }

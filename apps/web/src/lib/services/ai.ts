@@ -218,7 +218,7 @@ User visualization request: ${query}`;
       // In this case, we have a user message with no assistant response yet.
       // We pop it and add it to the current query context to preserve intent.
       const lastUser = sanitizedHistory.pop();
-      prefixContext = `[PREVIOUS USER MESSAGE]:\n${lastUser!.parts[0].text}\n\n`;
+      prefixContext = `[PREVIOUS UNANSWERED QUERY]:\n${lastUser!.parts[0].text}\n\n`;
     }
 
     const chat = this.model.startChat({
