@@ -215,6 +215,15 @@
 			event.preventDefault();
 			searchStore.open();
 		}
+
+		if (
+			(event.ctrlKey || event.metaKey) &&
+			event.key === "ArrowUp" &&
+			vault.selectedEntityId
+		) {
+			event.preventDefault();
+			uiStore.openZenMode(vault.selectedEntityId);
+		}
 	};
 </script>
 

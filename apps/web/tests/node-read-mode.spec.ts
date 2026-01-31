@@ -57,10 +57,8 @@ test.describe('Node Read Mode', () => {
         // 4. Verify Copy (Mock Clipboard)
         await page.context().grantPermissions(['clipboard-write']);
         await modal.getByTitle('Copy Content').click();
-        // Since we can't easily read clipboard in all envs without permission headaches, 
-        // we check for the visual feedback (check icon or similar state change if implemented)
-        // Implementation: Copy button changes icon to check mark on success
-        // But for now we trust the button click doesn't crash.
+        // Verify visual feedback (icon change)
+        await expect(modal.locator('.icon-\\[lucide--check\\]')).toBeVisible();
 
         // 5. Navigate
         // Hero has connection to Villain. Find the connection link.
@@ -75,5 +73,25 @@ test.describe('Node Read Mode', () => {
         // 7. Close
         await modal.getByLabel('Close').click();
         await expect(modal).not.toBeVisible();
+    });
+
+    test('Open Zen Mode via Keyboard Shortcut (Ctrl+ArrowUp)', async ({ page }) => {
+        await page.goto('http://localhost:5173/');
+        await page.getByRole('button', { name: 'OPEN VAULT' }).click();
+        await expect(page.getByTestId('entity-count')).toHaveText('2 ENTITIES', { timeout: 20000 });
+
+        // 1. Select "Hero" (opens detail panel)
+        await page.keyboard.press('Control+k');
+        await page.getByPlaceholder('Search notes...').fill('Hero');
+        await page.getByTestId('search-result').filter({ hasText: 'Hero' }).click();
+        await expect(page.getByRole('heading', { level: 2 }).filter({ hasText: 'Hero' })).toBeVisible();
+
+        // 2. Press Ctrl+ArrowUp
+        await page.keyboard.press('Control+ArrowUp');
+
+        // 3. Verify Modal Open
+        const modal = page.locator('[role="dialog"]');
+        await expect(modal).toBeVisible();
+        await expect(modal.getByTestId('entity-title')).toHaveText('Hero');
     });
 });
