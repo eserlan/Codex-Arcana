@@ -8,7 +8,9 @@
 	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
 	import TourOverlay from "$lib/components/help/TourOverlay.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
+	import { graph } from "$lib/stores/graph.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
+	import { timelineStore } from "$lib/stores/timeline.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
 	import { helpStore } from "$stores/help.svelte";
@@ -105,6 +107,7 @@
 	onMount(() => {
 		categories.init();
 		helpStore.init();
+		timelineStore.init();
 
 		if (shareId) {
 			// Check if we already have a guest session
@@ -184,9 +187,10 @@
 		window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
 		// Expose for E2E testing
-		if (import.meta.env.DEV) {
+		if (import.meta.env.DEV || (window as any).__E2E__) {
 			(window as any).searchStore = searchStore;
 			(window as any).vault = vault;
+			(window as any).graph = graph;
 			(window as any).oracle = oracle;
 			(window as any).aiService = aiService;
 			(window as any).categories = categories;

@@ -4,6 +4,7 @@
     import { vault } from "$lib/stores/vault.svelte";
     import { oracle } from "$lib/stores/oracle.svelte";
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
+    import TemporalEditor from "$lib/components/timeline/TemporalEditor.svelte";
 
     let { entity, onClose } = $props<{
         entity: Entity | null;
@@ -15,6 +16,9 @@
     let editContent = $state("");
     let editLore = $state("");
     let editImage = $state("");
+    let editDate = $state<Entity["date"]>();
+    let editStartDate = $state<Entity["start_date"]>();
+    let editEndDate = $state<Entity["end_date"]>();
     let resolvedImageUrl = $state("");
 
     const startEditing = () => {
@@ -23,6 +27,9 @@
         editContent = entity.content || "";
         editLore = entity.lore || "";
         editImage = entity.image || "";
+        editDate = entity.date;
+        editStartDate = entity.start_date;
+        editEndDate = entity.end_date;
         isEditing = true;
     };
 
@@ -38,6 +45,9 @@
                 content: editContent,
                 lore: editLore,
                 image: editImage,
+                date: editDate,
+                start_date: editStartDate,
+                end_date: editEndDate,
                 type: entity.type, // Explicitly preserve type
             });
             isEditing = false;
@@ -316,6 +326,47 @@
         <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {#if vault.activeDetailTab === "status"}
                 <div class="space-y-8">
+                    <!-- Temporal Metadata -->
+                    {#if isEditing}
+                        <div class="space-y-4">
+                            <TemporalEditor 
+                                bind:value={editDate} 
+                                label="Occurrence / Specific Date" 
+                            />
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <TemporalEditor 
+                                    bind:value={editStartDate} 
+                                    label="Start Date / Birth" 
+                                />
+                                <TemporalEditor 
+                                    bind:value={editEndDate} 
+                                    label="End Date / Death" 
+                                />
+                            </div>
+                        </div>
+                    {:else if entity.date || entity.start_date || entity.end_date}
+                        <div class="flex flex-wrap gap-4 text-[10px] font-mono border-b border-green-900/20 pb-4">
+                            {#if entity.date}
+                                <div class="flex flex-col">
+                                    <span class="text-green-900 uppercase">Occurrence</span>
+                                    <span class="text-green-100">{entity.date.label || `${entity.date.year}/${entity.date.month ?? 1}/${entity.date.day ?? 1}`}</span>
+                                </div>
+                            {/if}
+                            {#if entity.start_date}
+                                <div class="flex flex-col">
+                                    <span class="text-green-900 uppercase">Started / Born</span>
+                                    <span class="text-green-100">{entity.start_date.label || `${entity.start_date.year}/${entity.start_date.month ?? 1}/${entity.start_date.day ?? 1}`}</span>
+                                </div>
+                            {/if}
+                            {#if entity.end_date}
+                                <div class="flex flex-col">
+                                    <span class="text-green-900 uppercase">Ended / Deceased</span>
+                                    <span class="text-green-100">{entity.end_date.label || `${entity.end_date.year}/${entity.end_date.month ?? 1}/${entity.end_date.day ?? 1}`}</span>
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
+
                     <!-- Chronicle / Content -->
                     <div>
                         <h3
