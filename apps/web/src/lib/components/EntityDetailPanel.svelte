@@ -228,7 +228,7 @@
         class="w-full md:w-1/3 lg:w-1/4 md:min-w-[400px] bg-theme-surface border-l border-theme-border flex flex-col h-[calc(100%-60px)] md:h-full absolute right-0 bottom-0 md:top-0 shadow-2xl z-40 font-mono"
     >
         <!-- Header -->
-        <div class="p-6 border-b border-theme-border">
+        <div class="p-6 border-b border-theme-border bg-theme-surface">
             <div class="flex justify-between items-start mb-2">
                 {#if isEditing}
                     <div class="flex flex-col gap-2 w-full mr-4">
@@ -305,7 +305,7 @@
                             class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
                         />
                         <div
-                            class="absolute bottom-2 right-2 bg-theme-bg/70 text-theme-primary text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition"
+                            class="absolute bottom-2 right-2 bg-theme-surface text-theme-primary text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition"
                         >
                             Click to enlarge
                         </div>

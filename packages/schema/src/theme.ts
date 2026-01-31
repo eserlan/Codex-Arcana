@@ -71,7 +71,7 @@ export const THEMES: Record<string, StylingTemplate> = {
       texture: "parchment.png",
     },
     graph: {
-      nodeShape: "ellipse",
+      nodeShape: "round-rectangle",
       edgeStyle: "solid",
       nodeBorderWidth: 2,
       edgeColor: "#78350f",
@@ -92,7 +92,7 @@ export const THEMES: Record<string, StylingTemplate> = {
       fontBody: "'Inter', sans-serif",
     },
     graph: {
-      nodeShape: "rectangle",
+      nodeShape: "round-rectangle",
       edgeStyle: "solid",
       nodeBorderWidth: 1,
       edgeColor: "#cbd5e1",
@@ -113,7 +113,7 @@ export const THEMES: Record<string, StylingTemplate> = {
       fontBody: "'Fira Code', monospace",
     },
     graph: {
-      nodeShape: "diamond",
+      nodeShape: "round-rectangle",
       edgeStyle: "dashed",
       nodeBorderWidth: 2,
       edgeColor: "#db2777",
@@ -135,7 +135,7 @@ export const THEMES: Record<string, StylingTemplate> = {
       texture: "rust.png",
     },
     graph: {
-      nodeShape: "heptagon",
+      nodeShape: "round-rectangle",
       edgeStyle: "dotted",
       nodeBorderWidth: 1,
       edgeColor: "#78716c",
