@@ -136,17 +136,17 @@ export function parseOracleResponse(text: string): OracleParseResult {
         if (lines.length > 1) {
             const firstLine = lines[0];
             // If the first line is very long, it's not a title but likely just the start of a paragraph
-            if (firstLine.length > 200) {
+            if (firstLine.length > 150) {
                 const sentenceEnd = firstLine.indexOf('. ');
-                if (sentenceEnd !== -1 && sentenceEnd < 200) {
+                if (sentenceEnd !== -1 && sentenceEnd < 150) {
                     // Split at the first sentence if it's short enough
                     parts = [
                         firstLine.substring(0, sentenceEnd + 1),
                         firstLine.substring(sentenceEnd + 2) + '\n' + lines.slice(1).join('\n')
                     ];
                 } else {
-                    // Truncate at 200 chars but keep original text in lore
-                    parts = [firstLine.substring(0, 200) + '...', text];
+                    // Truncate at 150 chars but keep original text in lore
+                    parts = [firstLine.substring(0, 150) + '...', text];
                 }
             } else {
                 parts = [firstLine, lines.slice(1).join('\n')];
@@ -207,9 +207,10 @@ function guessType(text: string): string | undefined {
     return undefined;
 }
 
+const WIKI_LINK_REGEX = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+
 function extractWikiLinks(content: string): { target: string, type: string, strength: number, label?: string }[] {
-    const regex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
-    const matches = content.matchAll(regex);
+    const matches = content.matchAll(WIKI_LINK_REGEX);
     const connections: { target: string, type: string, strength: number, label?: string }[] = [];
 
     for (const match of matches) {
