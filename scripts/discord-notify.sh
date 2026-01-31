@@ -24,8 +24,6 @@ if [ ! -t 0 ]; then
       # if [[ "$RESPONSE" == *"Implementation Completed"* || "$RESPONSE" == *"All tasks completed"* ]]; then
       
       MESSAGE="✅ **Speckit Implementation Turn Completed**
-**Session ID:** 
-${CLI_SESSION_ID}
 
 The implementation turn for the current feature has finished."
       # else
@@ -38,8 +36,6 @@ The implementation turn for the current feature has finished."
 else
   # Manual execution or simple message from command line arg
   MESSAGE="🔔 **Gemini CLI Notification**
-**Session ID:** 
-${CLI_SESSION_ID}
 **Content:** ${1:-"Task completed!"}"
 fi
 
