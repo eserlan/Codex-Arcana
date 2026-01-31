@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { TemporalMetadata } from "schema";
+  import { slide } from "svelte/transition";
 
   let { 
     value = $bindable(), 
@@ -13,6 +14,7 @@
   let month = $state<number | undefined>(value?.month);
   let day = $state<number | undefined>(value?.day);
   let displayLabel = $state<string | undefined>(value?.label);
+  let showLabelInput = $state(!!value?.label);
 
   const update = () => {
     if (year === undefined || year === null) {
@@ -79,13 +81,22 @@
   </div>
 
   <div class="flex flex-col gap-1">
-    <span class="text-[10px] text-green-800 uppercase font-bold">Display Label (Optional)</span>
-    <input 
-      type="text" 
-      bind:value={displayLabel} 
-      oninput={update}
-      placeholder="e.g. Early 1240 AF"
-      class="bg-black border border-green-900/30 rounded px-2 py-1.5 text-sm text-gray-100 focus:border-green-500 outline-none w-full"
-    />
+    <button 
+      onclick={() => showLabelInput = !showLabelInput}
+      class="text-[10px] text-green-800 uppercase font-bold text-left hover:text-green-500 transition-colors flex items-center gap-1"
+    >
+      <span class="text-[8px]">{showLabelInput ? '▼' : '▶'}</span> Display Label (Optional)
+    </button>
+    {#if showLabelInput}
+      <div transition:slide={{ duration: 200 }}>
+        <input 
+          type="text" 
+          bind:value={displayLabel} 
+          oninput={update}
+          placeholder="e.g. Early 1240 AF"
+          class="bg-black border border-green-900/30 rounded px-2 py-1.5 text-sm text-gray-100 focus:border-green-500 outline-none w-full"
+        />
+      </div>
+    {/if}
   </div>
 </div>
