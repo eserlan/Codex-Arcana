@@ -18,7 +18,20 @@
   let cy: Core | undefined = $state();
   let currentLayout: any;
 
-  let graphStyle = $derived([...BASE_STYLE, ...getTypeStyles(categories.list)]);
+  let graphStyle = $derived([
+    ...BASE_STYLE,
+    ...getTypeStyles(categories.list),
+    ...(graph.timelineMode
+      ? [
+          {
+            selector: "node",
+            style: {
+              label: "", // Labels handled by TimelineOverlay
+            },
+          },
+        ]
+      : []),
+  ]);
 
   let connectMode = $state(false);
   let sourceId = $state<string | null>(null);

@@ -217,12 +217,13 @@
 		}
 
 		if (
-			event.altKey &&
-			event.key.toLowerCase() === "z" &&
-			vault.selectedEntityId
+			((event.ctrlKey || event.metaKey) && event.key === "ArrowUp") ||
+			(event.altKey && event.key.toLowerCase() === "z")
 		) {
-			event.preventDefault();
-			uiStore.openZenMode(vault.selectedEntityId);
+			if (vault.selectedEntityId) {
+				event.preventDefault();
+				uiStore.openZenMode(vault.selectedEntityId);
+			}
 		}
 	};
 </script>
