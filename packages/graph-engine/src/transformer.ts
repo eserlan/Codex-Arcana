@@ -34,9 +34,16 @@ export type GraphElement = GraphNode | GraphEdge;
 const formatDate = (date?: TemporalMetadata) => {
   if (!date || date.year === undefined) return "";
   if (date.label) return date.label;
-  let str = `${date.year}`;
-  if (date.month !== undefined) str += `/${date.month}`;
-  if (date.day !== undefined) str += `/${date.day}`;
+  
+  const y = String(date.year).padStart(4, "0");
+  const m = date.month !== undefined ? String(date.month).padStart(2, "0") : "";
+  const d = date.day !== undefined ? String(date.day).padStart(2, "0") : "";
+  
+  let str = y;
+  if (m) {
+    str += `-${m}`;
+    if (d) str += `-${d}`;
+  }
   return str;
 };
 

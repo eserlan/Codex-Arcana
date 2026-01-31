@@ -26,20 +26,24 @@
           {
             selector: "node[dateLabel]",
             style: {
-              label: "data(dateLabel)\n[ data(label) ]",
+              // Position date over, title under. 
+              // Standard node is 32px. Image node is 48px.
+              // We use text-valign center and add newlines to push them apart.
+              label: "data(dateLabel)\n\n\n\ndata(label)",
               "text-wrap": "wrap",
               "text-max-width": 120,
-              "text-valign": "top",
-              "text-margin-y": -10,
-              "line-height": 1.4,
-              "text-background-color": "#000",
-              "text-background-opacity": 0.7,
-              "text-background-padding": "4px",
-              "text-border-color": "#15803d",
-              "text-border-width": 1,
-              "text-border-opacity": 0.8,
+              "text-valign": "center",
+              "text-margin-y": 0,
+              "line-height": 1.2,
               "font-size": 9,
-              "font-weight": "bold",
+              color: "#86efac",
+            },
+          },
+          {
+            selector: "node[dateLabel][resolvedImage]",
+            style: {
+              // More newlines for larger 48px image nodes
+              label: "data(dateLabel)\n\n\n\n\ndata(label)",
             },
           },
         ]

@@ -26,7 +26,7 @@ describe("GraphTransformer", () => {
     const elements = GraphTransformer.entitiesToElements(mockEntities);
     const nodes = elements.filter(el => el.group === "nodes");
 
-    expect(nodes[0].data.dateLabel).toBe("1240/5/12");
+    expect(nodes[0].data.dateLabel).toBe("1240-05-12");
     expect(nodes[1].data.dateLabel).toBe("Age of Myth");
   });
 
