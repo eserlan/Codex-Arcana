@@ -351,18 +351,14 @@
                     <!-- Temporal Metadata -->
                     {#if isEditing}
                         <div class="space-y-4">
-                            <TemporalEditor 
-                                bind:value={editDate} 
-                                label="Occurrence / Specific Date" 
-                            />
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <TemporalEditor 
                                     bind:value={editStartDate} 
-                                    label="Start Date / Birth" 
+                                    label={getTemporalLabel(entity.type, 'start')} 
                                 />
                                 <TemporalEditor 
                                     bind:value={editEndDate} 
-                                    label="End Date / Death" 
+                                    label={getTemporalLabel(entity.type, 'end')} 
                                 />
                             </div>
                         </div>
