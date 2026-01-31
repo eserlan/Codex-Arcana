@@ -18,10 +18,14 @@ interface CodexDB extends DBSchema {
     key: string; // id
     value: any; // ChatMessage
   };
+  world_eras: {
+    key: string; // id
+    value: any; // Era
+  };
 }
 
 const DB_NAME = "CodexCryptica";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase<CodexDB>>;
 
@@ -37,6 +41,9 @@ export function getDB() {
         }
         if (oldVersion < 3 && !db.objectStoreNames.contains("chat_history")) {
           db.createObjectStore("chat_history", { keyPath: "id" });
+        }
+        if (oldVersion < 4 && !db.objectStoreNames.contains("world_eras")) {
+          db.createObjectStore("world_eras", { keyPath: "id" });
         }
       },
     });

@@ -1,4 +1,4 @@
-import type { Entity } from "schema";
+import type { Entity, TemporalMetadata } from "schema";
 
 export interface GraphNode {
   group: "nodes";
@@ -9,6 +9,9 @@ export interface GraphNode {
     weight: number;
     image?: string;
     thumbnail?: string;
+    date?: TemporalMetadata;
+    start_date?: TemporalMetadata;
+    end_date?: TemporalMetadata;
   };
   position?: { x: number; y: number };
 }
@@ -41,6 +44,9 @@ export class GraphTransformer {
         label: entity.title,
         type: entity.type,
         weight: entity.connections?.length || 0,
+        date: entity.date,
+        start_date: entity.start_date,
+        end_date: entity.end_date,
       };
       if (entity.image) nodeData.image = entity.image;
       if (entity.thumbnail) nodeData.thumbnail = entity.thumbnail;
