@@ -86,6 +86,15 @@
         return "Date";
     };
 
+    const formatDate = (date: Entity["date"]) => {
+        if (!date || date.year === undefined) return "";
+        if (date.label) return date.label;
+        let str = `${date.year}`;
+        if (date.month !== undefined) str += `/${date.month}`;
+        if (date.day !== undefined) str += `/${date.day}`;
+        return str;
+    };
+
     const handleDelete = async () => {
         if (!entity) return;
         if (confirm(`Are you sure you want to permanently delete "${entity.title}"? This cannot be undone.`)) {
@@ -367,19 +376,19 @@
                             {#if entity.date?.year !== undefined}
                                 <div class="flex items-baseline gap-2">
                                     <span class="text-green-400 font-bold uppercase">{getTemporalLabel(entity.type, 'date')}:</span>
-                                    <span class="text-green-100">{entity.date.label || `${entity.date.year}/${entity.date.month ?? 1}/${entity.date.day ?? 1}`}</span>
+                                    <span class="text-green-100">{formatDate(entity.date)}</span>
                                 </div>
                             {/if}
                             {#if entity.start_date?.year !== undefined}
                                 <div class="flex items-baseline gap-2">
                                     <span class="text-green-400 font-bold uppercase">{getTemporalLabel(entity.type, 'start')}:</span>
-                                    <span class="text-green-100">{entity.start_date.label || `${entity.start_date.year}/${entity.start_date.month ?? 1}/${entity.start_date.day ?? 1}`}</span>
+                                    <span class="text-green-100">{formatDate(entity.start_date)}</span>
                                 </div>
                             {/if}
                             {#if entity.end_date?.year !== undefined}
                                 <div class="flex items-baseline gap-2">
                                     <span class="text-green-400 font-bold uppercase">{getTemporalLabel(entity.type, 'end')}:</span>
-                                    <span class="text-green-100">{entity.end_date.label || `${entity.end_date.year}/${entity.end_date.month ?? 1}/${entity.end_date.day ?? 1}`}</span>
+                                    <span class="text-green-100">{formatDate(entity.end_date)}</span>
                                 </div>
                             {/if}
                         </div>
