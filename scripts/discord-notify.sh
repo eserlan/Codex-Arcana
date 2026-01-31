@@ -1,7 +1,7 @@
 #!/bin/bash
 # Discord Notification Script for Gemini CLI
 
-WEBHOOK_URL="https://discord.com/api/webhooks/1467138976627298337/7TRjwaA6otrA4Q48EChhTymFuLrs47C6okgeSIshDNEtXQWYIcsoaosGLEin8dnJxK6j"
+WEBHOOK_URL="https://discord.com/api/webhooks/1467279751629639709/UArTaoiq8E1qu-VM7XFPF866izX7mTg1t8VQeZ1JMG3hn1nZ7wy72UVW8CBYMNx88aFv"
 CLI_SESSION_ID="${GEMINI_SESSION_ID:-unknown_session}"
 
 # Read event data from stdin if available
