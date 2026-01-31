@@ -1,5 +1,5 @@
 import { vault } from "./vault.svelte";
-import { GraphTransformer, getTimelineLayout } from "graph-engine";
+import { GraphTransformer, getTimelineLayout, type GraphNode } from "graph-engine";
 import type { Core } from "cytoscape";
 import type { Era } from "schema";
 import { getDB } from "../utils/idb";
