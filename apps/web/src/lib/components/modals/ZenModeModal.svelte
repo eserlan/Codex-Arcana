@@ -7,6 +7,8 @@
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
     import TemporalEditor from "$lib/components/timeline/TemporalEditor.svelte";
     import type { Entity } from "schema";
+    import { marked } from "marked";
+    import DOMPurify from "isomorphic-dompurify";
 
     let entityId = $derived(uiStore.zenModeEntityId);
     let entity = $derived(entityId ? vault.entities[entityId] : null);
@@ -39,9 +41,55 @@
 
     const handleCopy = async () => {
         if (!entity) return;
-        const text = `Title: ${entity.title}\n\n${entity.content || ""}`;
+
         try {
-            await navigator.clipboard.writeText(text);
+            // Render Markdown
+            const chronicleHtml = DOMPurify.sanitize(await marked.parse(entity.content || ""));
+            const loreHtml = entity.lore ? DOMPurify.sanitize(await marked.parse(entity.lore)) : "";
+
+            // Construct HTML
+            let html = `<h1>${entity.title}</h1>`;
+            
+            if (resolvedImageUrl) {
+                // Try to convert blob URL to data URI for portability if possible, 
+                // or just use the URL (though blobs won't work across windows usually).
+                // For local copy-paste within app or to docs that support it, this is best effort.
+                // Ideally we'd fetch the blob and convert to base64.
+                try {
+                    const response = await fetch(resolvedImageUrl);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    const base64 = await new Promise<string>((resolve) => {
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.readAsDataURL(blob);
+                    });
+                    html += `<img src="${base64}" alt="${entity.title}" style="max-width: 100%; height: auto;" /><br/>`;
+                } catch (e) {
+                    console.warn("Could not inline image for copy", e);
+                }
+            }
+
+            html += `<h2>Chronicle</h2>${chronicleHtml}`;
+            if (loreHtml) {
+                html += `<h2>Lore</h2>${loreHtml}`;
+            }
+
+            // Construct Plain Text
+            let text = `Title: ${entity.title}\n\n`;
+            text += `Chronicle:\n${entity.content || ""}\n\n`;
+            if (entity.lore) {
+                text += `Lore:\n${entity.lore}\n`;
+            }
+
+            const blobHtml = new Blob([html], { type: "text/html" });
+            const blobText = new Blob([text], { type: "text/plain" });
+
+            const data = [new ClipboardItem({ 
+                "text/html": blobHtml, 
+                "text/plain": blobText 
+            })];
+
+            await navigator.clipboard.write(data);
             isCopied = true;
             setTimeout(() => (isCopied = false), 2000);
         } catch (err) {
