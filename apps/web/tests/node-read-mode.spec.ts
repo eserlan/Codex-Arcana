@@ -7,11 +7,29 @@ test.describe('Node Read Mode', () => {
             // Mock IDB
             const originalPut = IDBObjectStore.prototype.put;
             IDBObjectStore.prototype.put = function (...args: [unknown, IDBValidKey?]) {
-                try { return originalPut.apply(this, args); } catch { return {} as any; }
+                try {
+                    return originalPut.apply(this, args);
+                } catch (error) {
+                    console.error('Mock IDBObjectStore.put failed', error);
+                    throw error;
+                }
             };
 
-            const content1 = "---\nid: hero\ntitle: Hero\nconnections:\n  - target: villain\n    type: enemy\n---\n# Hero Content\nHero is bold.";
-            const content2 = "---\nid: villain\ntitle: Villain\n---\n# Villain Content\nVillain is bad.";
+            const content1 = `---
+id: hero
+title: Hero
+connections:
+  - target: villain
+    type: enemy
+---
+# Hero Content
+Hero is bold.`;
+            const content2 = `---
+id: villain
+title: Villain
+---
+# Villain Content
+Villain is bad.`;
 
             const createMockFile = (content: string, name: string) => ({
                 kind: 'file',
@@ -58,7 +76,7 @@ test.describe('Node Read Mode', () => {
         await page.context().grantPermissions(['clipboard-write']);
         await modal.getByTitle('Copy Content').click();
         // Verify visual feedback (icon change)
-        await expect(modal.locator('.icon-\\[lucide--check\\]')).toBeVisible();
+        await expect(modal.locator('.icon-[lucide--check]')).toBeVisible();
 
         // 5. Navigate
         // Hero has connection to Villain. Find the connection link.
