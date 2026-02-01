@@ -51,12 +51,9 @@ npm test; npm run lint
 TypeScript: Follow standard conventions
 
 ## Recent Changes
+- 030-rich-text-formatting: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 - 024-delete-nodes: Added TypeScript 5.x / Node.js 20+ + Svelte 5, Cytoscape.js, FlexSearch, `editor-core`
 - 022-oracle-data-parsing: Added TypeScript 5.x / Node.js 20+ + Svelte 5 (UI Framework), `packages/editor-core` (for content handling logic)
-- 020-help-guide-system: Added TypeScript 5.x / Node.js 20+ + Svelte 5, FlexSearch, marked (markdown parsing)
-- 019-oracle-rag-improvements: Added TypeScript 5.x / Node.js 20+ + @google/generative-ai, FlexSearch, Svelte 5
-- 018-perf-improvements: Added TypeScript 5.x, Node.js 20+ + Svelte 5, Cytoscape.js, `@google/generative-ai`
-- 017-sync-refinement: Added TypeScript 5.x, Node.js 20+ + Google Drive API v3, Svelte 5, `idb`; OPFS (Vault), IndexedDB (Metadata Store)
 
 
 
