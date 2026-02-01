@@ -189,10 +189,22 @@
 
 <style>
     .toolbar-btn {
-        @apply p-1.5 rounded text-green-700/70 hover:text-green-400 hover:bg-green-900/20 transition-all flex items-center justify-center;
+        padding: 0.375rem; /* p-1.5 */
+        border-radius: 0.25rem; /* rounded */
+        color: rgba(21, 128, 61, 0.7); /* text-green-700/70 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .toolbar-btn:hover {
+        color: #4ade80; /* hover:text-green-400 */
+        background-color: rgba(20, 83, 45, 0.2); /* hover:bg-green-900/20 */
     }
     
     .toolbar-btn.active {
-        @apply text-green-400 bg-green-900/40;
+        color: #4ade80; /* text-green-400 */
+        background-color: rgba(20, 83, 45, 0.4); /* bg-green-900/40 */
     }
 </style>

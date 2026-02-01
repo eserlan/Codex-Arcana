@@ -71,10 +71,22 @@
     /* Tiptap will manage visibility via Tippy.js, but requires the element to be in DOM */
     
     .menu-btn {
-        @apply p-1.5 rounded text-green-700 hover:text-green-400 hover:bg-green-900/20 transition-all flex items-center justify-center;
+        padding: 0.375rem; /* p-1.5 */
+        border-radius: 0.25rem; /* rounded */
+        color: #15803d; /* text-green-700 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .menu-btn:hover {
+        color: #4ade80; /* hover:text-green-400 */
+        background-color: rgba(20, 83, 45, 0.2); /* hover:bg-green-900/20 */
     }
     
     .menu-btn.active {
-        @apply text-green-400 bg-green-900/40;
+        color: #4ade80; /* text-green-400 */
+        background-color: rgba(20, 83, 45, 0.4); /* bg-green-900/40 */
     }
 </style>
