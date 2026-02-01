@@ -299,6 +299,10 @@ class VaultStore {
                   content: content,
                   lore: metadata.lore,
                   image: metadata.image,
+                  thumbnail: metadata.thumbnail,
+                  date: metadata.date,
+                  start_date: metadata.start_date,
+                  end_date: metadata.end_date,
                   metadata: metadata.metadata,
                   _fsHandle: fileEntry.handle,
                   _path: fileEntry.path,
@@ -832,7 +836,7 @@ class VaultStore {
       this.errorMessage = err.message;
       
       // Show global error notification
-      import("../../stores/ui.svelte").then(({ uiStore }) => {
+      import("./ui.svelte").then(({ uiStore }) => {
         uiStore.setGlobalError(`Failed to delete "${entity.title}": ${err.message}`);
       });
 

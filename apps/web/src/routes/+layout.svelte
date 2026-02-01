@@ -6,16 +6,20 @@
 	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
+	import ZenModeModal from "$lib/components/modals/ZenModeModal.svelte";
 	import TourOverlay from "$lib/components/help/TourOverlay.svelte";
 	import { vault } from "$lib/stores/vault.svelte";
+	import { graph } from "$lib/stores/graph.svelte";
 	import { oracle } from "$lib/stores/oracle.svelte";
+	import { timelineStore } from "$lib/stores/timeline.svelte";
 	import { categories } from "$lib/stores/categories.svelte";
 	import { searchStore } from "$lib/stores/search";
-	import { helpStore } from "$stores/help.svelte";
-	import { uiStore } from "$stores/ui.svelte";
+	import { helpStore } from "$lib/stores/help.svelte";
+	import { uiStore } from "$lib/stores/ui.svelte";
+	import { themeStore } from "$lib/stores/theme.svelte";
 	import { guestInfo } from "$lib/stores/guest";
-	import { syncStats } from "$stores/sync-stats";
-	import { cloudConfig } from "$stores/cloud-config";
+	import { syncStats } from "$lib/stores/sync-stats";
+	import { cloudConfig } from "$lib/stores/cloud-config";
 	import { workerBridge } from "$lib/cloud-bridge/worker-bridge";
 	import { MemoryAdapter } from "$lib/cloud-bridge/memory-adapter";
 	import { P2PClientAdapter } from "$lib/cloud-bridge/p2p/client-adapter";
@@ -105,7 +109,9 @@
 	onMount(() => {
 		categories.init();
 		helpStore.init();
-
+		themeStore.init();
+		timelineStore.init();
+		graph.init();
 		if (shareId) {
 			// Check if we already have a guest session
 			const savedUser = sessionStorage.getItem("guest_username");
@@ -184,9 +190,10 @@
 		window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
 		// Expose for E2E testing
-		if (import.meta.env.DEV) {
+		if (import.meta.env.DEV || (window as any).__E2E__) {
 			(window as any).searchStore = searchStore;
 			(window as any).vault = vault;
+			(window as any).graph = graph;
 			(window as any).oracle = oracle;
 			(window as any).aiService = aiService;
 			(window as any).categories = categories;
@@ -210,6 +217,16 @@
 			event.preventDefault();
 			searchStore.open();
 		}
+
+		if (
+			((event.ctrlKey || event.metaKey) && event.key === "ArrowUp") ||
+			(event.altKey && event.key.toLowerCase() === "z")
+		) {
+			if (vault.selectedEntityId) {
+				event.preventDefault();
+				uiStore.openZenMode(vault.selectedEntityId);
+			}
+		}
 	};
 </script>
 
@@ -218,26 +235,26 @@
 <div class="app-layout min-h-screen bg-black flex flex-col">
 	{#if !isPopup}
 		<header
-			class="px-4 md:px-6 py-3 md:py-4 bg-[#0c0c0c] border-b border-green-900/30 flex flex-wrap md:flex-nowrap justify-between items-center sticky top-0 z-50 gap-y-3"
+			class="px-4 md:px-6 py-3 md:py-4 bg-theme-surface border-b border-theme-border flex flex-wrap md:flex-nowrap justify-between items-center sticky top-0 z-50 gap-y-3"
 		>
 			<h1
-				class="text-lg md:text-xl font-bold text-gray-100 font-mono tracking-wide flex items-center gap-2 md:gap-3 shrink-0"
+				class="text-lg md:text-xl font-bold text-theme-text font-mono tracking-wide flex items-center gap-2 md:gap-3 shrink-0"
 			>
-				<span class="icon-[lucide--book-open] text-green-500 w-5 h-5"
+				<span class="icon-[lucide--book-open] text-theme-primary w-5 h-5"
 				></span>
 				<span class="hidden sm:inline">Codex Cryptica</span>
-				<span class="sm:hidden text-green-500">CC</span>
+				<span class="sm:hidden text-theme-primary">CC</span>
 			</h1>
 
 			<div class="flex-1 order-3 md:order-2 w-full md:max-w-xl md:px-4">
 				<div class="relative group">
 					<span
-						class="absolute left-3 top-1/2 -translate-y-1/2 icon-[heroicons--magnifying-glass] w-4 h-4 text-green-900 group-focus-within:text-green-500 transition-colors"
+						class="absolute left-3 top-1/2 -translate-y-1/2 icon-[heroicons--magnifying-glass] w-4 h-4 text-theme-muted group-focus-within:text-theme-primary transition-colors"
 					></span>
 					<input
 						type="text"
 						placeholder="Search (Cmd+K)..."
-						class="w-full bg-black border border-green-900/50 hover:border-green-700 focus:border-green-500 focus:ring-1 focus:ring-green-500/50 rounded py-1.5 pl-10 pr-4 text-sm font-mono text-gray-100 transition-all placeholder:text-green-900/50"
+						class="w-full bg-theme-bg border border-theme-border hover:border-theme-primary/50 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary/50 rounded py-1.5 pl-10 pr-4 text-sm font-mono text-theme-text transition-all placeholder:text-theme-muted/50"
 						onfocus={() => searchStore.open()}
 						value={$searchStore.query}
 						oninput={(e) =>
@@ -254,8 +271,8 @@
 				<button
 					class="w-8 h-8 flex items-center justify-center border transition-all {uiStore.showSettings &&
 					uiStore.activeSettingsTab !== 'sync'
-						? 'border-green-500 bg-green-900/10 text-green-500'
-						: 'border-green-900/30 hover:border-green-500 text-green-900 hover:text-green-500'} relative"
+						? 'border-theme-primary bg-theme-primary/10 text-theme-primary'
+						: 'border-theme-border hover:border-theme-primary text-theme-muted hover:text-theme-primary'} relative"
 					onclick={() => uiStore.toggleSettings("vault")}
 					title="Application Settings"
 					data-testid="settings-button"
@@ -263,12 +280,12 @@
 					<span
 						class="w-5 h-5 {$syncStats.status === 'SCANNING' ||
 						$syncStats.status === 'SYNCING'
-							? 'icon-[lucide--zap] animate-pulse text-green-500'
+							? 'icon-[lucide--zap] animate-pulse text-theme-primary'
 							: 'icon-[lucide--settings]'}"
 					></span>
 					{#if $cloudConfig.enabled && $cloudConfig.connectedEmail && $syncStats.status === "IDLE"}
 						<span
-							class="absolute top-1 right-1 w-1.5 h-1.5 bg-green-500 rounded-full border border-black animate-pulse"
+							class="absolute top-1 right-1 w-1.5 h-1.5 bg-theme-primary rounded-full border border-theme-bg animate-pulse"
 						></span>
 					{/if}
 				</button>
@@ -282,10 +299,10 @@
 
 	{#if !isPopup}
 		<footer
-			class="px-6 py-4 bg-[#080808] border-t border-green-900/10 flex flex-col md:flex-row justify-between items-center gap-4"
+			class="px-6 py-4 bg-theme-surface border-t border-theme-border flex flex-col md:flex-row justify-between items-center gap-4"
 		>
 			<div
-				class="text-[10px] font-mono text-green-900/60 uppercase tracking-widest"
+				class="text-[10px] font-mono text-theme-muted uppercase tracking-widest"
 			>
 				&copy; 2026 Codex Cryptica // Local-First Intelligence
 			</div>
@@ -294,14 +311,14 @@
 					href="{base}/privacy"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
+					class="text-[10px] font-mono text-theme-secondary hover:text-theme-primary transition-colors uppercase tracking-widest"
 					>Privacy Policy</a
 				>
 				<a
 					href="{base}/terms"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-[10px] font-mono text-green-700 hover:text-green-500 transition-colors uppercase tracking-widest"
+					class="text-[10px] font-mono text-theme-secondary hover:text-theme-primary transition-colors uppercase tracking-widest"
 					>Terms of Service</a
 				>
 			</div>
@@ -311,6 +328,7 @@
 			<OracleWindow />
 		{/if}
 		<SettingsModal />
+		<ZenModeModal />
 		<TourOverlay />
 	{/if}
 </div>

@@ -3,8 +3,9 @@
     import { fly, fade } from "svelte/transition";
     import { vault } from "$lib/stores/vault.svelte";
     import { oracle } from "$lib/stores/oracle.svelte";
-    import { ui } from "$lib/stores/ui.svelte";
+    import { uiStore } from "$lib/stores/ui.svelte";
     import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
+    import TemporalEditor from "$lib/components/timeline/TemporalEditor.svelte";
 
     let { entity, onClose } = $props<{
         entity: Entity | null;
@@ -12,10 +13,22 @@
     }>();
 
     let isEditing = $state(false);
+    let previousEntityId = $state<string | undefined>(undefined);
+
+    $effect(() => {
+        if (entity?.id !== previousEntityId) {
+            isEditing = false;
+            previousEntityId = entity?.id;
+        }
+    });
+
     let editTitle = $state("");
     let editContent = $state("");
     let editLore = $state("");
     let editImage = $state("");
+    let editDate = $state<Entity["date"]>();
+    let editStartDate = $state<Entity["start_date"]>();
+    let editEndDate = $state<Entity["end_date"]>();
     let resolvedImageUrl = $state("");
 
     const startEditing = () => {
@@ -24,6 +37,9 @@
         editContent = entity.content || "";
         editLore = entity.lore || "";
         editImage = entity.image || "";
+        editDate = entity.date;
+        editStartDate = entity.start_date;
+        editEndDate = entity.end_date;
         isEditing = true;
     };
 
@@ -39,6 +55,9 @@
                 content: editContent,
                 lore: editLore,
                 image: editImage,
+                date: editDate,
+                start_date: editStartDate,
+                end_date: editEndDate,
                 type: entity.type, // Explicitly preserve type
             });
             isEditing = false;
@@ -55,9 +74,77 @@
         editLore = markdown;
     };
 
+    const getTemporalLabel = (
+        type: string,
+        field: "date" | "start" | "end",
+    ) => {
+        const t = type.toLowerCase();
+
+        if (field === "date") return "Occurrence";
+
+        if (field === "start") {
+            if (
+                ["npc", "creature", "character", "monster"].some((x) =>
+                    t.includes(x),
+                )
+            )
+                return "Born";
+            if (
+                ["faction", "location", "city", "organization", "guild"].some(
+                    (x) => t.includes(x),
+                )
+            )
+                return "Founded";
+            if (
+                ["item", "artifact", "object", "weapon"].some((x) =>
+                    t.includes(x),
+                )
+            )
+                return "Created";
+            return "Started";
+        }
+
+        if (field === "end") {
+            if (
+                ["npc", "creature", "character", "monster"].some((x) =>
+                    t.includes(x),
+                )
+            )
+                return "Died";
+            if (
+                ["faction", "location", "city", "organization", "guild"].some(
+                    (x) => t.includes(x),
+                )
+            )
+                return "Dissolved";
+            if (
+                ["item", "artifact", "object", "weapon"].some((x) =>
+                    t.includes(x),
+                )
+            )
+                return "Destroyed";
+            return "Ended";
+        }
+
+        return "Date";
+    };
+
+    const formatDate = (date: Entity["date"]) => {
+        if (!date || date.year === undefined) return "";
+        if (date.label) return date.label;
+        let str = `${date.year}`;
+        if (date.month !== undefined) str += `/${date.month}`;
+        if (date.day !== undefined) str += `/${date.day}`;
+        return str;
+    };
+
     const handleDelete = async () => {
         if (!entity) return;
-        if (confirm(`Are you sure you want to permanently delete "${entity.title}"? This cannot be undone.`)) {
+        if (
+            confirm(
+                `Are you sure you want to permanently delete "${entity.title}"? This cannot be undone.`,
+            )
+        ) {
             try {
                 await vault.deleteEntity(entity.id);
                 onClose();
@@ -175,45 +262,49 @@
 {#if entity}
     <div
         transition:fly={{ x: 400, duration: 300 }}
-        class="w-full md:w-1/3 lg:w-1/4 md:min-w-[400px] bg-[#0c0c0c] border-l border-green-900/50 flex flex-col h-[calc(100%-60px)] md:h-full absolute right-0 bottom-0 md:top-0 shadow-2xl z-40 font-mono"
+        class="w-full md:w-1/3 lg:w-1/4 md:min-w-[400px] bg-theme-surface border-l border-theme-border flex flex-col h-[calc(100%-60px)] md:h-full absolute right-0 bottom-0 md:top-0 shadow-2xl z-40 font-mono"
     >
         <!-- Header -->
-        <div class="p-6 border-b border-green-900/30">
+        <div class="p-6 border-b border-theme-border bg-theme-surface">
             <div class="flex justify-between items-start mb-2">
                 {#if isEditing}
                     <div class="flex flex-col gap-2 w-full mr-4">
                         <input
                             type="text"
                             bind:value={editTitle}
-                            class="bg-black/50 border border-green-800 text-gray-100 px-2 py-1 focus:outline-none focus:border-green-500 font-serif font-bold text-xl w-full placeholder-green-900"
+                            class="bg-theme-bg border border-theme-primary text-theme-text px-2 py-1 focus:outline-none focus:border-theme-primary font-serif font-bold text-xl w-full placeholder-theme-muted"
                             placeholder="Entity Title"
                         />
                     </div>
                 {:else}
                     <h2
-                        class="text-3xl font-bold text-gray-100 font-serif tracking-wide"
+                        class="text-3xl font-bold text-theme-text font-serif tracking-wide"
                     >
                         {entity.title}
                     </h2>
                 {/if}
 
-                <button
-                    onclick={() => ui.openReadMode(entity!.id)}
-                    class="text-green-700 hover:text-green-500 transition flex items-center justify-center p-1 mr-2"
-                    aria-label="Read Mode"
-                    title="Read Mode"
-                >
-                    <span class="icon-[lucide--book-open] w-6 h-6"></span>
-                </button>
-
-                <button
-                    onclick={onClose}
-                    class="text-green-700 hover:text-green-500 transition flex items-center justify-center p-1"
-                    aria-label="Close panel"
-                    title="Close"
-                >
-                    <span class="icon-[heroicons--x-mark] w-6 h-6"></span>
-                </button>
+                <div class="flex items-center gap-1">
+                    {#if !isEditing}
+                        <button
+                            onclick={() => uiStore.openZenMode(entity.id)}
+                            class="text-theme-secondary hover:text-theme-primary transition flex items-center justify-center p-1"
+                            aria-label="Enter Zen Mode"
+                            title="Zen Mode (Full Screen)"
+                        >
+                            <span class="icon-[lucide--maximize-2] w-5 h-5"
+                            ></span>
+                        </button>
+                    {/if}
+                    <button
+                        onclick={onClose}
+                        class="text-theme-muted hover:text-theme-primary transition flex items-center justify-center p-1"
+                        aria-label="Close panel"
+                        title="Close"
+                    >
+                        <span class="icon-[heroicons--x-mark] w-6 h-6"></span>
+                    </button>
+                </div>
             </div>
 
             <!-- Image Preview / Input -->
@@ -230,36 +321,36 @@
                 {#if isEditing}
                     <div class="mb-4">
                         <label
-                            class="block text-[10px] text-green-600 font-bold mb-1"
+                            class="block text-[10px] text-theme-secondary font-bold mb-1"
                             for="entity-image-url">IMAGE URL</label
                         >
                         <input
                             id="entity-image-url"
                             type="text"
                             bind:value={editImage}
-                            class="bg-black/50 border border-green-800 text-gray-300 px-2 py-1 text-xs focus:outline-none focus:border-green-500 w-full placeholder-green-900/50"
+                            class="bg-theme-bg border border-theme-border text-theme-text px-2 py-1 text-xs focus:outline-none focus:border-theme-primary w-full placeholder-theme-muted/50"
                             placeholder="https://..."
                         />
                     </div>
                 {:else if entity.image}
                     <button
                         onclick={() => (showLightbox = true)}
-                        class="mb-4 w-full aspect-square rounded border border-green-900/30 overflow-hidden relative group cursor-pointer hover:border-green-700 transition block"
+                        class="mb-4 w-full rounded border border-theme-border overflow-hidden relative group cursor-pointer hover:border-theme-primary transition block shadow-inner bg-theme-bg/30"
                     >
                         <img
                             src={resolvedImageUrl}
                             alt={entity.title}
-                            class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
+                            class="w-full h-auto max-h-80 object-contain opacity-90 group-hover:opacity-100 transition mx-auto"
                         />
                         <div
-                            class="absolute bottom-2 right-2 bg-black/70 text-green-500 text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition"
+                            class="absolute bottom-2 right-2 bg-theme-surface text-theme-primary text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition"
                         >
                             Click to enlarge
                         </div>
                     </button>
                 {:else}
                     <div
-                        class="mb-4 w-full aspect-square rounded border border-dashed border-green-900/30 flex flex-col items-center justify-center gap-2 text-green-900 group-hover:border-green-700 transition"
+                        class="mb-4 w-full h-32 rounded border border-dashed border-theme-border flex flex-col items-center justify-center gap-2 text-theme-muted group-hover:border-theme-primary transition"
                     >
                         <span class="icon-[lucide--image] w-8 h-8 opacity-20"
                         ></span>
@@ -288,34 +379,34 @@
             </div>
 
             <div
-                class="text-xs font-bold tracking-widest text-green-600 uppercase mb-4"
+                class="text-xs font-bold tracking-widest text-theme-secondary uppercase mb-4"
             >
                 {entity.type}
             </div>
 
             <!-- Status Tabs -->
             <div
-                class="flex gap-6 text-[10px] font-bold tracking-widest text-gray-500 border-b border-green-900/30 pb-2"
+                class="flex gap-6 text-[10px] font-bold tracking-widest text-theme-muted border-b border-theme-border pb-2"
             >
                 <button
                     class={vault.activeDetailTab === "status"
-                        ? "text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
-                        : "hover:text-gray-300 transition"}
+                        ? "text-theme-primary border-b-2 border-theme-primary pb-2 -mb-2.5"
+                        : "hover:text-theme-text transition"}
                     onclick={() => (vault.activeDetailTab = "status")}
                     >STATUS</button
                 >
                 <button
                     class={vault.activeDetailTab === "lore"
-                        ? "text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
-                        : "hover:text-gray-300 transition"}
+                        ? "text-theme-primary border-b-2 border-theme-primary pb-2 -mb-2.5"
+                        : "hover:text-theme-text transition"}
                     onclick={() => {
                         vault.activeDetailTab = "lore";
                     }}>LORE & NOTES</button
                 >
                 <button
                     class={vault.activeDetailTab === "inventory"
-                        ? "text-green-400 border-b-2 border-green-400 pb-2 -mb-2.5"
-                        : "hover:text-gray-300 transition"}
+                        ? "text-theme-primary border-b-2 border-theme-primary pb-2 -mb-2.5"
+                        : "hover:text-theme-text transition"}
                     onclick={() => (vault.activeDetailTab = "inventory")}
                     >INVENTORY</button
                 >
@@ -323,13 +414,79 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-theme-bg">
             {#if vault.activeDetailTab === "status"}
                 <div class="space-y-8">
+                    <!-- Temporal Metadata -->
+                    {#if isEditing}
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <TemporalEditor
+                                    bind:value={editStartDate}
+                                    label={getTemporalLabel(
+                                        entity.type,
+                                        "start",
+                                    )}
+                                />
+                                <TemporalEditor
+                                    bind:value={editEndDate}
+                                    label={getTemporalLabel(entity.type, "end")}
+                                />
+                            </div>
+                        </div>
+                    {:else if entity.date?.year !== undefined || entity.start_date?.year !== undefined || entity.end_date?.year !== undefined}
+                        <div
+                            class="flex flex-wrap gap-x-6 gap-y-2 text-sm font-mono border-b border-theme-border pb-4"
+                        >
+                            {#if entity.date?.year !== undefined}
+                                <div class="flex items-baseline gap-2">
+                                    <span
+                                        class="text-theme-primary font-bold uppercase"
+                                        >{getTemporalLabel(
+                                            entity.type,
+                                            "date",
+                                        )}:</span
+                                    >
+                                    <span class="text-theme-text"
+                                        >{formatDate(entity.date)}</span
+                                    >
+                                </div>
+                            {/if}
+                            {#if entity.start_date?.year !== undefined}
+                                <div class="flex items-baseline gap-2">
+                                    <span
+                                        class="text-theme-primary font-bold uppercase"
+                                        >{getTemporalLabel(
+                                            entity.type,
+                                            "start",
+                                        )}:</span
+                                    >
+                                    <span class="text-theme-text"
+                                        >{formatDate(entity.start_date)}</span
+                                    >
+                                </div>
+                            {/if}
+                            {#if entity.end_date?.year !== undefined}
+                                <div class="flex items-baseline gap-2">
+                                    <span
+                                        class="text-theme-primary font-bold uppercase"
+                                        >{getTemporalLabel(
+                                            entity.type,
+                                            "end",
+                                        )}:</span
+                                    >
+                                    <span class="text-theme-text"
+                                        >{formatDate(entity.end_date)}</span
+                                    >
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
+
                     <!-- Chronicle / Content -->
                     <div>
                         <h3
-                            class="text-green-500 font-serif italic text-lg mb-3 border-b border-green-900/30 pb-1"
+                            class="text-theme-secondary font-serif italic text-lg mb-3 border-b border-theme-border pb-1"
                         >
                             Chronicle
                         </h3>
@@ -355,18 +512,18 @@
                     <!-- Connections -->
                     <div>
                         <h3
-                            class="text-green-500 font-serif italic text-lg mb-3 border-b border-green-900/30 pb-1"
+                            class="text-theme-secondary font-serif italic text-lg mb-3 border-b border-theme-border pb-1"
                         >
                             Gossip & Secrets
                         </h3>
                         <ul class="space-y-3">
                             {#each allConnections as conn}
                                 <li
-                                    class="flex gap-3 text-sm text-gray-400 items-start group"
+                                    class="flex gap-3 text-sm text-theme-muted items-start group"
                                 >
                                     <span
                                         class="mt-1 w-3 h-3 shrink-0 {conn.isOutbound
-                                            ? 'text-green-500 icon-[lucide--arrow-up-right]'
+                                            ? 'text-theme-primary icon-[lucide--arrow-up-right]'
                                             : 'text-blue-500 icon-[lucide--arrow-down-left]'}"
                                     ></span>
                                     <div class="flex-1 min-w-0">
@@ -374,42 +531,44 @@
                                             onclick={() =>
                                                 (vault.selectedEntityId =
                                                     conn.targetId)}
-                                            class="text-left hover:text-green-400 transition flex items-center flex-wrap gap-y-1"
+                                            class="text-left hover:text-theme-primary transition flex items-center flex-wrap gap-y-1"
                                         >
                                             {#if conn.isOutbound}
-                                                <span class="text-green-700"
+                                                <span
+                                                    class="text-theme-secondary"
                                                     >{entity.title}</span
                                                 >
                                                 <span
                                                     class="relation-arrow icon-[lucide--move-right]"
                                                 ></span>
                                                 <strong
-                                                    class="text-gray-300 group-hover:text-green-400 transition"
+                                                    class="text-theme-text group-hover:text-theme-primary transition"
                                                     >{conn.label ||
                                                         conn.type}</strong
                                                 >
                                                 <span
                                                     class="relation-arrow icon-[lucide--move-right]"
                                                 ></span>
-                                                <span class="text-gray-300"
+                                                <span class="text-theme-text"
                                                     >{conn.displayTitle}</span
                                                 >
                                             {:else}
-                                                <span class="text-gray-300"
+                                                <span class="text-theme-text"
                                                     >{conn.displayTitle}</span
                                                 >
                                                 <span
                                                     class="relation-arrow icon-[lucide--move-right]"
                                                 ></span>
                                                 <strong
-                                                    class="text-gray-300 group-hover:text-green-400 transition"
+                                                    class="text-theme-text group-hover:text-theme-primary transition"
                                                     >{conn.label ||
                                                         conn.type}</strong
                                                 >
                                                 <span
                                                     class="relation-arrow icon-[lucide--move-right]"
                                                 ></span>
-                                                <span class="text-green-700"
+                                                <span
+                                                    class="text-theme-secondary"
                                                     >{entity.title}</span
                                                 >
                                             {/if}
@@ -418,7 +577,7 @@
                                 </li>
                             {/each}
                             {#if allConnections.length === 0}
-                                <li class="text-sm text-gray-600 italic">
+                                <li class="text-sm text-theme-muted italic">
                                     No known connections.
                                 </li>
                             {/if}
@@ -429,13 +588,13 @@
                 <div class="space-y-4">
                     <div>
                         <div
-                            class="flex items-center gap-3 text-xs uppercase tracking-widest text-gray-500 mb-6 font-mono"
+                            class="flex items-center gap-3 text-xs uppercase tracking-widest text-theme-muted mb-6 font-mono"
                         >
                             <span
-                                class="text-blue-500 icon-[lucide--file-text] w-4 h-4"
+                                class="text-theme-accent icon-[lucide--file-text] w-4 h-4"
                             ></span>
                             <span>Lore archive decrypted</span>
-                            <div class="h-px bg-gray-800 flex-1 ml-2"></div>
+                            <div class="h-px bg-theme-border flex-1 ml-2"></div>
                         </div>
                         {#if isEditing}
                             <div class="h-96">
@@ -457,7 +616,7 @@
                     </div>
                 </div>
             {:else if vault.activeDetailTab === "inventory"}
-                <div class="text-gray-500 italic text-sm">
+                <div class="text-theme-muted italic text-sm">
                     Inventory coming soon...
                 </div>
             {/if}
@@ -465,28 +624,32 @@
 
         <!-- Footer Action -->
         <div
-            class="p-4 border-t border-green-900/30 flex justify-between items-center bg-[#0a0a0a]"
+            class="p-4 border-t border-theme-border flex justify-between items-center bg-theme-surface"
         >
             {#if isEditing}
                 <div class="flex gap-2 w-full justify-end">
                     <button
                         onclick={cancelEditing}
-                        class="text-gray-500 hover:text-gray-300 text-xs font-bold px-4 py-2 rounded tracking-widest transition"
+                        class="text-theme-muted hover:text-theme-text text-xs font-bold px-4 py-2 rounded tracking-widest transition"
                     >
                         CANCEL
                     </button>
                     <button
                         onclick={saveChanges}
-                        class="bg-green-600 hover:bg-green-500 text-black text-xs font-bold px-6 py-2 rounded tracking-widest transition"
+                        class="bg-theme-primary hover:bg-theme-secondary text-theme-bg text-xs font-bold px-6 py-2 rounded tracking-widest transition"
                     >
                         SAVE CHANGES
                     </button>
                 </div>
             {:else}
-                <div class="flex gap-4 text-gray-600">
+                <div class="flex gap-4 text-theme-muted">
                     <!-- Icons -->
-                    <div class="w-4 h-4 bg-gray-800 rounded"></div>
-                    <div class="w-4 h-4 bg-gray-800 rounded"></div>
+                    <div
+                        class="w-4 h-4 bg-theme-surface border border-theme-border rounded"
+                    ></div>
+                    <div
+                        class="w-4 h-4 bg-theme-surface border border-theme-border rounded"
+                    ></div>
                 </div>
                 <div class="flex gap-2">
                     {#if !vault.isGuest}
@@ -498,7 +661,7 @@
                         </button>
                         <button
                             onclick={startEditing}
-                            class="border border-green-900 text-green-600 hover:text-green-400 hover:border-green-700 text-xs font-bold px-4 py-2 rounded tracking-widest transition"
+                            class="border border-theme-border text-theme-secondary hover:text-theme-primary hover:border-theme-primary text-xs font-bold px-4 py-2 rounded tracking-widest transition"
                         >
                             EDIT
                         </button>

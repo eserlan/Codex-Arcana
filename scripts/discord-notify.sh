@@ -1,7 +1,7 @@
 #!/bin/bash
 # Discord Notification Script for Gemini CLI
 
-WEBHOOK_URL="https://discord.com/api/webhooks/1467138976627298337/7TRjwaA6otrA4Q48EChhTymFuLrs47C6okgeSIshDNEtXQWYIcsoaosGLEin8dnJxK6j"
+WEBHOOK_URL="https://discord.com/api/webhooks/1467279751629639709/UArTaoiq8E1qu-VM7XFPF866izX7mTg1t8VQeZ1JMG3hn1nZ7wy72UVW8CBYMNx88aFv"
 CLI_SESSION_ID="${GEMINI_SESSION_ID:-unknown_session}"
 
 # Read event data from stdin if available
@@ -12,30 +12,32 @@ if [ ! -t 0 ]; then
   SESSION_END_REASON=$(echo "$EVENT_DATA" | jq -r '.reason // empty')
   
   if [ -n "$SESSION_END_REASON" ]; then
-    MESSAGE="🚀 **Gemini CLI Session Ended**
-**Session ID:** 
-${CLI_SESSION_ID}
-**Reason:** ${SESSION_END_REASON}"
+    exit 0 # Silent exit for session end
   else
     # Check if it's an AfterAgent event (contains prompt and prompt_response)
     PROMPT=$(echo "$EVENT_DATA" | jq -r '.prompt // empty')
-    if [[ "$PROMPT" == *"Execute the implementation plan"* ]]; then
-      MESSAGE="✅ **Speckit Implementation Turn Completed**
-**Session ID:** 
-${CLI_SESSION_ID}
+    RESPONSE=$(echo "$EVENT_DATA" | jq -r '.prompt_response // empty')
+    
+    # ONLY notify if the special speckit.implement marker is present
+    if [[ "$PROMPT" == *"GEMINI_CMD: specify.implement"* ]]; then
+      # Try to find the feature name from the implementation plan matching current branch
+      BRANCH=$(git branch --show-current)
+      FEATURE_NAME=$(grep -h "^# Implementation Plan:" "specs/${BRANCH}/plan.md" 2>/dev/null | head -n 1 | sed 's/# Implementation Plan: //')
+      
+      if [ -z "$FEATURE_NAME" ]; then
+        FEATURE_NAME="Current Feature"
+      fi
 
-The implementation turn for the current feature has finished."
+      MESSAGE="🚀 **Implementation Complete: ${FEATURE_NAME}**
+
+The implementation of **${FEATURE_NAME}** has finished. All systems are operational."
     else
-      MESSAGE="🤖 **Gemini Agent Turn Completed**
-**Session ID:** 
-${CLI_SESSION_ID}"
+      exit 0 # Silent exit for any other command
     fi
   fi
 else
   # Manual execution or simple message from command line arg
   MESSAGE="🔔 **Gemini CLI Notification**
-**Session ID:** 
-${CLI_SESSION_ID}
 **Content:** ${1:-"Task completed!"}"
 fi
 
