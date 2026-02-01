@@ -29,7 +29,7 @@
 
     let element: HTMLDivElement;
     let editor: Editor | null = $state(null);
-    let bubbleMenuComponent: any; 
+    let bubbleMenuComponent: ReturnType<typeof mount> | undefined; 
     let isZenMode = $state(false);
 
     const toggleZenMode = () => {

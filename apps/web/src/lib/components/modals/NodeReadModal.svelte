@@ -12,18 +12,61 @@
 
   let renderedContent = $state("");
   let copyStatus = $state<"idle" | "success" | "error">("idle");
+  let renderTimeout: ReturnType<typeof setTimeout> | null = null;
+  const renderCache = new Map<string, string>();
 
   $effect(() => {
-    if (entity?.content) {
-      const raw = marked.parse(entity.content) as string | Promise<string>;
-      if (typeof raw === 'string') {
-          renderedContent = DOMPurify.sanitize(raw);
-      } else {
-          raw.then(html => renderedContent = DOMPurify.sanitize(html));
-      }
-    } else {
-      renderedContent = "";
+    // Clear any pending render when the entity/content changes
+    if (renderTimeout) {
+      clearTimeout(renderTimeout);
+      renderTimeout = null;
     }
+
+    const currentEntity = entity;
+    const content = currentEntity?.content ?? "";
+
+    if (!content) {
+      renderedContent = "";
+      return;
+    }
+
+    // Use a simple cache key based on entity id and content length
+    const cacheKey =
+      currentEntity && typeof currentEntity.id === "string"
+        ? `${currentEntity.id}:${content.length}`
+        : `content:${content.length}:${content.slice(0, 64)}`;
+
+    const cached = renderCache.get(cacheKey);
+    if (cached) {
+      renderedContent = cached;
+      return;
+    }
+
+    // Debounce rendering to avoid blocking on rapid navigation
+    renderTimeout = setTimeout(() => {
+      const raw = marked.parse(content) as string | Promise<string>;
+
+      const applyResult = (html: string) => {
+        const sanitized = DOMPurify.sanitize(html);
+        renderCache.set(cacheKey, sanitized);
+
+        // Only update if the entity/content is still the same
+        if (
+          entity &&
+          currentEntity &&
+          entity.id === currentEntity.id &&
+          entity.content === content
+        ) {
+          renderedContent = sanitized;
+        }
+      };
+
+      if (typeof raw === "string") {
+        applyResult(raw);
+      } else {
+        raw.then(applyResult);
+      }
+    }, 100);
   });
 
   const connections = $derived.by(() => {
@@ -80,7 +123,7 @@
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div 
     class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" 
-    onclick={close} 
+    onclick={(event) => { if (event.target === event.currentTarget) close(); }} 
     role="dialog" 
     aria-modal="true" 
     tabindex="-1" 
@@ -150,7 +193,9 @@
                     <div class="mb-8 p-4 bg-green-900/10 border-l-2 border-green-500 rounded-r">
                         <h4 class="text-green-400 font-bold text-xs uppercase tracking-widest mb-2 font-mono">Lore & Context</h4>
                         <div class="prose prose-invert prose-sm max-w-none text-gray-300">
-                            {@html DOMPurify.sanitize(marked.parse(entity.lore) as string)}
+                            {#await Promise.resolve(marked.parse(entity.lore)) then html}
+                                {@html DOMPurify.sanitize(html)}
+                            {/await}
                         </div>
                     </div>
                 {/if}

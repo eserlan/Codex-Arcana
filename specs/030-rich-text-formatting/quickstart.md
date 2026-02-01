@@ -15,7 +15,7 @@ This feature adds a visual toolbar to the Markdown editor, allowing users to for
 ### Zen Mode
 1.  In the editor toolbar, click the "Expand" / "Zen Mode" icon (usually ⛶).
 2.  The editor expands to fill the entire screen.
-3.  Click the "Compress" / "Exit Zen Mode" icon to return to the standard view.
+3.  Click the "Minimize" (Exit Zen Mode) icon to return to the standard view.
 4.  Press `Esc` to exit Zen Mode.
 
 ### Keyboard Shortcuts

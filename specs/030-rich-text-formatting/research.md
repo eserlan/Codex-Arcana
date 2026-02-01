@@ -7,7 +7,7 @@
 - **Research**:
     - How to implement a fixed toolbar (for Detail Panel) and a floating/bubble menu (for text selection) using Tiptap's Vue/Svelte wrappers or vanilla JS?
     - Which Tiptap extensions are required for the requested features (Headings, Lists, Links, Blockquotes)? `StarterKit` covers most. `Link` might need to be added.
-    - **Findings**: Tiptap provides `BubbleMenu` and `FloatingMenu` extensions. For a fixed toolbar, we can simply bind buttons to `editor.chain().focus().toggleBold().run()`, etc. Svelte integration is straightforward using the `editor` instance.
+    - **Findings**: Tiptap provides both `BubbleMenu` and `FloatingMenu` extensions, but for this implementation we will only use `BubbleMenu` for selection-based formatting. `FloatingMenu` was evaluated but is not required for the current UX, so it is deferred and out of scope for now. For a fixed toolbar, we can simply bind buttons to `editor.chain().focus().toggleBold().run()`, etc. Svelte integration is straightforward using the `editor` instance.
 
 ### 2. Zen Mode Implementation
 - **Context**: The spec mentions "Zen Mode". Currently, `NodeReadModal` exists but is read-only. There is no dedicated "Zen Editor".

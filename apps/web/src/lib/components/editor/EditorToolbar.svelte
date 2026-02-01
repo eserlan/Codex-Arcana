@@ -22,8 +22,6 @@
 
     const toggleZenMode = () => {
         onToggleZenMode();
-        // Dispatch custom event for global app layout if needed (optional but kept for compatibility)
-        window.dispatchEvent(new CustomEvent('zen-mode-toggle', { detail: { active: !isZenMode } }));
     };
 
     const setLink = () => {
@@ -46,8 +44,8 @@
     };
 
     const handleKeydown = (e: KeyboardEvent) => {
-        // Toggle Zen Mode on Escape if active
-        if (e.key === "Escape" && isZenMode) {
+        // Toggle Zen Mode on Escape if active, but do not block other handlers/defaults
+        if (e.key === "Escape" && isZenMode && !e.defaultPrevented) {
             e.preventDefault();
             toggleZenMode();
         }

@@ -7,7 +7,12 @@ test.describe('Node Read Mode', () => {
             // Mock IDB
             const originalPut = IDBObjectStore.prototype.put;
             IDBObjectStore.prototype.put = function (...args: [unknown, IDBValidKey?]) {
-                try { return originalPut.apply(this, args); } catch { return {} as any; }
+                try {
+                    return originalPut.apply(this, args);
+                } catch (error) {
+                    console.error('Mock IDBObjectStore.put failed', error);
+                    throw error;
+                }
             };
 
             const content1 = `---

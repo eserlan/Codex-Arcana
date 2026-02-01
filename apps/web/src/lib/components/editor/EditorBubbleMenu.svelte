@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
     import { type Editor } from "@tiptap/core";
     
     let { editor } = $props<{ editor: Editor | null }>();
@@ -22,14 +21,6 @@
         }
         editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
     };
-
-    onMount(() => {
-        // Just keeping the element alive
-    });
-
-    onDestroy(() => {
-        // Cleanup if needed
-    });
 </script>
 
 <!-- The element bound here must be passed to BubbleMenu extension -->
@@ -63,12 +54,18 @@
 
 <style>
     .bubble-menu {
-        visibility: hidden; /* Controlled by Tiptap */
+        visibility: hidden; /* Hidden by default, visibility controlled by Tiptap */
         opacity: 0;
         transition: opacity 0.2s;
     }
 
-    /* Tiptap will manage visibility via Tippy.js, but requires the element to be in DOM */
+    /* When Tiptap's BubbleMenu marks the menu as active, make it visible */
+    :global(.bubble-menu.is-active) {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    /* Tiptap will manage visibility via Tippy.js / class toggling, but requires the element to be in DOM */
     
     .menu-btn {
         padding: 0.375rem; /* p-1.5 */

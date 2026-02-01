@@ -14,7 +14,8 @@ test.describe('Rich Text Editor', () => {
     // Interact with editor (ProseMirror contenteditable div)
     const editor = page.locator('.ProseMirror');
     await expect(editor).toBeVisible();
-    await editor.fill('Hello World');
+    await editor.click();
+    await editor.type('Hello World');
 
     // Check output update
     const output = page.getByTestId('markdown-output');
@@ -35,7 +36,7 @@ test.describe('Rich Text Editor', () => {
     // In MarkdownEditor.svelte: <div class="markdown-editor-container ... class:zen-mode={isZenMode}">
     // The test page wraps MarkdownEditor in a div with data-testid="editor-container", but the class is on the inner div.
     // We can look for the class .zen-mode
-    await expect(page.locator('.zen-mode')).toBeVisible();
+    await expect(page.locator('.zen-mode')).toBeVisible({ timeout: 1000 });
 
     // Click to exit Zen Mode
     const exitButton = page.locator('button[title="Exit Zen Mode (Esc)"]');
