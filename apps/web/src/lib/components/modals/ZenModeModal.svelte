@@ -45,14 +45,14 @@
         if (!entity) return;
 
         try {
-            // Pre-process WikiLinks: convert [[Link]] to <strong>Link</strong> for rich text
+            // Pre-process WikiLinks: convert [[Link]] or [[Link|Label]] to <strong>Label</strong> for rich text
             const processedContent = (entity.content || "").replace(
-                /[[ (.*?) ]]/g,
-                "<strong>$1</strong>",
+                /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+                (_, target, label) => `<strong>${label || target}</strong>`,
             );
             const processedLore = (entity.lore || "").replace(
-                /[[ (.*?) ]]/g,
-                "<strong>$1</strong>",
+                /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+                (_, target, label) => `<strong>${label || target}</strong>`,
             );
 
             // Render Markdown
@@ -119,9 +119,9 @@
 
             // Construct Plain Text (convert WikiLinks to simple text)
             let text = `${entity.title}\n\n`;
-            text += `CHRONICLE:\n${(entity.content || "").replace(/[[ (.*?) ]]/g, "$1")}\n\n`;
+            text += `CHRONICLE:\n${(entity.content || "").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => label || target)}\n\n`;
             if (entity.lore) {
-                text += `DEEP LORE:\n${entity.lore.replace(/[[ (.*?) ]]/g, "$1")}\n`;
+                text += `DEEP LORE:\n${entity.lore.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => label || target)}\n`;
             }
 
             const clipboardData: Record<string, Blob> = {

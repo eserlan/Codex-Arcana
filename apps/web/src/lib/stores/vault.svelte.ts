@@ -35,13 +35,13 @@ class VaultStore {
    * Case-insensitive.
    */
   labelIndex = $derived.by(() => {
-    const labels = new Set<string>();
+    const seen = new Set<string>();
     for (const entity of Object.values(this.entities)) {
       for (const label of entity.labels || []) {
-        labels.add(label);
+        seen.add(label.trim().toLowerCase());
       }
     }
-    return Array.from(labels).sort((a, b) => a.localeCompare(b));
+    return Array.from(seen).sort((a, b) => a.localeCompare(b));
   });
 
   /**
@@ -164,6 +164,7 @@ class VaultStore {
     this.storageAdapter = adapter;
     this.status = "loading";
     try {
+      await adapter.init();
       const graph = await adapter.loadGraph();
       if (!graph) throw new Error("Graph could not be loaded");
       this.entities = graph.entities as Record<string, LocalEntity>;
@@ -942,15 +943,15 @@ class VaultStore {
     const entity = this.entities[entityId];
     if (!entity) return;
 
-    const trimmedLabel = label.trim();
-    if (!trimmedLabel) return;
+    const normalizedLabel = label.trim().toLowerCase();
+    if (!normalizedLabel) return;
 
-    // Check if label already exists (case-insensitive)
-    if (entity.labels?.some((l) => l.toLowerCase() === trimmedLabel.toLowerCase())) {
+    // Check if label already exists (canonical check)
+    if (entity.labels?.some((l) => l.toLowerCase() === normalizedLabel)) {
       return;
     }
 
-    const newLabels = [...(entity.labels || []), trimmedLabel];
+    const newLabels = [...(entity.labels || []), normalizedLabel];
     this.updateEntity(entityId, { labels: newLabels });
   }
 
@@ -958,8 +959,9 @@ class VaultStore {
     const entity = this.entities[entityId];
     if (!entity) return;
 
+    const target = label.toLowerCase();
     const newLabels = (entity.labels || []).filter(
-      (l) => l.toLowerCase() !== label.toLowerCase(),
+      (l) => l.toLowerCase() !== target,
     );
 
     this.updateEntity(entityId, { labels: newLabels });
@@ -967,43 +969,45 @@ class VaultStore {
 
   async renameLabel(oldLabel: string, newLabel: string) {
     if (this.isGuest) return;
-    const trimmedNew = newLabel.trim();
-    if (!trimmedNew || oldLabel === trimmedNew) return;
+    const targetOld = oldLabel.trim().toLowerCase();
+    const targetNew = newLabel.trim().toLowerCase();
+    if (!targetNew || targetOld === targetNew) return;
 
     const affectedEntities = Object.values(this.entities).filter(e =>
-      e.labels?.some(l => l.toLowerCase() === oldLabel.toLowerCase())
+      e.labels?.some(l => l.toLowerCase() === targetOld)
     );
 
     // Batch update in memory first to ensure UI remains responsive and consistent
     const updates = affectedEntities.map(entity => {
       const updatedLabels = (entity.labels || []).map(l =>
-        l.toLowerCase() === oldLabel.toLowerCase() ? trimmedNew : l
+        l.toLowerCase() === targetOld ? targetNew : l
       );
-      // Ensure no duplicates if the new label already existed on the entity
-      const uniqueLabels = Array.from(new Set(updatedLabels));
+      // Canonical deduplication
+      const uniqueLabels = Array.from(new Set(updatedLabels.map(l => l.toLowerCase())));
       return { id: entity.id, labels: uniqueLabels };
     });
 
     for (const update of updates) {
-      await this.updateEntity(update.id, { labels: update.labels });
+      this.updateEntity(update.id, { labels: update.labels });
     }
   }
 
   async deleteLabel(label: string) {
     if (this.isGuest) return;
+    const target = label.trim().toLowerCase();
     const affectedEntities = Object.values(this.entities).filter(e =>
-      e.labels?.some(l => l.toLowerCase() === label.toLowerCase())
+      e.labels?.some(l => l.toLowerCase() === target)
     );
 
     const updates = affectedEntities.map(entity => {
       const updatedLabels = (entity.labels || []).filter(l =>
-        l.toLowerCase() !== label.toLowerCase()
+        l.toLowerCase() !== target
       );
       return { id: entity.id, labels: updatedLabels };
     });
 
     for (const update of updates) {
-      await this.updateEntity(update.id, { labels: update.labels });
+      this.updateEntity(update.id, { labels: update.labels });
     }
   }
 

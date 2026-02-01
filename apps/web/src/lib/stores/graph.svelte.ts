@@ -9,34 +9,7 @@ class GraphStore {
   activeLabels = $state(new Set<string>());
 
   elements = $derived.by(() => {
-    let entities = vault.allEntities;
-
-    // Apply Label Filtering (OR logic)
-    if (this.activeLabels.size > 0) {
-      const active = this.activeLabels;
-      entities = entities.filter((e) =>
-        (e.labels || []).some((l) => active.has(l)),
-      );
-    }
-
-    // Apply temporal filtering if in timeline mode and range is set
-    if (this.timelineMode) {
-      entities = entities.filter((e) => {
-        const year =
-          e.date?.year ?? e.start_date?.year ?? e.end_date?.year ?? null;
-        if (year === null) return false; // Hide undated nodes in timeline mode
-
-        if (
-          this.timelineRange.start !== null &&
-          year < this.timelineRange.start
-        )
-          return false;
-        if (this.timelineRange.end !== null && year > this.timelineRange.end)
-          return false;
-        return true;
-      });
-    }
-
+    const entities = vault.allEntities;
     return GraphTransformer.entitiesToElements(entities);
   });
 

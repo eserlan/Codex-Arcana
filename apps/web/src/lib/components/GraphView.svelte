@@ -27,6 +27,12 @@
 
   let graphStyle = $derived([
     ...getGraphStyle(themeStore.activeTheme, categories.list),
+    {
+      selector: ".filtered-out",
+      style: {
+        display: "none",
+      },
+    },
     ...(graph.timelineMode
       ? [
           {
@@ -295,6 +301,29 @@
   $effect(() => {
     if (cy && graphStyle) {
       cy.style(graphStyle);
+    }
+  });
+
+  $effect(() => {
+    const currentCy = cy;
+    if (currentCy && graph.activeLabels) {
+      const active = Array.from(graph.activeLabels).map((l) => l.toLowerCase());
+      currentCy.batch(() => {
+        currentCy.nodes().forEach((node) => {
+          const entity = vault.entities[node.id()];
+          if (!entity) return;
+
+          const hasMatch =
+            active.length === 0 ||
+            (entity.labels || []).some((l) => active.includes(l.toLowerCase()));
+
+          if (hasMatch) {
+            node.removeClass("filtered-out");
+          } else {
+            node.addClass("filtered-out");
+          }
+        });
+      });
     }
   });
 

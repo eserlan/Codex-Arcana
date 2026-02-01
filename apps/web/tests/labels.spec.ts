@@ -31,8 +31,30 @@ test.describe('Entity Labeling System', () => {
                     values: async function* () { yield* []; }
                 };
             };
+
+            // Patch IDBObjectStore.put to avoid DataCloneError when persisting mocked handles
+            if (typeof IDBObjectStore !== 'undefined' && IDBObjectStore.prototype && typeof IDBObjectStore.prototype.put === 'function') {
+                const originalPut = IDBObjectStore.prototype.put;
+                IDBObjectStore.prototype.put = function (value: any, key?: IDBValidKey) {
+                    try {
+                        return originalPut.call(this, value, key);
+                    } catch (err) {
+                        // Strip functions from the value so it becomes cloneable for IndexedDB
+                        if (value && typeof value === 'object') {
+                            const clone: any = {};
+                            for (const [k, v] of Object.entries(value)) {
+                                if (typeof v !== 'function') {
+                                    clone[k] = v;
+                                }
+                            }
+                            return originalPut.call(this, clone, key);
+                        }
+                        throw err;
+                    }
+                };
+            }
         });
-        await page.goto('http://localhost:5173/');
+        await page.goto('/');
         
         // Handle console logs from the page
         page.on('console', msg => {
@@ -43,10 +65,8 @@ test.describe('Entity Labeling System', () => {
         console.log('TEST: Clicking OPEN VAULT');
         await page.getByRole('button', { name: 'OPEN VAULT' }).click();
         
-        await page.waitForTimeout(2000);
-        
-        console.log('TEST: Checking button visibility');
-        await expect(page.getByTestId('new-entity-button')).toBeVisible();
+        console.log('TEST: Waiting for vault.isInitialized');
+        await expect(page.getByTestId('new-entity-button')).toBeVisible({ timeout: 20000 });
     });
 
     test('Add and remove labels from an entity', async ({ page }) => {

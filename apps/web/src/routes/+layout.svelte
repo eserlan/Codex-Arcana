@@ -3,6 +3,7 @@
 	import { aiService } from "$lib/services/ai";
 	import VaultControls from "$lib/components/VaultControls.svelte";
 	import SearchModal from "$lib/components/search/SearchModal.svelte";
+	import OracleWindow from "$lib/components/oracle/OracleWindow.svelte";
 	import SettingsModal from "$lib/components/settings/SettingsModal.svelte";
 	import GuestLoginModal from "$lib/components/modals/GuestLoginModal.svelte";
 	import ZenModeModal from "$lib/components/modals/ZenModeModal.svelte";
@@ -320,7 +321,8 @@
 			</div>
 		</footer>
 		<SearchModal />
-		{#if (page.url.pathname as string) !== "/login"}
+		{#if (page.url.pathname as string) !== `${base}/login`}
+			<OracleWindow />
 			{#if browser}
 				<SettingsModal />
 				<ZenModeModal />
