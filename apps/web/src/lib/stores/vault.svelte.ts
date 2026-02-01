@@ -300,7 +300,7 @@ class VaultStore {
                   type: metadata.type || "npc",
                   title: metadata.title || id!,
                   tags: metadata.tags || [],
-                  labels: metadata.labels,
+                  labels: metadata.labels || [],
                   connections,
                   content: content,
                   lore: metadata.lore,
