@@ -9,6 +9,7 @@
         DocxParser,
         JsonParser,
         OracleAnalyzer,
+        generateMarkdownFile,
     } from "@codex/importer";
     import type { DiscoveredEntity } from "@codex/importer";
     import { sanitizeId } from "$lib/utils/markdown";
@@ -81,12 +82,15 @@
             return "note";
         };
 
-        for (const entity of toSave) {
+        const batchData = toSave.map(entity => {
+            const content = generateMarkdownFile(entity);
             const title = entity.suggestedTitle;
-            const type = mapType(entity.suggestedType);
+            const type = mapType(entity.suggestedType) as any;
 
-            try {
-                await vault.createEntity(type, title, {
+            return {
+                type,
+                title,
+                initialData: {
                     content: entity.content,
                     labels: entity.frontmatter.labels || [],
                     metadata: entity.frontmatter,
@@ -98,10 +102,14 @@
                         type: "related_to",
                         strength: 1,
                     })),
-                });
-            } catch (err) {
-                console.error(`Failed to save ${title}:`, err);
-            }
+                }
+            };
+        });
+
+        try {
+            await vault.batchCreateEntities(batchData);
+        } catch (err) {
+            console.error("Batch import failed:", err);
         }
 
         step = "complete";

@@ -763,6 +763,64 @@ class VaultStore {
     return id;
   }
 
+  async batchCreateEntities(entitiesData: { type: Entity["type"]; title: string; initialData?: Partial<Entity> }[]): Promise<string[]> {
+    if (this.isGuest) throw new Error("Cannot create entities in Guest Mode");
+    if (!this.rootHandle) throw new Error("Vault not open");
+
+    const createdIds: string[] = [];
+    const searchEntries: any[] = [];
+
+    // 1. Process all file writes
+    await Promise.all(entitiesData.map(async (data) => {
+      const id = sanitizeId(data.title);
+      if (this.entities[id]) {
+        console.warn(`Skipping duplicate entity during batch import: ${id}`);
+        return;
+      }
+
+      const filename = `${id}.md`;
+      const handle = await this.rootHandle!.getFileHandle(filename, { create: true });
+
+      const newEntity: LocalEntity = {
+        id,
+        type: data.type,
+        title: data.title,
+        content: data.initialData?.content || "",
+        tags: data.initialData?.tags || [],
+        labels: data.initialData?.labels || [],
+        connections: data.initialData?.connections || [],
+        metadata: data.initialData?.metadata || {},
+        lore: data.initialData?.lore,
+        image: data.initialData?.image,
+        thumbnail: data.initialData?.thumbnail,
+        _fsHandle: handle,
+        _path: [filename],
+      };
+
+      await writeFile(handle, stringifyEntity(newEntity));
+      this.entities[id] = newEntity;
+      createdIds.push(id);
+
+      searchEntries.push({
+        id,
+        title: data.title,
+        content: newEntity.content,
+        type: data.type,
+        path: filename,
+        updatedAt: Date.now()
+      });
+    }));
+
+    // 2. Single expensive rebuilding operation
+    this.rebuildInboundMap();
+
+    // 3. Batch indexing
+    // Assuming searchService has a batch method or we just map promises (SearchService is usually async/concurrent safe)
+    await Promise.all(searchEntries.map(entry => searchService.index(entry)));
+
+    return createdIds;
+  }
+
   async deleteEntity(id: string): Promise<void> {
     if (this.isGuest) throw new Error("Cannot delete entities in Guest Mode");
 
