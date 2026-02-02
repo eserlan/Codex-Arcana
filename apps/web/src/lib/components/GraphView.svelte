@@ -17,7 +17,10 @@
   import Minimap from "$lib/components/graph/Minimap.svelte";
   import TimelineControls from "$lib/components/graph/TimelineControls.svelte";
   import TimelineOverlay from "$lib/components/graph/TimelineOverlay.svelte";
+  import OrbitControls from "$lib/components/graph/OrbitControls.svelte";
+  import ContextMenu from "$lib/components/graph/ContextMenu.svelte";
   import FeatureHint from "$lib/components/help/FeatureHint.svelte";
+  import { setCentralNode } from "graph-engine";
   import LabelFilter from "$lib/components/labels/LabelFilter.svelte";
 
   let container: HTMLElement;
@@ -107,6 +110,8 @@
 
     if (graph.timelineMode) {
       graph.applyTimelineLayout(cy);
+    } else if (graph.orbitMode && graph.centralNodeId) {
+       setCentralNode(cy, graph.centralNodeId);
       if (isInitial) {
         cy.resize();
         cy.animate({
@@ -116,6 +121,9 @@
         });
       }
     } else {
+        // Not in timeline or orbit mode: intentionally reset to a fresh 'cose' layout,
+        // which also replaces any previous orbit layout. We do not call clearOrbit(cy)
+        // here, because its effect is equivalent to re-running 'cose' with these options.
       currentLayout = cy.layout({
         ...DEFAULT_LAYOUT_OPTIONS,
       });
@@ -243,6 +251,9 @@
             sourceId = null;
             connectMode = false; // Auto exit connect mode
           }
+        } else if (graph.orbitMode) {
+            // US2: Switch center if clicked in orbit mode
+            graph.setCentralNode(targetId);
         } else {
           // Selection Logic for Detail Panel
           skipNextCenter = true;
@@ -414,6 +425,13 @@
   $effect(() => {
     if (cy) {
       // Re-apply timeline layout if mode or axis changes
+      const _mode = graph.timelineMode;
+      const _axis = graph.timelineAxis;
+      const _scale = graph.timelineScale;
+      // Re-apply orbit layout if params change
+      const _orbit = graph.orbitMode;
+      const _center = graph.centralNodeId;
+      
       untrack(() => {
         applyCurrentLayout(false);
       });
@@ -421,43 +439,10 @@
   });
 
   $effect(() => {
-    const currentCy = cy;
-    if (currentCy) {
-      console.log("[GraphView] Focus Effect Triggered:", selectedId);
-      untrack(() => {
-        applyFocus(selectedId);
-      });
+    if (cy) {
+      applyFocus(selectedId);
     }
-    if (currentCy && selectedId) {
-      const node = currentCy.$id(selectedId);
-      if (node.length > 0) {
-        // Select the node in Cytoscape if not already selected
-        if (!node.selected()) {
-          untrack(() => {
-            currentCy.$(":selected").unselect(); // Optional: clear other selections
-            node.select();
-          });
-        }
 
-        if (skipNextCenter) {
-          console.log("[GraphView] Skipping center as requested");
-          skipNextCenter = false;
-        } else {
-          console.log("[GraphView] Centering on node:", selectedId);
-          const currentCy = cy;
-          if (currentCy) {
-            untrack(() => {
-              currentCy.animate({
-                center: { eles: node },
-                duration: 500,
-                easing: "ease-out-cubic",
-              });
-            });
-          }
-        }
-      }
-    }
-  });
 
   // Manual fit request listener
   $effect(() => {
@@ -739,6 +724,8 @@
 
   {#if cy}
     <TimelineOverlay {cy} />
+    <OrbitControls />
+    <ContextMenu {cy} />
   {/if}
 
   <!-- Hover Tooltip -->

@@ -28,8 +28,8 @@
     } = $props();
 
     let element: HTMLDivElement;
-    let editor: Editor | null = $state(null);
-    let bubbleMenuComponent: ReturnType<typeof mount> | undefined;
+    let editor = $state<Editor | null>(null);
+    let bubbleMenuComponent: ReturnType<typeof mount> | undefined; 
     let isZenMode = $state(false);
 
     const toggleZenMode = () => {
@@ -119,7 +119,10 @@
             try {
                 unmount(bubbleMenuComponent);
             } catch (e) {
-                console.warn("Failed to unmount bubble menu", e);
+                console.warn(
+                    "Failed to unmount bubble menu during MarkdownEditor onDestroy; bubble menu cleanup may be incomplete.",
+                    { error: e, component: bubbleMenuComponent }
+                );
             }
         }
         if (editor) {
