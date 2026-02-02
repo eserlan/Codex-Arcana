@@ -823,8 +823,8 @@
             bind:value={edgeEditType}
             class="w-full bg-theme-bg border border-theme-border text-theme-text px-3 py-2 text-xs font-mono focus:outline-none focus:border-theme-primary rounded uppercase"
           >
-            <option value="neutral">Neutral (Grey)</option>
-            <option value="friendly">Friendly (Green)</option>
+            <option value="neutral">Neutral (Amber)</option>
+            <option value="friendly">Friendly (Blue)</option>
             <option value="enemy">Enemy (Red)</option>
           </select>
         </div>

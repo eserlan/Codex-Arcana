@@ -13,7 +13,7 @@ export const DEFAULT_LAYOUT_OPTIONS = {
 };
 
 export const CONNECTION_COLORS = {
-    friendly: "#22c55e", // Green-500
+    friendly: "#3b82f6", // Blue-500
     enemy: "#ef4444",    // Red-500
-    neutral: "#94a3b8",  // Slate-400 (Default)
+    neutral: "#f59e0b",  // Amber-500
 };
