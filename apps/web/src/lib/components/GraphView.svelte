@@ -20,7 +20,7 @@
   import OrbitControls from "$lib/components/graph/OrbitControls.svelte";
   import ContextMenu from "$lib/components/graph/ContextMenu.svelte";
   import FeatureHint from "$lib/components/help/FeatureHint.svelte";
-  import { setCentralNode, clearOrbit } from "graph-engine";
+  import { setCentralNode } from "graph-engine";
   import LabelFilter from "$lib/components/labels/LabelFilter.svelte";
 
   let container: HTMLElement;
@@ -121,11 +121,9 @@
         });
       }
     } else {
-        // If we were in orbit mode and just exited, this block runs because !orbitMode
-        // Or if we were just default, this runs.
-        // We can explicitly clear if we want, but re-running 'cose' effectively clears it.
-        // We could call clearOrbit(cy) but it just runs 'cose' anyway.
-        
+        // Not in timeline or orbit mode: intentionally reset to a fresh 'cose' layout,
+        // which also replaces any previous orbit layout. We do not call clearOrbit(cy)
+        // here, because its effect is equivalent to re-running 'cose' with these options.
       currentLayout = cy.layout({
         ...DEFAULT_LAYOUT_OPTIONS,
       });

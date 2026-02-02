@@ -58,9 +58,9 @@ test.describe('Orbit Layout', () => {
         
         // Verify we are still in orbit mode
         await expect(page.locator('.orbit-status')).toBeVisible();
-
+        
         // 7. Exit Orbit Mode
-        await page.getByText('[Exit View]').click();
+        await page.getByTestId('orbit-exit-button').click();
         await expect(page.locator('.orbit-status')).not.toBeVisible();
     });
 });

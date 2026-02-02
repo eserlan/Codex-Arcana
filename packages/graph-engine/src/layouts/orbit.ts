@@ -1,5 +1,5 @@
 
-import { type NodeSingular, type Collection, type Core } from 'cytoscape';
+import { type NodeSingular, type Core, type ConcentricLayoutOptions, type LayoutOptions } from 'cytoscape';
 
 /**
  * Calculates the Breadth-First Search (BFS) distance from a source node to all other nodes.
@@ -21,7 +21,7 @@ export const calculateBFSDistances = (cy: Core, sourceNodeId: string): Map<strin
 
   cy.elements().bfs({
     roots: sourceNode,
-    visit: (v, e, u, i, depth) => {
+    visit: (v, _e, _u, _i, depth) => {
         distances.set(v.id(), depth);
     },
     directed: false // Treat graph as undirected for layout purposes
@@ -63,13 +63,13 @@ export const setCentralNode = (cy: Core, centralNodeId: string, options: OrbitLa
 
     const islandDistance = maxDistance + 1;
 
-    const layout = cy.layout({
+    const layoutOptions: ConcentricLayoutOptions = {
         name: 'concentric',
         fit: options.fit ?? true,
         padding: options.padding ?? 50,
         animate: options.animate ?? true,
         animationDuration: options.animationDuration ?? 500,
-        animationEasing: 'ease-in-out-cubic',
+        animationEasing: 'ease-in-out-cubic' as any, // Cytoscape types are strict on easing strings
         minNodeSpacing: options.minNodeSpacing ?? 50,
         avoidOverlap: true,
         nodeDimensionsIncludeLabels: true,
@@ -84,9 +84,9 @@ export const setCentralNode = (cy: Core, centralNodeId: string, options: OrbitLa
             return islandDistance - distance;
         },
         levelWidth: () => 1 // Each integer difference in 'concentric' value is a new level
-    } as any); // 'as any' used because concentric options are dynamic
+    };
 
-    layout.run();
+    cy.layout(layoutOptions).run();
 };
 
 /**
@@ -99,12 +99,12 @@ export const setCentralNode = (cy: Core, centralNodeId: string, options: OrbitLa
  * @param defaultLayoutName The name of the layout to revert to (e.g. 'cose', 'grid').
  */
 export const clearOrbit = (cy: Core, defaultLayoutName: string = 'cose'): void => {
-    const layout = cy.layout({
-        name: defaultLayoutName,
+    const layoutOptions: LayoutOptions = {
+        name: defaultLayoutName as any,
         animate: true,
         animationDuration: 500,
         fit: true,
         padding: 50
-    } as any);
-    layout.run();
+    };
+    cy.layout(layoutOptions).run();
 };

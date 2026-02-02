@@ -1,6 +1,6 @@
 <script lang="ts">
   import { graph } from "$lib/stores/graph.svelte";
-  import type { Core } from "cytoscape";
+  import type { Core, EventObject } from "cytoscape";
 
   let { cy } = $props<{ cy: Core }>();
 
@@ -10,7 +10,7 @@
 
   $effect(() => {
     if (cy) {
-      cy.on("cxttap", "node", (evt) => {
+      cy.on("cxttap", "node", (evt: EventObject) => {
         const node = evt.target;
         targetId = node.id();
         position = { x: evt.renderedPosition.x, y: evt.renderedPosition.y };

@@ -11,6 +11,7 @@
     <button 
       class="text-xs font-mono uppercase hover:text-red-400 transition"
       onclick={() => graph.toggleOrbit()}
+      data-testid="orbit-exit-button"
     >
       [Exit View]
     </button>
