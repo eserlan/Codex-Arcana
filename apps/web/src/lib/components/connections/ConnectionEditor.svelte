@@ -12,6 +12,8 @@
   let type = $state(connection.type);
   let label = $state(connection.label || "");
 
+  // Note: These options are coupled with `packages/schema/src/connection.ts` and 
+  // `packages/graph-engine/src/defaults.ts`. If types or colors change there, update here.
   const options = [
     { value: "neutral", label: "Neutral (Grey)" },
     { value: "friendly", label: "Friendly (Green)" },

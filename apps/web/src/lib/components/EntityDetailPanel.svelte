@@ -610,7 +610,7 @@
                                         
                                         {#if conn.isOutbound && !vault.isGuest}
                                             <button 
-                                                class="opacity-0 group-hover:opacity-100 text-theme-muted hover:text-theme-primary transition p-1"
+                                                class="text-theme-muted hover:text-theme-primary transition p-1"
                                                 onclick={() => editingConnectionTarget = conn.targetId}
                                                 aria-label="Edit connection"
                                             >

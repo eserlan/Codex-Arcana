@@ -865,7 +865,7 @@ class VaultStore {
   addConnection(
     sourceId: string,
     targetId: string,
-    type: string = "related_to",
+    type: string = "neutral",
     label?: string,
   ) {
     const source = this.entities[sourceId];
