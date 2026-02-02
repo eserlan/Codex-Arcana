@@ -865,7 +865,8 @@ class VaultStore {
   addConnection(
     sourceId: string,
     targetId: string,
-    type: string = "related_to",
+    type: string = "neutral",
+    label?: string,
   ) {
     const source = this.entities[sourceId];
     if (!source) return;
@@ -880,7 +881,7 @@ class VaultStore {
       target: targetId,
       type,
       strength: 1,
-      label: undefined,
+      label,
     };
 
     const updated = {

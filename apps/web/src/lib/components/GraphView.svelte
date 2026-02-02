@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, untrack } from "svelte";
   import { initGraph } from "graph-engine";
   import { graph } from "$lib/stores/graph.svelte";
   import { vault } from "$lib/stores/vault.svelte";
@@ -95,8 +95,10 @@
     source: string;
     target: string;
     label: string;
+    type: string;
   } | null>(null);
   let edgeEditInput = $state("");
+  let edgeEditType = $state("neutral");
 
   const applyCurrentLayout = (isInitial = false) => {
     if (!cy) return;
@@ -266,13 +268,16 @@
         const sourceId = edge.data("source");
         const targetId = edge.data("target");
         const currentLabel = edge.data("label") || "";
+        const currentType = edge.data("connectionType") || "neutral";
 
         editingEdge = {
           source: sourceId,
           target: targetId,
           label: currentLabel,
+          type: currentType,
         };
         edgeEditInput = currentLabel;
+        edgeEditType = currentType;
       });
 
       cy.on("tap", (evt) => {
@@ -415,19 +420,17 @@
   // Center on selection when it changes externally
   $effect(() => {
     if (cy) {
-      // Re-apply timeline layout if mode or axis changes
-      const _mode = graph.timelineMode;
-      const _axis = graph.timelineAxis;
-      const _scale = graph.timelineScale;
       // Re-apply orbit layout if params change
       const _orbit = graph.orbitMode;
       const _center = graph.centralNodeId;
       
-      // Defer layout application to break synchronous reactive cycles
-      // preventing 'effect_update_depth_exceeded' errors
-      setTimeout(() => {
-        applyCurrentLayout(false);
-      }, 0);
+      untrack(() => {
+        // Defer layout application to break synchronous reactive cycles
+        // preventing 'effect_update_depth_exceeded' errors
+        setTimeout(() => {
+          applyCurrentLayout(false);
+        }, 0);
+      });
     }
   });
 
@@ -598,6 +601,7 @@
     if (editingEdge) {
       vault.updateConnection(editingEdge.source, editingEdge.target, {
         label: edgeEditInput || undefined,
+        type: edgeEditType,
       });
       editingEdge = null;
     }
@@ -813,6 +817,17 @@
           class="text-[10px] font-mono text-theme-primary uppercase tracking-widest mb-3"
         >
           Edit Connection
+        </div>
+        <div class="mb-2">
+          <select
+            bind:value={edgeEditType}
+            class="w-full bg-theme-bg border border-theme-border text-theme-text px-3 py-2 text-xs font-mono focus:outline-none focus:border-theme-primary rounded uppercase"
+          >
+            <option value="related_to">Default (Grey)</option>
+            <option value="neutral">Neutral (Amber)</option>
+            <option value="friendly">Friendly (Blue)</option>
+            <option value="enemy">Enemy (Red)</option>
+          </select>
         </div>
         <input
           type="text"

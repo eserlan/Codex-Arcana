@@ -11,3 +11,9 @@ export const DEFAULT_LAYOUT_OPTIONS = {
     gravity: 0.25,
     numIter: 2500,
 };
+
+export const CONNECTION_COLORS = {
+    friendly: "#3b82f6", // Blue-500
+    enemy: "#ef4444",    // Red-500
+    neutral: "#f59e0b",  // Amber-500
+};
