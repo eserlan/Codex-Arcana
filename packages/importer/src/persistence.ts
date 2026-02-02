@@ -33,7 +33,7 @@ export async function saveAssetToOpfs(asset: { id: string, blob: Blob, originalN
   // Mock OPFS persistence for MVP or use browser API
   // In a real app, this would use the Origin Private File System API
   // For this library, we might just return the logic or delegate.
-  // We'll implementing a basic interface placeholder.
+  // We'll implement a basic interface placeholder.
   const root = await navigator.storage.getDirectory();
   const fileHandle = await root.getFileHandle(asset.originalName, { create: true });
   const writable = await fileHandle.createWritable();

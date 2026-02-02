@@ -99,7 +99,7 @@
   const createAsNode = async () => {
     if (!parsed.title || vault.isGuest) return;
     try {
-      const type = (parsed.type || "npc") as any;
+      const type = (parsed.type || "character") as any;
       const connections = [
         ...(parsed.wikiLinks || []),
         ...(parsed.connections || []).map((name) => ({
