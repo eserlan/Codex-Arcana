@@ -65,7 +65,11 @@
         item.extractedAssets = result.assets;
         
         statusMessage = `Analyzing content with Oracle...`;
-        const analysis = await analyzer.analyze(result.text);
+        const analysis = await analyzer.analyze(result.text, {
+            onProgress: (current, total) => {
+                statusMessage = `Analyzing content with Oracle (Chunk ${current}/${total})...`;
+            }
+        });
         item.detectedEntities = analysis.entities;
         
         discoveredEntities = [...discoveredEntities, ...analysis.entities];

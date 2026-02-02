@@ -51,7 +51,11 @@
                 const result = await parser.parse(file);
 
                 statusMessage = `Analyzing ${file.name} with Oracle...`;
-                const analysis = await analyzer.analyze(result.text);
+                const analysis = await analyzer.analyze(result.text, {
+                    onProgress: (current, total) => {
+                        statusMessage = `Analyzing ${file.name} with Oracle (Chunk ${current}/${total})...`;
+                    }
+                });
 
                 discoveredEntities = [
                     ...discoveredEntities,

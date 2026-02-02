@@ -59,6 +59,7 @@ export interface OracleAnalyzerEngine {
 export interface AnalysisOptions {
   batchContext?: string[];
   knownEntities?: string[];
+  onProgress?: (current: number, total: number) => void;
 }
 
 export interface AnalysisResult {
