@@ -432,10 +432,11 @@
       const _orbit = graph.orbitMode;
       const _center = graph.centralNodeId;
       
-// SEARCH_CHECK_ONLY HEAD
-      untrack(() => {
+      // Defer layout application to break synchronous reactive cycles
+      // preventing 'effect_update_depth_exceeded' errors
+      setTimeout(() => {
         applyCurrentLayout(false);
-      });
+      }, 0);
 =======
       // Defer layout application to break synchronous reactive cycles
       // preventing 'effect_update_depth_exceeded' errors
