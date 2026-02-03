@@ -121,7 +121,3 @@ class GraphStore {
 }
 
 export const graph = new GraphStore();
-
-if (typeof window !== 'undefined' && import.meta.env.DEV) {
-  (window as any).graph = graph;
-}

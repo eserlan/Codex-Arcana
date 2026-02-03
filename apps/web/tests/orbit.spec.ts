@@ -1,3 +1,4 @@
+
 import { test, expect } from '@playwright/test';
 
 test.describe('Orbit Layout', () => {
@@ -17,8 +18,13 @@ test.describe('Orbit Layout', () => {
                     };
                 }
             };
-            applyMocks();
-            setInterval(applyMocks, 100);
+            
+            const intervalId = setInterval(() => {
+                if ((window as any).vault) {
+                    applyMocks();
+                    clearInterval(intervalId);
+                }
+            }, 100);
         });
     });
 
@@ -29,32 +35,29 @@ test.describe('Orbit Layout', () => {
         const canvas = page.getByTestId('graph-canvas');
         await expect(canvas).toBeVisible();
         
-        // 2. Activate Orbit Mode directly via Store
+        // 2. Wait for graph store and activate Orbit Mode
+        await page.waitForFunction(() => !!(window as any).graph);
         await page.evaluate(() => {
-            if ((window as any).graph) {
-                (window as any).graph.setCentralNode('node-1');
-            }
+            (window as any).graph.setCentralNode('node-1');
         });
 
         // 3. Verify Orbit Mode Active UI
         await expect(page.locator('.orbit-status')).toContainText('Orbit Mode Active');
         await expect(page.getByText('Node 1')).toBeVisible();
 
-        // 4. Click another node to switch center
+        // 4. Wait for node-2 to be ready in Cytoscape and click it
+        await page.waitForFunction(() => (window as any).cy?.$id('node-2').length > 0);
         await page.evaluate(() => {
              const cy = (window as any).cy;
              const otherNode = cy.$id('node-2');
-             // Trigger tap directly on the node
              otherNode.trigger('tap');
         });
         
-        // 5. Verify center switched (with a small timeout for animation/reactivity)
-        // We expect at least one "Node 2" to be visible (e.g. in OrbitControls or Breadcrumbs)
+        // 5. Verify center switched
         await expect(page.getByText('Node 2').first()).toBeVisible({ timeout: 10000 });
         
-        // 6. Verify Detail Panel is open for node-2
-        await expect(page.getByText('Archive Detail Mode')).toBeVisible();
-        // The Detail Panel has the title in an h2
+        // 6. Verify Detail Panel is open for node-2 (case-insensitive match)
+        await expect(page.getByText(/archive detail mode/i)).toBeVisible();
         await expect(page.locator('h2').filter({ hasText: 'Node 2' })).toBeVisible();
         await expect(page.getByText('Content 2')).toBeVisible();
 
