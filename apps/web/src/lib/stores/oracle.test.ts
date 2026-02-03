@@ -87,19 +87,15 @@ vi.mock("../utils/idb", () => ({
 
 vi.mock("../services/ai", () => ({
   TIER_MODES: {
-    lite: "gemini-2.5-flash-lite",
+    lite: "gemini-flash-lite-latest",
     advanced: "gemini-3-flash-preview",
   },
   aiService: {
     generateResponse: vi.fn(),
     generateImage: vi.fn().mockResolvedValue(new Blob()),
-    enhancePrompt: vi.fn().mockImplementation((q) => q),
-    retrieveContext: vi.fn().mockResolvedValue({
-      content: "context",
-      primaryEntityId: undefined,
-      sourceIds: [],
-    }),
-    expandQuery: vi.fn().mockResolvedValue("expanded query"),
+    distillVisualPrompt: vi.fn().mockResolvedValue("distilled"),
+    enhancePrompt: vi.fn().mockReturnValue("enhanced"),
+    retrieveContext: vi.fn().mockResolvedValue({ content: "context", sourceIds: [] }),
   },
 }));
 

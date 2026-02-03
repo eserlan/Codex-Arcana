@@ -31,7 +31,16 @@
         { id: "about", label: "About", icon: "icon-[lucide--info]" },
     ];
 
-    const close = () => uiStore.closeSettings();
+    const close = () => {
+        if (uiStore.isImporting) {
+            if (confirm("An import is in progress or pending review. Closing now will cancel the process and you may lose identified entities. Are you sure you want to abort?")) {
+                uiStore.abortActiveOperations();
+                uiStore.closeSettings();
+            }
+            return;
+        }
+        uiStore.closeSettings();
+    };
 
     let previousActiveElement: HTMLElement | null = null;
     let modalElement: HTMLElement | undefined = $state();
@@ -111,6 +120,9 @@
                 {#each tabs as tab}
                     <button
                         onclick={() => (uiStore.activeSettingsTab = tab.id)}
+                        disabled={uiStore.isImporting}
+                        aria-disabled={uiStore.isImporting ? "true" : "false"}
+                        title={uiStore.isImporting ? "Navigation disabled during active import" : ""}
                         role="tab"
                         aria-selected={uiStore.activeSettingsTab === tab.id}
                         aria-controls="settings-panel-{tab.id}"
@@ -118,7 +130,7 @@
                         class="px-4 md:px-6 py-3 flex items-center gap-3 transition-all relative {uiStore.activeSettingsTab ===
                         tab.id
                             ? 'text-theme-primary bg-theme-primary/10'
-                            : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary/5'}"
+                            : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary/5'} {uiStore.isImporting ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}"
                     >
                         <span class="{tab.icon} w-5 h-5"></span>
                         <span
@@ -162,7 +174,9 @@
                 </h2>
                 <button
                     onclick={close}
-                    class="text-theme-muted hover:text-theme-primary transition-colors"
+                    aria-disabled={uiStore.isImporting ? "true" : "false"}
+                    title={uiStore.isImporting ? "Import in progress" : "Close Settings"}
+                    class="text-theme-muted hover:text-theme-primary transition-colors {uiStore.isImporting ? 'opacity-30 cursor-not-allowed' : ''}"
                     aria-label="Close Settings"
                 >
                     <span class="icon-[lucide--x] w-6 h-6"></span>
@@ -224,7 +238,10 @@
                             </p>
                             <button
                                 onclick={() => vault.rebuildIndex()}
-                                class="px-6 py-2 bg-theme-primary/10 border border-theme-primary/30 text-theme-primary hover:bg-theme-primary hover:text-black transition-all text-[10px] font-bold tracking-widest uppercase"
+                                disabled={uiStore.isImporting}
+                                aria-disabled={uiStore.isImporting ? "true" : "false"}
+                                title={uiStore.isImporting ? "Disabled during active import" : "Rebuild index"}
+                                class="px-6 py-2 bg-theme-primary/10 border border-theme-primary/30 text-theme-primary hover:bg-theme-primary hover:text-black transition-all text-[10px] font-bold tracking-widest uppercase disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-theme-primary/10 disabled:hover:text-theme-primary"
                             >
                                 Rebuild Search Index
                             </button>

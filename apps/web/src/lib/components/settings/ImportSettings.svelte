@@ -16,6 +16,24 @@
     let step = $state<"upload" | "processing" | "review" | "complete">(
         "upload",
     );
+
+    $effect(() => {
+        uiStore.isImporting = step === "processing" || step === "review";
+        
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (step === "processing") {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            uiStore.isImporting = false;
+        };
+    });
+
     let statusMessage = $state("");
     let discoveredEntities = $state<DiscoveredEntity[]>([]);
     let extractedAssets = new Map<string, any>(); // filename -> asset
@@ -41,7 +59,11 @@
         discoveredEntities = [];
         extractedAssets.clear();
 
+        const signal = uiStore.abortSignal;
+
         for (const file of files) {
+            if (signal.aborted) break;
+
             const parser = parsers.find((p) => p.accepts(file));
             if (!parser) {
                 console.error(`No parser for ${file.name}`);
@@ -57,12 +79,16 @@
                     extractedAssets.set(asset.placementRef, asset);
                 });
 
+                if (signal.aborted) break;
+
                 statusMessage = `Analyzing ${file.name} with Oracle...`;
                 const analysis = await analyzer.analyze(result.text, {
                     onProgress: (current, total) => {
                         statusMessage = `Analyzing ${file.name} with Oracle (Chunk ${current}/${total})...`;
                     }
                 });
+
+                if (signal.aborted) break;
 
                 discoveredEntities = [
                     ...discoveredEntities,
@@ -73,12 +99,20 @@
             }
         }
 
+        if (signal.aborted) {
+            step = "upload";
+            discoveredEntities = [];
+            return;
+        }
+
         step = "review";
     };
 
     const handleSave = async (toSave: DiscoveredEntity[]) => {
         step = "processing";
         statusMessage = `Finalizing ${toSave.length} entities...`;
+
+        const signal = uiStore.abortSignal;
 
         const mapType = (type: string) => {
             const t = type.toLowerCase();
@@ -88,7 +122,11 @@
             return "note";
         };
 
-        const batchData = await Promise.all(toSave.map(async entity => {
+        const batchData: Parameters<typeof vault.batchCreateEntities>[0] = [];
+        
+        for (const entity of toSave) {
+            if (signal.aborted) break;
+
             const title = entity.suggestedTitle;
             const entityId = sanitizeId(title);
             const type = mapType(entity.suggestedType) as any;
@@ -114,11 +152,12 @@
                 }
             }
 
-            return {
+            batchData.push({
                 type,
                 title,
                 initialData: {
-                    content: entity.content,
+                    content: entity.chronicle || entity.content,
+                    lore: entity.lore,
                     labels: entity.frontmatter.labels || [],
                     metadata: {
                         width: typeof width === 'number' ? width : undefined,
@@ -137,8 +176,13 @@
                         };
                     }),
                 }
-            };
-        }));
+            });
+        }
+
+        if (signal.aborted) {
+            step = "review";
+            return;
+        }
 
         try {
             await vault.batchCreateEntities(batchData);
