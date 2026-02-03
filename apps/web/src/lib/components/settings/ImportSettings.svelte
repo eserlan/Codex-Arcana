@@ -146,7 +146,8 @@
                 type,
                 title,
                 initialData: {
-                    content: entity.content,
+                    content: entity.chronicle || entity.content,
+                    lore: entity.lore,
                     labels: entity.frontmatter.labels || [],
                     metadata: {
                         width: typeof width === 'number' ? width : undefined,

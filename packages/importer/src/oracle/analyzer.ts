@@ -80,11 +80,13 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
           id: crypto.randomUUID(),
           suggestedTitle: item.title,
           suggestedType: item.type,
-          content: item.content || '',
+          chronicle: item.chronicle || item.content || '',
+          lore: item.lore || '',
+          content: item.content || `${item.chronicle || ''}\n\n${item.lore || ''}`.trim(),
           frontmatter: {
             ...item.frontmatter,
             // Prioritize explicit image URL from AI or input
-            image: item.imageURL || item.imageUrl || item.frontmatter?.image
+            image: item.imageUrl || item.imageURL || item.image || item.frontmatter?.image
           },
           confidence: 1, // Placeholder
           suggestedFilename: this.slugify(item.title),
@@ -119,6 +121,8 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
       } else {
         const existing = map.get(key)!;
         // Merge Content
+        existing.chronicle += `\n\n${entity.chronicle}`;
+        existing.lore += `\n\n${entity.lore}`;
         existing.content += `\n\n${entity.content}`;
         // Merge Links
         const existingLinks = new Map<string, any>();

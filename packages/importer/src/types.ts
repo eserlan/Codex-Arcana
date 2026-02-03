@@ -30,7 +30,9 @@ export interface DiscoveredEntity {
   id: string; // Temp ID
   suggestedTitle: string;
   suggestedType: 'Character' | 'Location' | 'Item' | 'Lore' | 'Unknown';
-  content: string; // Markdown body
+  chronicle: string; // Short Markdown summary
+  lore: string;      // Detailed background
+  content: string; // Markdown body (full combined content)
   frontmatter: Record<string, any>;
   confidence: number; // 0-1
   suggestedFilename: string; // Added for persistence

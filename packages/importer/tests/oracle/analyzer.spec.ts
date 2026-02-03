@@ -22,7 +22,8 @@ describe('OracleAnalyzer', () => {
       {
         title: 'Hero',
         type: 'Character',
-        content: '# Hero\nA brave warrior.',
+        chronicle: '# Hero\nA brave warrior.',
+        lore: 'Detailed history...',
         frontmatter: { class: 'Warrior' },
         detectedLinks: ['Sword']
       }
@@ -38,6 +39,8 @@ describe('OracleAnalyzer', () => {
 
     expect(result.entities).toHaveLength(1);
     expect(result.entities[0].suggestedTitle).toBe('Hero');
+    expect(result.entities[0].chronicle).toContain('brave warrior');
+    expect(result.entities[0].lore).toBe('Detailed history...');
     expect(result.entities[0].suggestedFilename).toBe('hero.md'); // Auto-slug check
     expect(mockGenerateContent).toHaveBeenCalled();
   });

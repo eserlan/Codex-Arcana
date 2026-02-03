@@ -45,7 +45,7 @@
           </div>
         </label>
         <div class="preview">
-          {(entity.content || '').slice(0, 100)}...
+          {(entity.chronicle || entity.content || '').slice(0, 100)}...
         </div>
       </div>
     {/each}
