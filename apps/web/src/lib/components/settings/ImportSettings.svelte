@@ -18,7 +18,7 @@
     );
 
     $effect(() => {
-        uiStore.isImporting = step === "processing";
+        uiStore.isImporting = step === "processing" || step === "review";
         return () => {
             uiStore.isImporting = false;
         };

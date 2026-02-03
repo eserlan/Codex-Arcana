@@ -33,7 +33,7 @@
 
     const close = () => {
         if (uiStore.isImporting) {
-            if (confirm("Import in progress. Aborting now may lead to incomplete archives. Do you want to cancel the import and close?")) {
+            if (confirm("An import is in progress or pending review. Closing now will cancel the process and you may lose identified entities. Are you sure you want to abort?")) {
                 uiStore.abortActiveOperations();
                 uiStore.closeSettings();
             }
