@@ -452,7 +452,7 @@
     if (currentCy) {
       applyFocus(selectedId);
       // Small delay to allow flex layout to settle before resizing
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         currentCy.resize();
         if (selectedId) {
           const node = currentCy.$id(selectedId);
@@ -465,6 +465,7 @@
           }
         }
       }, 50);
+      return () => clearTimeout(timer);
     }
   });
 
