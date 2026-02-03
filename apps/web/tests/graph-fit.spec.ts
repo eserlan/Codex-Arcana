@@ -36,16 +36,12 @@ test.describe('Graph Fit to Screen', () => {
         await page.waitForFunction(() => (window as any).cy?.nodes().length > 0);
 
         // 2. Deliberately mess up the view (pan and zoom way out)
-        const initialView = await page.evaluate(() => {
+        await page.evaluate(() => {
             const cy = (window as any).cy;
-            const pos = cy.pan();
-            const zoom = cy.zoom();
             
             // Move it away
             cy.pan({ x: 1000, y: 1000 });
             cy.zoom(0.1);
-            
-            return { pos, zoom };
         });
 
         // 3. Click "Fit to Screen" button
