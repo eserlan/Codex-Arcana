@@ -16,6 +16,14 @@
     let step = $state<"upload" | "processing" | "review" | "complete">(
         "upload",
     );
+
+    $effect(() => {
+        uiStore.isImporting = step === "processing";
+        return () => {
+            uiStore.isImporting = false;
+        };
+    });
+
     let statusMessage = $state("");
     let discoveredEntities = $state<DiscoveredEntity[]>([]);
     let extractedAssets = new Map<string, any>(); // filename -> asset

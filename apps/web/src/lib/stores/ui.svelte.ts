@@ -3,6 +3,7 @@ export type SettingsTab = "vault" | "sync" | "intelligence" | "schema" | "aesthe
 class UIStore {
     showSettings = $state(false);
     activeSettingsTab = $state<SettingsTab>("vault");
+    isImporting = $state(false);
     globalError = $state<{ message: string; stack?: string } | null>(null);
 
     // Zen Mode State
