@@ -310,6 +310,7 @@ class OracleStore {
         const blob = await aiService.generateImage(key, visualPrompt, imageModelName);
         const imageUrl = URL.createObjectURL(blob);
 
+        this.messages[assistantMsgIndex].type = "image";
         this.messages[assistantMsgIndex].imageUrl = imageUrl;
         this.messages[assistantMsgIndex].imageBlob = blob;
         this.messages[assistantMsgIndex].content = `Generated visualization for: "${query}"`;
