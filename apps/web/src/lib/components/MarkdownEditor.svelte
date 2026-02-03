@@ -156,19 +156,19 @@
     /* Zen Mode State - applied via class toggle in EditorToolbar logic */
     :global(.markdown-editor-container.zen-mode) {
         position: fixed;
-        top: 0;
+        top: var(--header-height, 65px); /* Below main app header */
         left: 0;
         right: 0;
         bottom: 0;
-        z-index: 50;
+        z-index: 150; /* High enough to be above aside and modals if needed */
         background-color: var(--color-theme-bg);
-        padding: 2rem;
+        padding: 0; /* Remove padding to allow toolbar to be flush top */
     }
 
     :global(.markdown-editor-container.zen-mode .tiptap-editor-wrapper) {
         max-width: 800px;
-        margin: 0 auto;
-        height: 100%;
+        margin: 2rem auto; /* Add margin here instead */
+        height: calc(100% - 4rem);
         border: none;
         background: transparent;
     }
@@ -240,6 +240,33 @@
     }
     :global(.ProseMirror h3) {
         font-size: 1.1em;
+    }
+
+    :global(.ProseMirror ul) {
+        list-style-type: disc;
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    :global(.ProseMirror ol) {
+        list-style-type: decimal;
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    :global(.ProseMirror li) {
+        margin-bottom: 0.25rem;
+    }
+
+    :global(.ProseMirror blockquote) {
+        border-left: 3px solid var(--color-theme-primary);
+        padding-left: 1rem;
+        margin-left: 0;
+        margin-right: 0;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        font-style: italic;
+        color: var(--color-theme-muted);
     }
 
     :global(.ProseMirror .selectedCell:after) {
