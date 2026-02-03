@@ -263,6 +263,8 @@
         padding-left: 1rem;
         margin-left: 0;
         margin-right: 0;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
         font-style: italic;
         color: var(--color-theme-muted);
     }

@@ -42,8 +42,8 @@ test.describe("MarkdownEditor", () => {
 
     // Verify it rendered as a list in DOM
     await expect(editor.locator("ul")).toBeVisible();
-    await expect(editor.locator("li")).toHaveCount(2);
-    await expect(editor.locator("li").first()).toHaveText("Item 1");
+    await expect(editor.locator("ul > li")).toHaveCount(2);
+    await expect(editor.locator("ul > li").first()).toHaveText("Item 1");
 
     // Verify toolbar button is active
     const bulletBtn = page.getByTitle("Bullet List");
@@ -70,13 +70,38 @@ test.describe("MarkdownEditor", () => {
 
     // Verify DOM
     await expect(editor.locator("ol")).toBeVisible();
-    await expect(editor.locator("li")).toHaveCount(2);
-    await expect(editor.locator("li").first()).toHaveText("First");
+    await expect(editor.locator("ol > li")).toHaveCount(2);
+    await expect(editor.locator("ol > li").first()).toHaveText("First");
 
     // Verify markdown
     const output = page.getByTestId("markdown-output");
     await expect(output).toContainText("1. First");
     await expect(output).toContainText("2. Second");
+  });
+
+  test("renders and serializes blockquotes correctly", async ({ page }) => {
+    const editor = page.locator(".ProseMirror");
+    await expect(editor).toBeVisible();
+
+    // Clear editor
+    await editor.press("Control+A");
+    await editor.press("Backspace");
+
+    // Type a blockquote
+    await editor.type("> This is a quote");
+    await editor.press("Enter");
+
+    // Verify DOM
+    await expect(editor.locator("blockquote")).toBeVisible();
+    await expect(editor.locator("blockquote p").first()).toHaveText("This is a quote");
+
+    // Verify toolbar button is active
+    const quoteBtn = page.getByTitle("Blockquote");
+    await expect(quoteBtn).toHaveClass(/active/);
+
+    // Verify markdown
+    const output = page.getByTestId("markdown-output");
+    await expect(output).toContainText("> This is a quote");
   });
 
   test("inserts embed widget via exposed method", async ({ page }) => {
