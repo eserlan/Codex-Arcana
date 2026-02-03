@@ -4,7 +4,22 @@ class UIStore {
     showSettings = $state(false);
     activeSettingsTab = $state<SettingsTab>("vault");
     isImporting = $state(false);
+    private abortController: AbortController | null = null;
     globalError = $state<{ message: string; stack?: string } | null>(null);
+
+    get abortSignal() {
+        if (!this.abortController) {
+            this.abortController = new AbortController();
+        }
+        return this.abortController.signal;
+    }
+
+    abortActiveOperations() {
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
+    }
 
     // Zen Mode State
     showZenMode = $state(false);
