@@ -45,6 +45,16 @@
   let collapsed = $state(false); // Default to expanded for visibility
   const toggleMinimap = () => (collapsed = !collapsed);
 
+  const isTransparent = (color: string) => {
+    if (!color || color === "transparent") return true;
+    const normalized = color.replace(/\s+/g, "").toLowerCase();
+    return (
+      normalized.includes("rgba(0,0,0,0)") ||
+      normalized.includes(",0)") ||
+      normalized === "transparent"
+    );
+  };
+
   const updateProjection = () => {
     if (!cy) return;
     const eles = cy.elements().filter((el) => el.isNode()); // Only nodes for projection
@@ -71,8 +81,13 @@
     // Add padding
     const x1 = bb.x1 - SCALE_PADDING;
     const y1 = bb.y1 - SCALE_PADDING;
-    const w = Math.max(bb.w + SCALE_PADDING * 2, 100);
-    const h = Math.max(bb.h + SCALE_PADDING * 2, 100);
+    const w = bb.w + SCALE_PADDING * 2;
+    const h = bb.h + SCALE_PADDING * 2;
+
+    // Final guard for scale calculation
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+      return;
+    }
 
     // Calculate 'contain' fit scale
     const scaleX = width / w;
@@ -97,12 +112,12 @@
       let color = node.style("border-color");
       
       // Fallback to background-color if border is not useful
-      if (!color || color === "transparent" || color.includes("rgba(0, 0, 0, 0)")) {
+      if (isTransparent(color)) {
         color = node.style("background-color");
       }
       
       // Ultimate fallback to theme primary
-      if (!color || color === "transparent" || color.includes("rgba(0, 0, 0, 0)")) {
+      if (isTransparent(color)) {
         color = "#4ade80";
       }
 
@@ -147,31 +162,23 @@
       const offsetX = (width - contentW) / 2;
       const offsetY = (height - contentH) / 2;
 
-      // Draw background glow/dots first for better contrast
-      ctx.globalAlpha = 0.3;
+      // Draw in a single pass to minimize iterations and context switches
+      ctx.strokeStyle = "rgba(0,0,0,0.5)";
+      ctx.lineWidth = 1;
       for (const node of nodes) {
         const mx = (node.x - graphBounds.x1) * scale + offsetX;
         const my = (node.y - graphBounds.y1) * scale + offsetY;
         if (mx < -5 || mx > width + 5 || my < -5 || my > height + 5) continue;
 
+        // Glow
+        ctx.globalAlpha = 0.3;
         ctx.fillStyle = node.color;
         ctx.beginPath();
         ctx.arc(mx, my, 5, 0, Math.PI * 2);
         ctx.fill();
-      }
-      ctx.globalAlpha = 1.0;
 
-      // Draw main dots with stroke
-      for (const node of nodes) {
-        const mx = (node.x - graphBounds.x1) * scale + offsetX;
-        const my = (node.y - graphBounds.y1) * scale + offsetY;
-
-        if (mx < -5 || mx > width + 5 || my < -5 || my > height + 5) continue;
-
-        ctx.fillStyle = node.color;
-        ctx.strokeStyle = "rgba(0,0,0,0.5)";
-        ctx.lineWidth = 1;
-        
+        // Dot
+        ctx.globalAlpha = 1.0;
         ctx.beginPath();
         ctx.arc(mx, my, 3.5, 0, Math.PI * 2);
         ctx.fill();
@@ -196,13 +203,11 @@
 
   // Reactive redraw on state changes
   $effect(() => {
-    // Track dependencies
-    const _n = nodes;
-    const _b = graphBounds;
-    const _s = scale;
-    const _c = collapsed;
-    
-    if (!_c) {
+    if (!collapsed) {
+      // Track dependencies
+      nodes;
+      graphBounds;
+      scale;
       requestRedraw();
     }
   });
@@ -318,9 +323,8 @@
       cancelAnimationFrame(animationFrameId);
     }
     if (cy) {
-      cy.off("add remove position data", handleGraphUpdate);
+      cy.off("add remove position data layoutstop", handleGraphUpdate);
       cy.off("pan zoom resize", handleViewportUpdate);
-      cy.off("layoutstop", handleGraphUpdate);
     }
   });
 </script>
