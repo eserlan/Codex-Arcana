@@ -172,8 +172,7 @@
                 </h2>
                 <button
                     onclick={close}
-                    disabled={uiStore.isImporting}
-                    class="text-theme-muted hover:text-theme-primary transition-colors {uiStore.isImporting ? 'opacity-30 cursor-not-allowed' : ''}"
+                    class="text-theme-muted hover:text-theme-primary transition-colors {uiStore.isImporting ? 'opacity-30' : ''}"
                     aria-label="Close Settings"
                 >
                     <span class="icon-[lucide--x] w-6 h-6"></span>

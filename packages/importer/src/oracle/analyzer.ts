@@ -76,28 +76,33 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
 
         const parsed = JSON.parse(jsonMatch[0]);
 
-        const entities: DiscoveredEntity[] = parsed.map((item: any) => ({
-          id: crypto.randomUUID(),
-          suggestedTitle: item.title,
-          suggestedType: item.type,
-          chronicle: item.chronicle || item.content || '',
-          lore: item.lore || '',
-          content: item.content || `${item.chronicle || ''}\n\n${item.lore || ''}`.trim(),
-          frontmatter: {
-            ...item.frontmatter,
-            // Prioritize explicit image URL from AI or input
-            image: item.imageUrl || item.imageURL || item.image || item.frontmatter?.image
-          },
-          confidence: 1, // Placeholder
-          suggestedFilename: this.slugify(item.title),
-          detectedLinks: (item.detectedLinks || []).map((link: any) => {
+        const entities: DiscoveredEntity[] = parsed.map((item: any) => {
+          const rawImage = item.imageUrl || item.imageURL || item.image || item.frontmatter?.image;
+          const isValidUrl = typeof rawImage === 'string' && (rawImage.startsWith('http://') || rawImage.startsWith('https://'));
+
+          return {
+            id: crypto.randomUUID(),
+            suggestedTitle: item.title,
+            suggestedType: item.type,
+            chronicle: item.chronicle || item.content || '',
+            lore: item.lore || '',
+            content: item.content || `${item.chronicle || ''}\n\n${item.lore || ''}`.trim(),
+            frontmatter: {
+              ...item.frontmatter,
+              // Prioritize explicit image URL from AI or input, only if absolute
+              image: isValidUrl ? rawImage : undefined
+            },
+            confidence: 1, // Placeholder
+            suggestedFilename: this.slugify(item.title),
+            detectedLinks: (item.detectedLinks || []).map((link: any) => {
             if (typeof link === 'string') return { target: link };
             return {
               target: link.target || link.title || '',
               label: link.label || link.type || ''
             };
           })
-        }));
+        };
+      });
 
         return { entities };
 
@@ -124,6 +129,10 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
         existing.chronicle += `\n\n${entity.chronicle}`;
         existing.lore += `\n\n${entity.lore}`;
         existing.content += `\n\n${entity.content}`;
+        // Merge Image
+        if (!existing.frontmatter.image && entity.frontmatter.image) {
+          existing.frontmatter.image = entity.frontmatter.image;
+        }
         // Merge Links
         const existingLinks = new Map<string, any>();
         [...existing.detectedLinks, ...entity.detectedLinks].forEach(link => {

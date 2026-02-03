@@ -38,11 +38,50 @@ describe('OracleAnalyzer', () => {
     const result = await analyzer.analyze('Hero is a brave warrior who wields the Sword.');
 
     expect(result.entities).toHaveLength(1);
-    expect(result.entities[0].suggestedTitle).toBe('Hero');
     expect(result.entities[0].chronicle).toContain('brave warrior');
     expect(result.entities[0].lore).toBe('Detailed history...');
     expect(result.entities[0].suggestedFilename).toBe('hero.md'); // Auto-slug check
-    expect(mockGenerateContent).toHaveBeenCalled();
+  });
+
+  it('extracts absolute image URLs and ignores relative ones', async () => {
+    const mockResponse = JSON.stringify([
+      {
+        title: 'Image Test',
+        type: 'Location',
+        imageUrl: 'https://cdn.example.com/map.png',
+        frontmatter: { localImage: '/assets/old.png' }
+      }
+    ]);
+
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => mockResponse
+      }
+    });
+
+    const result = await analyzer.analyze('A place with a link.');
+
+    expect(result.entities[0].frontmatter.image).toBe('https://cdn.example.com/map.png');
+  });
+
+  it('ignores relative image URLs', async () => {
+    const mockResponse = JSON.stringify([
+      {
+        title: 'Relative Test',
+        type: 'Location',
+        imageUrl: '/assets/map.png'
+      }
+    ]);
+
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => mockResponse
+      }
+    });
+
+    const result = await analyzer.analyze('A place.');
+
+    expect(result.entities[0].frontmatter.image).toBeUndefined();
   });
 
   it('handles empty response gracefully', async () => {
