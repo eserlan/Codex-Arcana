@@ -18,7 +18,7 @@ test.describe('Visual Styling Templates', () => {
         await page.getByRole('tab', { name: 'Aesthetics' }).click();
 
         // 3. Select Fantasy theme
-        await page.getByText('Ancient Parchment').click();
+        await page.getByRole('button', { name: 'Ancient Parchment' }).click();
 
         // 4. Verify background color change (Parchment color)
         const body = page.locator('body');
@@ -33,15 +33,17 @@ test.describe('Visual Styling Templates', () => {
         await page.getByRole('tab', { name: 'Aesthetics' }).click();
 
         // 3. Select Horror theme
-        await page.getByText('Blood & Noir').click();
+        await page.getByRole('button', { name: 'Blood & Noir' }).click();
 
         // 4. Verify visual properties
         const body = page.locator('body');
         await expect(body).toHaveCSS('background-color', 'rgb(5, 5, 5)');
         
-        // Verify primary color (Deep Crimson) is available via CSS variable
-        const header = page.locator('header');
-        await expect(header).toBeVisible();
+        // 5. Verify primary color (Deep Crimson) is correctly applied to CSS variable
+        const primaryColor = await page.evaluate(() => 
+            getComputedStyle(document.documentElement).getPropertyValue('--color-accent-primary').trim()
+        );
+        expect(primaryColor).toBe('#991b1b');
     });
 
     test('Theme selection persists across reloads', async ({ page }) => {
