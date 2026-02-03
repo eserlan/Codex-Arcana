@@ -1,5 +1,4 @@
 import type { FileParser, ParseResult } from '../types';
-import * as pdfjs from 'pdfjs-dist';
 
 // Ensure worker is set up (though in browser env this might need CDN or local build)
 // For Node/Test env we might skip this or polyfill.
@@ -11,6 +10,7 @@ export class PdfParser implements FileParser {
   }
 
   async parse(file: File): Promise<ParseResult> {
+    const pdfjs = await import('pdfjs-dist');
     const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as ArrayBuffer);

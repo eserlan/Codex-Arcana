@@ -14,7 +14,14 @@ export function generateMarkdownFile(entity: DiscoveredEntity): string {
 
   const yamlLines = Object.entries(frontmatter).map(([key, value]) => {
     if (Array.isArray(value)) {
-      return `${key}: [${value.map(v => `"${v}"`).join(', ')}]`;
+      const items = value.map(v => {
+        if (typeof v === 'object' && v !== null) {
+          // Simple key-value pairing for connection objects
+          return `{ ${Object.entries(v).map(([sk, sv]) => `${sk}: "${String(sv).replace(/"/g, '\\"')}"`).join(', ')} }`;
+        }
+        return `"${v}"`;
+      });
+      return `${key}: [${items.join(', ')}]`;
     }
     if (typeof value === 'string' && (value.includes(':') || value.includes('\n'))) {
       return `${key}: "${value.replace(/"/g, '\\"')}"`;

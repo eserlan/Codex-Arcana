@@ -68,16 +68,13 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
         const response = await result.response;
         const rawText = response.text();
 
-        // Robust JSON extraction: look for the first '[' and last ']'
-        const startIdx = rawText.indexOf('[');
-        const endIdx = rawText.lastIndexOf(']');
-
-        if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+        // Robust JSON extraction
+        const jsonMatch = rawText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        if (!jsonMatch) {
           throw new Error('No valid JSON array found in Oracle response');
         }
 
-        const jsonStr = rawText.substring(startIdx, endIdx + 1).trim();
-        const parsed = JSON.parse(jsonStr);
+        const parsed = JSON.parse(jsonMatch[0]);
 
         const entities: DiscoveredEntity[] = parsed.map((item: any) => ({
           id: crypto.randomUUID(),
@@ -91,7 +88,13 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
           },
           confidence: 1, // Placeholder
           suggestedFilename: this.slugify(item.title),
-          detectedLinks: item.detectedLinks || []
+          detectedLinks: (item.detectedLinks || []).map((link: any) => {
+            if (typeof link === 'string') return { target: link };
+            return {
+              target: link.target || link.title || '',
+              label: link.label || link.type || ''
+            };
+          })
         }));
 
         return { entities };
@@ -118,8 +121,15 @@ export class OracleAnalyzer implements OracleAnalyzerEngine {
         // Merge Content
         existing.content += `\n\n${entity.content}`;
         // Merge Links
-        const mergedLinks = new Set([...existing.detectedLinks, ...entity.detectedLinks]);
-        existing.detectedLinks = Array.from(mergedLinks);
+        const existingLinks = new Map<string, any>();
+        [...existing.detectedLinks, ...entity.detectedLinks].forEach(link => {
+          const l = typeof link === 'string' ? { target: link } : link;
+          const targetKey = l.target.toLowerCase().trim();
+          if (!existingLinks.has(targetKey) || (!existingLinks.get(targetKey).label && l.label)) {
+            existingLinks.set(targetKey, l);
+          }
+        });
+        existing.detectedLinks = Array.from(existingLinks.values());
       }
     }
 

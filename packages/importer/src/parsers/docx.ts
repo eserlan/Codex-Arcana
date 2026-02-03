@@ -38,17 +38,37 @@ export class DocxParser implements FileParser {
         ignoreEmptyParagraphs: true,
         includeDefaultStyleMap: true,
         convertImage: (mammoth.images as any).inline((element: any) => {
-          return element.read().then((buffer: any) => {
+          return element.read().then(async (buffer: any) => {
             const blob = new Blob([buffer], { type: element.contentType });
             const id = crypto.randomUUID();
             const filename = `image-${id}.${element.contentType.split('/')[1]}`;
+
+            // Detect dimensions
+            let width: number | undefined;
+            let height: number | undefined;
+            try {
+              const url = URL.createObjectURL(blob);
+              const img = new Image();
+              img.src = url;
+              await new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve;
+              });
+              width = img.naturalWidth;
+              height = img.naturalHeight;
+              URL.revokeObjectURL(url);
+            } catch (e) {
+              console.warn("Failed to detect image dimensions", e);
+            }
 
             assets.push({
               id,
               originalName: filename,
               blob,
               mimeType: element.contentType,
-              placementRef: filename
+              placementRef: filename,
+              width,
+              height
             });
 
             // Return the src that will be put into the <img> tag

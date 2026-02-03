@@ -9,7 +9,6 @@
         DocxParser,
         JsonParser,
         OracleAnalyzer,
-        generateMarkdownFile,
     } from "@codex/importer";
     import type { DiscoveredEntity } from "@codex/importer";
     import { sanitizeId } from "$lib/utils/markdown";
@@ -19,6 +18,7 @@
     );
     let statusMessage = $state("");
     let discoveredEntities = $state<DiscoveredEntity[]>([]);
+    let extractedAssets = new Map<string, any>(); // filename -> asset
 
     const parsers = [
         new TextParser(),
@@ -39,6 +39,7 @@
         );
 
         discoveredEntities = [];
+        extractedAssets.clear();
 
         for (const file of files) {
             const parser = parsers.find((p) => p.accepts(file));
@@ -50,6 +51,11 @@
             try {
                 statusMessage = `Parsing ${file.name}...`;
                 const result = await parser.parse(file);
+                
+                // Store assets for dimension lookups later
+                result.assets.forEach(asset => {
+                    extractedAssets.set(asset.placementRef, asset);
+                });
 
                 statusMessage = `Analyzing ${file.name} with Oracle...`;
                 const analysis = await analyzer.analyze(result.text, {
@@ -83,9 +89,19 @@
         };
 
         const batchData = toSave.map(entity => {
-            const content = generateMarkdownFile(entity);
             const title = entity.suggestedTitle;
             const type = mapType(entity.suggestedType) as any;
+            
+            // Check for image metadata in extracted assets
+            const imgRef = entity.frontmatter.image;
+            let width = entity.frontmatter.width;
+            let height = entity.frontmatter.height;
+
+            if (imgRef && extractedAssets.has(imgRef)) {
+                const asset = extractedAssets.get(imgRef);
+                width = width || asset.width;
+                height = height || asset.height;
+            }
 
             return {
                 type,
@@ -93,26 +109,36 @@
                 initialData: {
                     content: entity.content,
                     labels: entity.frontmatter.labels || [],
-                    metadata: entity.frontmatter,
+                    metadata: {
+                        width: typeof width === 'number' ? width : undefined,
+                        height: typeof height === 'number' ? height : undefined,
+                    },
                     image: entity.frontmatter.image,
                     thumbnail: entity.frontmatter.thumbnail,
-                    connections: (entity.detectedLinks || []).map((link) => ({
-                        target: sanitizeId(link),
-                        label: link,
-                        type: "related_to",
-                        strength: 1,
-                    })),
+                    connections: (entity.detectedLinks || []).map((link) => {
+                        const targetName = typeof link === 'string' ? link : link.target;
+                        const label = typeof link === 'string' ? link : (link.label || link.target);
+                        return {
+                            target: sanitizeId(targetName),
+                            label: label,
+                            type: "related_to",
+                            strength: 1,
+                        };
+                    }),
                 }
             };
         });
 
         try {
             await vault.batchCreateEntities(batchData);
+            step = "complete";
         } catch (err) {
             console.error("Batch import failed:", err);
+            alert("Failed to save imported entities. Check console for details.");
+            step = "review";
+            return;
         }
 
-        step = "complete";
         setTimeout(() => {
             step = "upload";
             discoveredEntities = [];

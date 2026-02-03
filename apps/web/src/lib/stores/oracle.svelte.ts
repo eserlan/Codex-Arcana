@@ -343,12 +343,16 @@ class OracleStore {
               const type = (parsed.type || "character") as any;
               const connections = [
                 ...(parsed.wikiLinks || []),
-                ...(parsed.connections || []).map(name => ({
-                  target: sanitizeId(name),
-                  label: name,
-                  type: 'related_to',
-                  strength: 1.0
-                }))
+                ...(parsed.connections || []).map(conn => {
+                  const targetName = typeof conn === 'string' ? conn : conn.target;
+                  const label = typeof conn === 'string' ? conn : (conn.label || conn.target);
+                  return {
+                    target: sanitizeId(targetName),
+                    label: label,
+                    type: 'related_to',
+                    strength: 1.0
+                  };
+                })
               ];
 
               const id = await vault.createEntity(type, parsed.title, {

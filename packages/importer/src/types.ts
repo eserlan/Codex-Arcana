@@ -20,6 +20,12 @@ export interface ImportItem {
   error?: string;
 }
 
+export interface DiscoveredLink {
+  target: string;
+  label?: string; // e.g. "enemy of", "grandmother of"
+  type?: string;  // e.g. "located_in", "related_to"
+}
+
 export interface DiscoveredEntity {
   id: string; // Temp ID
   suggestedTitle: string;
@@ -30,7 +36,7 @@ export interface DiscoveredEntity {
   suggestedFilename: string; // Added for persistence
 
   // Relationships
-  detectedLinks: string[]; // Names of other entities mentioned
+  detectedLinks: (string | DiscoveredLink)[]; // Support both for transition/flexibility
 }
 
 export interface ImportAsset {
@@ -39,6 +45,8 @@ export interface ImportAsset {
   blob: Blob;
   mimeType: string;
   placementRef: string; // e.g., "image1.png" used in Markdown
+  width?: number;
+  height?: number;
 }
 
 export interface FileParser {

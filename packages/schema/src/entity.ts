@@ -50,6 +50,8 @@ export const EntitySchema = z.object({
   metadata: z
     .object({
       coordinates: z.object({ x: z.number(), y: z.number() }).optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
     })
     .optional(),
   _path: z.union([z.string(), z.array(z.string())]).optional(),

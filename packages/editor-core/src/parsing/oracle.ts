@@ -7,7 +7,7 @@ export interface OracleParseResult {
     type?: string;
     image?: string;
     thumbnail?: string;
-    connections?: string[];
+    connections?: (string | { target: string, label?: string })[];
     wikiLinks?: { target: string, type: string, strength: number, label?: string }[];
 }
 
@@ -77,7 +77,7 @@ export function parseOracleResponse(text: string): OracleParseResult {
     let extractedType: string | undefined;
     let extractedImage: string | undefined;
     let extractedThumbnail: string | undefined;
-    let extractedConnections: string[] = [];
+    let extractedConnections: (string | { target: string, label?: string })[] = [];
 
     if (hasChronicle || hasLore) {
         let chronicle = "";

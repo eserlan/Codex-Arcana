@@ -54,8 +54,6 @@
     selectedId: string | null;
   }>();
 
-  let skipNextCenter = false;
-
   const applyFocus = (id: string | null) => {
     const currentCy = cy;
     if (!currentCy) return;
@@ -256,7 +254,6 @@
             graph.setCentralNode(targetId);
         } else {
           // Selection Logic for Detail Panel
-          skipNextCenter = true;
           selectedId = targetId;
         }
       });
@@ -370,17 +367,23 @@
                   (data.thumbnail || data.image)!,
                 );
                 if (resolvedUrl) {
-                  // Detect image dimensions
-                  const img = new Image();
-                  img.src = resolvedUrl;
-                  await new Promise((resolve) => {
-                    img.onload = resolve;
-                    img.onerror = resolve; // Continue even if image fails to load
-                  });
+                  let w = data.width;
+                  let h = data.height;
+
+                  if (!w || !h) {
+                    // Detect image dimensions only if missing
+                    const img = new Image();
+                    img.src = resolvedUrl;
+                    await new Promise((resolve) => {
+                      img.onload = resolve;
+                      img.onerror = resolve; // Continue even if image fails to load
+                    });
+
+                    w = img.naturalWidth || 100;
+                    h = img.naturalHeight || 100;
+                  }
 
                   // Calculate scaled dimensions (max aspect 2.0, max size 64)
-                  let w = img.naturalWidth || 100;
-                  let h = img.naturalHeight || 100;
                   const maxDim = 64;
                   const ratio = w / h;
 
@@ -437,21 +440,27 @@
       setTimeout(() => {
         applyCurrentLayout(false);
       }, 0);
-=======
-      // Defer layout application to break synchronous reactive cycles
-      // preventing 'effect_update_depth_exceeded' errors
-      setTimeout(() => {
-        applyCurrentLayout(false);
-      }, 0);
->>>>>>> main
     }
   });
 
   $effect(() => {
-    if (cy) {
+    const currentCy = cy;
+    if (currentCy) {
       applyFocus(selectedId);
+      if (selectedId) {
+        const node = currentCy.$id(selectedId);
+        if (node.length > 0) {
+          untrack(() => {
+            currentCy.animate({
+              center: { eles: node },
+              duration: 500,
+              easing: "ease-out-cubic",
+            });
+          });
+        }
+      }
     }
-
+  });
 
   // Manual fit request listener
   $effect(() => {
@@ -541,16 +550,18 @@
         }
 
         // 3. Update existing elements (labels, etc) - Data Sync only
-        graph.elements.forEach((el) => {
-          if (currentIds.has(el.data.id)) {
-            const node = currentCy?.$id(el.data.id);
-            if (node) {
-              // Only update if data actually changed to avoid style recalc?
-              // Cytoscape handles this reasonably well, but we can be explicit if needed.
-              // For now, blind update is cheap enough compared to layout.
-              node.data(el.data);
+        currentCy.batch(() => {
+          graph.elements.forEach((el) => {
+            if (currentIds.has(el.data.id)) {
+              const node = currentCy.$id(el.data.id);
+              if (node) {
+                // Only update if data actually changed to avoid style recalc?
+                // Cytoscape handles this reasonably well, but we can be explicit if needed.
+                // For now, blind update is cheap enough compared to layout.
+                node.data(el.data);
+              }
             }
-          }
+          });
         });
 
         // 4. Force layout ONLY if structural changes occurred OR if first load
