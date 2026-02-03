@@ -203,11 +203,7 @@
 
   // Reactive redraw on state changes
   $effect(() => {
-    if (!collapsed) {
-      // Track dependencies
-      nodes;
-      graphBounds;
-      scale;
+    if (!collapsed && nodes && graphBounds && scale !== undefined) {
       requestRedraw();
     }
   });
