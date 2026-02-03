@@ -242,6 +242,31 @@
         font-size: 1.1em;
     }
 
+    :global(.ProseMirror ul) {
+        list-style-type: disc;
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    :global(.ProseMirror ol) {
+        list-style-type: decimal;
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    :global(.ProseMirror li) {
+        margin-bottom: 0.25rem;
+    }
+
+    :global(.ProseMirror blockquote) {
+        border-left: 3px solid var(--color-theme-primary);
+        padding-left: 1rem;
+        margin-left: 0;
+        margin-right: 0;
+        font-style: italic;
+        color: var(--color-theme-muted);
+    }
+
     :global(.ProseMirror .selectedCell:after) {
         z-index: 2;
         position: absolute;

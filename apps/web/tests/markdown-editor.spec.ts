@@ -48,6 +48,60 @@ test.describe("MarkdownEditor", () => {
     await expect(output).toContainText("Hello **World**");
   });
 
+  test("renders and serializes bullet lists correctly", async ({ page }) => {
+    await page.goto("/test/markdown-editor");
+
+    const editor = page.locator(".ProseMirror");
+    await expect(editor).toBeVisible();
+
+    // Clear editor
+    await editor.press("Control+A");
+    await editor.press("Backspace");
+
+    // Type a bullet list using markdown shortcuts
+    await editor.type("* Item 1");
+    await editor.press("Enter");
+    await editor.type("Item 2");
+    await editor.press("Enter");
+    await editor.press("Backspace"); // Exit list
+
+    // Verify it rendered as a list in DOM
+    await expect(editor.locator("ul")).toBeVisible();
+    await expect(editor.locator("li")).toHaveCount(2);
+    await expect(editor.locator("li").first()).toHaveText("Item 1");
+
+    // Verify markdown output
+    const output = page.getByTestId("markdown-output");
+    await expect(output).toContainText("- Item 1");
+    await expect(output).toContainText("- Item 2");
+  });
+
+  test("renders and serializes ordered lists correctly", async ({ page }) => {
+    await page.goto("/test/markdown-editor");
+
+    const editor = page.locator(".ProseMirror");
+    await expect(editor).toBeVisible();
+
+    // Clear editor
+    await editor.press("Control+A");
+    await editor.press("Backspace");
+
+    // Type an ordered list
+    await editor.type("1. First");
+    await editor.press("Enter");
+    await editor.type("Second");
+
+    // Verify DOM
+    await expect(editor.locator("ol")).toBeVisible();
+    await expect(editor.locator("li")).toHaveCount(2);
+    await expect(editor.locator("li").first()).toHaveText("First");
+
+    // Verify markdown
+    const output = page.getByTestId("markdown-output");
+    await expect(output).toContainText("1. First");
+    await expect(output).toContainText("2. Second");
+  });
+
   test("inserts embed widget via exposed method", async ({ page }) => {
     await page.goto("/test/markdown-editor");
 
