@@ -448,20 +448,23 @@
 
   $effect(() => {
     const currentCy = cy;
+    const _id = selectedId; // Track selection state
     if (currentCy) {
       applyFocus(selectedId);
-      if (selectedId) {
-        const node = currentCy.$id(selectedId);
-        if (node.length > 0) {
-          untrack(() => {
+      // Small delay to allow flex layout to settle before resizing
+      setTimeout(() => {
+        currentCy.resize();
+        if (selectedId) {
+          const node = currentCy.$id(selectedId);
+          if (node.length > 0) {
             currentCy.animate({
               center: { eles: node },
               duration: 500,
               easing: "ease-out-cubic",
             });
-          });
+          }
         }
-      }
+      }, 50);
     }
   });
 

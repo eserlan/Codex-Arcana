@@ -40,7 +40,7 @@
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.8);
-    backdrop-blur: 4px;
+    backdrop-filter: blur(4px);
     color: white;
     padding: 8px 16px;
     border-radius: 20px;

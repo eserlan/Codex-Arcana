@@ -13,8 +13,10 @@
     const isGuestMode = $derived(!!page.url.searchParams.get("shareId"));
 </script>
 
-<div class="h-[calc(100vh-65px)] relative bg-black overflow-hidden">
-    <GraphView bind:selectedId={vault.selectedEntityId} />
+<div class="h-[calc(100vh-65px)] flex bg-black overflow-hidden">
+    <div class="flex-1 relative overflow-hidden">
+        <GraphView bind:selectedId={vault.selectedEntityId} />
+    </div>
 
     {#if selectedEntity}
         <EntityDetailPanel
