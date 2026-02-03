@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Entity, Connection } from "schema";
-    import { fly, fade } from "svelte/transition";
+    import { fade } from "svelte/transition";
     import { vault } from "$lib/stores/vault.svelte";
     import { oracle } from "$lib/stores/oracle.svelte";
     import { uiStore } from "$lib/stores/ui.svelte";
@@ -267,9 +267,9 @@
 />
 
 {#if entity}
-    <div
-        transition:fly={{ x: 400, duration: 300 }}
-        class="w-full md:w-1/3 lg:w-1/4 md:min-w-[400px] bg-theme-surface border-l border-theme-border flex flex-col h-[calc(100%-60px)] md:h-full absolute right-0 bottom-0 md:top-0 shadow-2xl z-40 font-mono"
+    <aside
+        transition:fade={{ duration: 200 }}
+        class="h-full w-full md:w-[400px] lg:w-[450px] bg-theme-surface border-l border-theme-border flex flex-col shadow-2xl z-40 font-mono max-md:absolute max-md:right-0 max-md:bottom-0 max-md:h-[calc(100%-60px)]"
     >
         <!-- Header -->
         <div class="p-6 border-b border-theme-border bg-theme-surface">
@@ -740,7 +740,7 @@
                 </div>
             {/if}
         </div>
-    </div>
+    </aside>
 
     <!-- Lightbox -->
     {#if showLightbox && entity.image}

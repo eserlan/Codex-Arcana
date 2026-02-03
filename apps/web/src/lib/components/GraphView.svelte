@@ -250,8 +250,10 @@
             connectMode = false; // Auto exit connect mode
           }
         } else if (graph.orbitMode) {
-            // US2: Switch center if clicked in orbit mode
-            graph.setCentralNode(targetId);
+          // US2: Switch center if clicked in orbit mode
+          graph.setCentralNode(targetId);
+          // Also show the detail panel for the node
+          selectedId = targetId;
         } else {
           // Selection Logic for Detail Panel
           selectedId = targetId;
@@ -446,20 +448,24 @@
 
   $effect(() => {
     const currentCy = cy;
+    const _id = selectedId; // Track selection state
     if (currentCy) {
       applyFocus(selectedId);
-      if (selectedId) {
-        const node = currentCy.$id(selectedId);
-        if (node.length > 0) {
-          untrack(() => {
+      // Small delay to allow flex layout to settle before resizing
+      const timer = setTimeout(() => {
+        currentCy.resize();
+        if (selectedId) {
+          const node = currentCy.$id(selectedId);
+          if (node.length > 0) {
             currentCy.animate({
               center: { eles: node },
               duration: 500,
               easing: "ease-out-cubic",
             });
-          });
+          }
         }
-      }
+      }, 50);
+      return () => clearTimeout(timer);
     }
   });
 
