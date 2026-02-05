@@ -18,7 +18,7 @@ test.describe("Fog of War", () => {
     }, { timeout: 15000 });
     
     await page.evaluate(async () => {
-      const { vault, searchStore } = (window as any);
+      const { vault } = (window as any);
       
       const mockEntities = {
         "visible-node": {
@@ -57,7 +57,7 @@ test.describe("Fog of War", () => {
       vault.rootHandle = { name: "mock-vault" }; // Mock handle to satisfy UI checks
       
       // Index them for search
-      for (const entity of Object.values(mockEntities)) {
+      for (const _entity of Object.values(mockEntities)) {
         await (window as any).searchStore.update((s: any) => ({
           ...s,
           // We bypass searchService.index because workers are hard to mock in eval
@@ -110,7 +110,7 @@ test.describe("Fog of War", () => {
     
     // For now, evaluation of store state after a mock 'search' call is best.
     const filteredSearchIds = await page.evaluate(async () => {
-      const { searchStore, uiStore, vault, isEntityVisible } = (window as any);
+      const { uiStore, vault, isEntityVisible } = (window as any);
       const results = [
         { id: "visible-node", title: "Visible Node" },
         { id: "hidden-node", title: "Hidden Node" },

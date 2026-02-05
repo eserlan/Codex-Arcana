@@ -1,6 +1,5 @@
 <script lang="ts">
     import { fly, fade } from 'svelte/transition';
-    import { page } from '$app/state';
     import { base } from '$app/paths';
     import { uiStore } from '$lib/stores/ui.svelte';
     import { PATREON_URL } from '$lib/config';
@@ -8,12 +7,12 @@
 
     let { isOpen = $bindable(false) } = $props();
 
-    let closeButton: HTMLButtonElement;
-    let lastFocusedElement: HTMLElement | null = null;
+    let closeButton = $state<HTMLButtonElement | null>(null);
+    let lastFocusedElement = $state<HTMLElement | null>(null);
 
-    function close() {
+    const close = () => {
         isOpen = false;
-    }
+    };
 
     // Accessibility: Focus management
     $effect(() => {
