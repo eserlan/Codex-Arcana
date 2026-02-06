@@ -106,6 +106,16 @@
 		}
 	};
 
+	const handleCancelJoin = () => {
+		showGuestLogin = false;
+		// Clear shareId from URL to prevent modal from reappearing on reload
+		if (browser) {
+			const url = new URL(window.location.href);
+			url.searchParams.delete("shareId");
+			window.history.replaceState({}, "", url.toString());
+		}
+	};
+
 	onMount(() => {
 		categories.init();
 		helpStore.init();
@@ -368,7 +378,7 @@
 </div>
 
 {#if showGuestLogin}
-	<GuestLoginModal onJoin={handleJoin} />
+	<GuestLoginModal onJoin={handleJoin} onCancel={handleCancelJoin} />
 {/if}
 
 {#if uiStore.globalError && !(window as any).DISABLE_ERROR_OVERLAY}

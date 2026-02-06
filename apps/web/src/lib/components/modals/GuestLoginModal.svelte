@@ -1,5 +1,5 @@
 <script lang="ts">
-    let { onJoin }: { onJoin: (username: string) => void } = $props();
+    let { onJoin, onCancel }: { onJoin: (username: string) => void, onCancel: () => void } = $props();
 
     let username = $state("");
     let error = $state<string | null>(null);
@@ -19,7 +19,17 @@
 </script>
 
 <div class="fixed inset-0 bg-black/95 flex items-center justify-center z-[100] p-4 font-mono">
-    <div class="max-w-md w-full border border-green-900 bg-black p-8 rounded shadow-2xl shadow-green-900/20 text-center">
+    <div class="max-w-md w-full border border-green-900 bg-black p-8 rounded shadow-2xl shadow-green-900/20 text-center relative">
+        <!-- Close Button -->
+        <button 
+            onclick={onCancel}
+            class="absolute top-4 right-4 text-green-900 hover:text-green-500 transition-colors"
+            title="Cancel"
+            aria-label="Cancel join"
+        >
+            <span class="icon-[lucide--x] w-6 h-6"></span>
+        </button>
+
         <div class="mb-6 flex justify-center">
             <span class="icon-[lucide--globe] w-12 h-12 text-green-500 animate-pulse"></span>
         </div>
