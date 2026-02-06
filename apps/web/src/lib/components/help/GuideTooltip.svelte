@@ -21,13 +21,17 @@
             return content;
         }
     };
+
+    const isE2E = $derived(typeof navigator !== 'undefined' && navigator.webdriver);
+    const duration = $derived(isE2E ? 0 : 300);
 </script>
 
 <div
     class="fixed z-[82] w-72 md:w-96 bg-[#0c0c0c] border border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.2)] rounded-lg flex flex-col overflow-hidden font-mono transition-all duration-300"
     class:anchored={hasAnchor}
     class:centered={!hasAnchor}
-    transition:fly={{ y: 10, duration: 300 }}
+    style:--area="{step.position} center"
+    transition:fly={{ y: 10, duration }}
 >
     <!-- Header -->
     <div class="px-4 py-3 border-b border-green-900/30 flex justify-between items-center bg-green-900/5">
@@ -95,16 +99,11 @@
         transform: translate(-50%, -50%);
     }
 
-    /* Anchored Position */
+    /* Anchored Position using position-area (Baseline 2026) */
     .anchored {
         position-anchor: --tour-target;
-        
-        /* Initial Position: Bottom Center */
-        top: anchor(bottom);
-        left: anchor(center);
-        translate: -50% 16px; /* 16px padding */
-        
-        /* Auto-flip Strategies */
+        position-area: var(--area, bottom center);
+        margin: 16px;
         position-try-options: flip-block, flip-inline;
     }
 </style>

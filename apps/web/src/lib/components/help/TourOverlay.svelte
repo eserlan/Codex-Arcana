@@ -22,13 +22,22 @@
         if (step && step.targetSelector !== "body") {
             const el = document.querySelector(step.targetSelector) as HTMLElement;
             if (el) {
-                // Assign Anchor Name
-                el.style.setProperty("anchor-name", ANCHOR_NAME);
-                hasAnchor = true;
-                activeEl = el;
-                
-                // Ensure visibility
-                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                const rect = el.getBoundingClientRect();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+
+                // If target is massive (like the canvas), treat it like "body"
+                if (rect.width > vw * 0.8 && rect.height > vh * 0.8) {
+                    hasAnchor = false;
+                } else {
+                    // Assign Anchor Name
+                    el.style.setProperty("anchor-name", ANCHOR_NAME);
+                    hasAnchor = true;
+                    activeEl = el;
+                    
+                    // Ensure visibility
+                    el.scrollIntoView({ behavior: "auto", block: "center" });
+                }
             } else {
                 hasAnchor = false;
             }
@@ -60,6 +69,9 @@
         if (typeof window === "undefined") return false;
         return (window as any).DISABLE_ONBOARDING;
     });
+
+    const isE2E = $derived(typeof navigator !== 'undefined' && navigator.webdriver);
+    const duration = $derived(isE2E ? 0 : 300);
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -72,38 +84,44 @@
         
         <!-- Top Mask -->
         <div 
-            class="fixed top-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
-            style="bottom: calc(anchor({ANCHOR_NAME} top) - {padding})"
-            transition:fade
+            class="fixed top-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all"
+            style="bottom: calc(anchor({ANCHOR_NAME} top) - {padding}); transition-duration: {duration}ms;"
+            transition:fade={{ duration }}
+            role="presentation"
         ></div>
 
         <!-- Bottom Mask -->
         <div 
-            class="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
-            style="top: calc(anchor({ANCHOR_NAME} bottom) + {padding})"
-            transition:fade
+            class="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all"
+            style="top: calc(anchor({ANCHOR_NAME} bottom) + {padding}); transition-duration: {duration}ms;"
+            transition:fade={{ duration }}
+            role="presentation"
         ></div>
 
         <!-- Left Mask -->
         <div 
-            class="fixed left-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
+            class="fixed left-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all"
             style="
                 top: calc(anchor({ANCHOR_NAME} top) - {padding}); 
                 bottom: calc(anchor({ANCHOR_NAME} bottom) + {padding}); 
                 right: calc(anchor({ANCHOR_NAME} left) - {padding});
+                transition-duration: {duration}ms;
             "
-            transition:fade
+            transition:fade={{ duration }}
+            role="presentation"
         ></div>
 
         <!-- Right Mask -->
         <div 
-            class="fixed right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
+            class="fixed right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all"
             style="
                 top: calc(anchor({ANCHOR_NAME} top) - {padding}); 
                 bottom: calc(anchor({ANCHOR_NAME} bottom) + {padding}); 
                 left: calc(anchor({ANCHOR_NAME} right) + {padding});
+                transition-duration: {duration}ms;
             "
-            transition:fade
+            transition:fade={{ duration }}
+            role="presentation"
         ></div>
     {/if}
 
