@@ -10,10 +10,13 @@ test.describe("Mobile UX Fixes", () => {
         await page.goto("/");
         
         // Wait for app load
-        await expect(page.locator('.app-layout')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('h1', { hasText: 'Codex Cryptica' })).toBeVisible({ timeout: 10000 });
     });
 
     test("Entity Detail Panel should have solid background and high z-index", async ({ page }) => {
+        // Set mobile viewport to verify mobile-specific absolute positioning and z-index
+        await page.setViewportSize({ width: 375, height: 667 });
+        
         await page.waitForFunction(() => (window as any).vault);
 
         await page.evaluate(() => {
