@@ -96,7 +96,11 @@ class HelpStore {
     // --- Tour Methods ---
 
     startTour(id: string) {
-        if (browser && (window as any).DISABLE_ONBOARDING) return;
+        const isE2E = browser && navigator.webdriver;
+        const explicitlyDisabled = (window as any).DISABLE_ONBOARDING === true;
+        const explicitlyEnabled = (window as any).DISABLE_ONBOARDING === false;
+
+        if (browser && (explicitlyDisabled || (isE2E && !explicitlyEnabled))) return;
         
         if (id === "initial-onboarding") {
             this.activeTour = {

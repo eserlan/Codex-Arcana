@@ -2,12 +2,15 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Help Onboarding Walkthrough", () => {
     test.beforeEach(async ({ page }) => {
-        // Ensure clean state
-        await page.goto("/");
-        await page.evaluate(() => {
+        // Ensure clean state before load
+        await page.addInitScript(() => {
             localStorage.clear();
+            (window as any).DISABLE_ONBOARDING = false;
+            (window as any).__E2E__ = true;
         });
-        await page.reload();
+        await page.goto("/");
+        // Wait for app load
+        await expect(page.locator('h1', { hasText: 'Codex Cryptica' })).toBeVisible({ timeout: 10000 });
     });
 
     test("should automatically start onboarding for new users", async ({ page }) => {
@@ -46,16 +49,16 @@ test.describe("Help Onboarding Walkthrough", () => {
         // Welcome step targets "body" so should NOT show dimming overlay
         await expect(page.getByText("Welcome to Codex Cryptica")).toBeVisible();
 
-        // The dimming overlay has role="presentation" and a specific class
+        // In the new 4-div system, we check if any of the masks are visible
         const dimmingOverlay = page.locator('[role="presentation"].bg-black\\/60');
-        await expect(dimmingOverlay).not.toBeVisible();
+        await expect(dimmingOverlay).toHaveCount(0);
 
         // Click Next to go to Vault step which HAS a specific target
         await page.getByRole("button", { name: "Next" }).click();
         await expect(page.getByText("Your Archive")).toBeVisible();
 
-        // Now the dimming overlay SHOULD be visible (spotlight on vault button)
-        await expect(dimmingOverlay).toBeVisible();
+        // Now the dimming overlay SHOULD be visible (4 anchored divs)
+        await expect(dimmingOverlay).toHaveCount(4);
     });
 
     test("should allow skipping the tour", async ({ page }) => {

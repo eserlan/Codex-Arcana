@@ -190,7 +190,7 @@
 		window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
 		// Expose for E2E testing
-		if (import.meta.env.DEV || (window as any).__E2E__) {
+		if (import.meta.env.DEV || (window as any).__E2E__ || (browser && navigator.webdriver)) {
 			(window as any).searchStore = searchStore;
 			(window as any).vault = vault;
 			(window as any).graph = graph;
