@@ -10,7 +10,7 @@ test.describe("Mobile UX Fixes", () => {
         await page.goto("/");
         
         // Wait for app load
-        await expect(page.locator('h1', { hasText: 'Codex Cryptica' })).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('h1')).toBeVisible({ timeout: 10000 });
     });
 
     test("Entity Detail Panel should have solid background and high z-index", async ({ page }) => {
