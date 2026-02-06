@@ -1,6 +1,7 @@
 # Tasks: Modern CSS Tour Overlay (037)
 
 - [ ] **Prepare Environment**: Ensure `apps/web` builds and tests pass. <!-- id: 0 -->
+    - [ ] Create E2E test file `tests/tour-overlay.spec.ts` to verify current behavior and serve as regression test (TDD).
 - [ ] **Refactor Tooltip Logic**: <!-- id: 1 -->
     - [ ] Modify `TourOverlay.svelte` to inject `anchor-name: --tour-target` on the target element.
     - [ ] Update `GuideTooltip.svelte` to use `position-anchor: --tour-target` and remove JS math.

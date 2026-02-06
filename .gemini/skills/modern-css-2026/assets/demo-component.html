@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern CSS 2026 Demo</title>
+    <style>
+        /* 5. Type-Safe Variables */
+        @property --card-bg {
+            syntax: '<color>';
+            inherits: false;
+            initial-value: #f0f0f0;
+        }
+
+        :root {
+            --brand-color: hotpink;
+        }
+
+        body {
+            font-family: system-ui;
+            margin: 0;
+            padding-bottom: 200vh; /* Enable scroll */
+            background: #111;
+            color: #eee;
+        }
+
+        /* 3. Scroll-Driven Animations: Progress Bar */
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 5px;
+            background: var(--brand-color);
+            width: 100%;
+            scale: 0 1;
+            transform-origin: left;
+            animation: progress-grow auto linear;
+            animation-timeline: scroll(root);
+            z-index: 1000;
+        }
+
+        @keyframes progress-grow {
+            to { scale: 1 1; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 100px auto;
+            display: grid;
+            gap: 2rem;
+        }
+
+        /* 4. Style Queries Container */
+        .card-wrapper {
+            container-name: card;
+            --theme: light; /* Toggle this to 'dark' to test style query */
+        }
+
+        .card {
+            /* 1. Conditional Logic */
+            background: var(--card-bg);
+            padding: if(style(--theme: dark), 2rem, 1.5rem);
+            border-radius: 1rem;
+            color: if(style(--theme: dark), white, black);
+            
+            /* @property transition */
+            transition: --card-bg 0.5s;
+        }
+        
+        .card:hover {
+            --card-bg: #e0e0e0;
+        }
+
+        /* Style Query usage */
+        @container style(--theme: dark) {
+            .card {
+                --card-bg: #333;
+            }
+            .card h2 {
+                text-decoration: underline;
+                text-decoration-color: var(--brand-color);
+            }
+        }
+
+        .anchor-section {
+            position: relative;
+            height: 200px;
+            border: 1px dashed #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 2. Anchor Positioning */
+        .anchor-btn {
+            anchor-name: --share-btn;
+            padding: 1rem 2rem;
+            background: var(--brand-color);
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .tooltip {
+            position: absolute;
+            position-anchor: --share-btn;
+            bottom: anchor(top); /* Sit on top */
+            left: anchor(center); /* Center align */
+            translate: -50% -10px; /* Fine tune */
+            
+            background: white;
+            color: black;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .anchor-btn:hover + .tooltip {
+            opacity: 1;
+        }
+
+        /* View Timeline Animation */
+        .reveal-block {
+            height: 300px;
+            background: #222;
+            margin-top: 50vh;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            animation: fade-in linear both;
+            animation-timeline: view();
+            animation-range: entry 20% cover 50%;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; translate: 0 50px; }
+            to { opacity: 1; translate: 0 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress"></div>
+
+    <div class="container">
+        <h1>Modern CSS 2026</h1>
+        
+        <!-- Anchor Positioning Demo -->
+        <div class="anchor-section">
+            <button class="anchor-btn">Hover Me</button>
+            <div class="tooltip">Native CSS Tooltip!</div>
+        </div>
+
+        <!-- Style Query & if() Demo -->
+        <div class="card-wrapper" style="--theme: light">
+            <div class="card">
+                <h2>Light Mode Card</h2>
+                <p>Padding and color determined by inline if().</p>
+            </div>
+        </div>
+
+        <div class="card-wrapper" style="--theme: dark">
+            <div class="card">
+                <h2>Dark Mode Card</h2>
+                <p>Styled via @container style() queries.</p>
+            </div>
+        </div>
+
+        <!-- Scroll/View Timeline Demo -->
+        <div class="reveal-block">
+            <h2>I reveal as you scroll!</h2>
+        </div>
+    </div>
+</body>
+</html>

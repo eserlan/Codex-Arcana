@@ -1,46 +1,46 @@
 <script lang="ts">
     import { helpStore } from "$stores/help.svelte";
     import { fade } from "svelte/transition";
-    import { onMount } from "svelte";
     import GuideTooltip from "./GuideTooltip.svelte";
 
-    let targetRect = $state<DOMRect | null>(null);
+    let hasAnchor = $state(false);
+    const ANCHOR_NAME = "--tour-target";
 
-    // Update the spotlight position whenever the active step changes
+    // Manage Anchor Name Assignment
     $effect(() => {
         const step = helpStore.currentStep;
+        
+        // Clean up previous anchor if any (though likely overwritten or element gone)
+        // Actually, we should probably find the *previous* element and remove it?
+        // But since we only have one active step, we can just ensure we set it on the new one.
+        // To be safe, we can query for any element with this anchor name and clear it?
+        // Or just rely on the fact that only one element effectively uses it at a time.
+        // Better: Keep track of the element we modified.
+        
+        let activeEl: HTMLElement | null = null;
+
         if (step && step.targetSelector !== "body") {
-            const el = document.querySelector(step.targetSelector);
+            const el = document.querySelector(step.targetSelector) as HTMLElement;
             if (el) {
-                targetRect = el.getBoundingClientRect();
-                // Ensure the element is visible
+                // Assign Anchor Name
+                el.style.setProperty("anchor-name", ANCHOR_NAME);
+                hasAnchor = true;
+                activeEl = el;
+                
+                // Ensure visibility
                 el.scrollIntoView({ behavior: "smooth", block: "center" });
             } else {
-                targetRect = null;
+                hasAnchor = false;
             }
         } else {
-            targetRect = null;
+            hasAnchor = false;
         }
-    });
 
-    const handleResize = () => {
-        const step = helpStore.currentStep;
-        if (step && step.targetSelector !== "body") {
-            const el = document.querySelector(step.targetSelector);
-            if (el) {
-                targetRect = el.getBoundingClientRect();
-            }
-        }
-    };
-
-    onMount(() => {
-        window.addEventListener("resize", handleResize);
-        window.addEventListener("scroll", handleResize, true);
-        window.addEventListener("keydown", handleKeydown);
         return () => {
-            window.removeEventListener("resize", handleResize);
-            window.removeEventListener("scroll", handleResize, true);
-            window.removeEventListener("keydown", handleKeydown);
+            if (activeEl) {
+                activeEl.style.removeProperty("anchor-name");
+            }
+            hasAnchor = false;
         };
     });
 
@@ -56,82 +56,64 @@
         }
     };
 
-    // Derived values for the mask
     const isDisabled = $derived.by(() => {
         if (typeof window === "undefined") return false;
         return (window as any).DISABLE_ONBOARDING;
     });
-
-    let maskStyle = $derived.by(() => {
-        if (!targetRect) return "";
-
-        const padding = 8;
-        const x = targetRect.left - padding;
-        const y = targetRect.top - padding;
-        const w = targetRect.width + padding * 2;
-        const h = targetRect.height + padding * 2;
-
-        // Clamp spotlight rectangle to viewport bounds
-        const viewportWidth =
-            typeof window !== "undefined"
-                ? window.innerWidth || document.documentElement.clientWidth
-                : 0;
-        const viewportHeight =
-            typeof window !== "undefined"
-                ? window.innerHeight || document.documentElement.clientHeight
-                : 0;
-
-        if (!viewportWidth || !viewportHeight) {
-            return "";
-        }
-
-        const left = Math.max(0, x);
-        const top = Math.max(0, y);
-        const right = Math.min(viewportWidth, x + w);
-        const bottom = Math.min(viewportHeight, y + h);
-
-        // If clamping results in an invalid rectangle, skip the mask.
-        if (right <= left || bottom <= top) {
-            return "";
-        }
-
-        // SVG mask approach for maximum compatibility and sharpness
-        return `clip-path: polygon(
-            0% 0%, 
-            0% 100%, 
-            ${left}px 100%, 
-            ${left}px ${top}px, 
-            ${right}px ${top}px, 
-            ${right}px ${bottom}px, 
-            ${left}px ${bottom}px, 
-            ${left}px 100%, 
-            100% 100%, 
-            100% 0%
-        );`;
-    });
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 {#if helpStore.activeTour && !isDisabled}
-    {#if targetRect}
-        <div
-            class="fixed inset-0 z-[80] bg-black/60 backdrop-blur-[2px] transition-all duration-300"
-            style={maskStyle}
+    <!-- 4-Div Anchored Mask -->
+    {#if hasAnchor}
+        <!-- Padding around target -->
+        {@const padding = "8px"}
+        
+        <!-- Top Mask -->
+        <div 
+            class="fixed top-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
+            style="bottom: calc(anchor({ANCHOR_NAME} top) - {padding})"
             transition:fade
-            role="presentation"
+        ></div>
+
+        <!-- Bottom Mask -->
+        <div 
+            class="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
+            style="top: calc(anchor({ANCHOR_NAME} bottom) + {padding})"
+            transition:fade
+        ></div>
+
+        <!-- Left Mask -->
+        <div 
+            class="fixed left-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
+            style="
+                top: calc(anchor({ANCHOR_NAME} top) - {padding}); 
+                bottom: calc(anchor({ANCHOR_NAME} bottom) + {padding}); 
+                right: calc(anchor({ANCHOR_NAME} left) - {padding});
+            "
+            transition:fade
+        ></div>
+
+        <!-- Right Mask -->
+        <div 
+            class="fixed right-0 bg-black/60 backdrop-blur-[2px] z-[80] transition-all duration-300"
+            style="
+                top: calc(anchor({ANCHOR_NAME} top) - {padding}); 
+                bottom: calc(anchor({ANCHOR_NAME} bottom) + {padding}); 
+                left: calc(anchor({ANCHOR_NAME} right) + {padding});
+            "
+            transition:fade
         ></div>
     {/if}
 
     {#if helpStore.currentStep}
         <GuideTooltip
             step={helpStore.currentStep}
-            {targetRect}
-            isLast={helpStore.activeTour.currentStepIndex ===
-                helpStore.activeTour.steps.length - 1}
+            {hasAnchor}
+            isLast={helpStore.activeTour.currentStepIndex === helpStore.activeTour.steps.length - 1}
             current={helpStore.activeTour.currentStepIndex + 1}
             total={helpStore.activeTour.steps.length}
         />
     {/if}
 {/if}
-
-<style>
-</style>

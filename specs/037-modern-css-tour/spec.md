@@ -14,7 +14,7 @@ The current implementation relies on:
 Refactor the components to use the `modern-css-2026` skill set:
 1. **CSS Anchor Positioning**: Use `anchor-name` on the target element and `position-anchor` on the tooltip/mask.
 2. **CSS `position-try`**: Use native fallback strategies (`flip-block`, `flip-inline`) instead of manual collision detection.
-3. **Box Shadow Spotlight**: Replace the complex `clip-path` calculation with a visual spotlight using a massive `box-shadow` on an anchored element (if feasible for click-blocking) or retain a simplified `clip-path` if necessary. *Decision: For this iteration, we focus on Tooltip Positioning first, as it's the most complex math.*
+3. **4-Div Anchored Mask**: Replace the complex `clip-path` calculation with a strategy using 4 anchored helper divs (Top, Bottom, Left, Right) to create a click-blocking "hole" around the target. This eliminates the need for `getBoundingClientRect`.
 
 ## 4. Technical Details
 

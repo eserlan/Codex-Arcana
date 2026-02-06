@@ -5,9 +5,9 @@
     import DOMPurify from "isomorphic-dompurify";
     import type { GuideStep } from "$lib/config/help-content";
 
-    let { step, targetRect, isLast, current, total } = $props<{
+    let { step, hasAnchor, isLast, current, total } = $props<{
         step: GuideStep;
-        targetRect: DOMRect | null;
+        hasAnchor: boolean;
         isLast: boolean;
         current: number;
         total: number;
@@ -21,68 +21,12 @@
             return content;
         }
     };
-
-    let tooltipStyle = $derived.by(() => {
-        if (!targetRect || step.targetSelector === "body") {
-            // Center of screen
-            return "top: 50%; left: 50%; transform: translate(-50%, -50%);";
-        }
-
-        const padding = 16;
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        
-        // If target is massive (like the canvas), treat it like "body" but dimmed
-        if (targetRect.width > vw * 0.8 && targetRect.height > vh * 0.8) {
-            return "top: 50%; left: 50%; transform: translate(-50%, -50%);";
-        }
-
-        let top = 0;
-        let left = 0;
-        let transform = "";
-
-        // Determine best position
-        let pos = step.position;
-        if (pos === "bottom" && targetRect.bottom + 250 > vh) pos = "top";
-        if (pos === "top" && targetRect.top - 250 < 0) pos = "bottom";
-
-        switch (pos) {
-            case "bottom":
-                top = targetRect.bottom + padding;
-                left = targetRect.left + targetRect.width / 2;
-                transform = "translateX(-50%)";
-                break;
-            case "top":
-                top = targetRect.top - padding;
-                left = targetRect.left + targetRect.width / 2;
-                transform = "translate(-50%, -100%)";
-                break;
-            case "left":
-                top = targetRect.top + targetRect.height / 2;
-                left = targetRect.left - padding;
-                transform = "translate(-100%, -50%)";
-                break;
-            case "right":
-                top = targetRect.top + targetRect.height / 2;
-                left = targetRect.right + padding;
-                transform = "translateY(-50%)";
-                break;
-        }
-
-        // Final safety clamp
-        const estimatedWidth = 350;
-        const estimatedHeight = 200;
-        
-        top = Math.max(padding, Math.min(vh - estimatedHeight - padding, top));
-        left = Math.max(estimatedWidth / 2 + padding, Math.min(vw - estimatedWidth / 2 - padding, left));
-
-        return `top: ${top}px; left: ${left}px; transform: ${transform};`;
-    });
 </script>
 
 <div
-    class="fixed z-[82] w-72 md:w-96 bg-[#0c0c0c] border border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.2)] rounded-lg flex flex-col overflow-hidden font-mono"
-    style={tooltipStyle}
+    class="fixed z-[82] w-72 md:w-96 bg-[#0c0c0c] border border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.2)] rounded-lg flex flex-col overflow-hidden font-mono transition-all duration-300"
+    class:anchored={hasAnchor}
+    class:centered={!hasAnchor}
     transition:fly={{ y: 10, duration: 300 }}
 >
     <!-- Header -->
@@ -142,3 +86,25 @@
     <div class="absolute -top-px -left-px w-2 h-2 border-t border-l border-green-500"></div>
     <div class="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-green-500"></div>
 </div>
+
+<style>
+    /* Default Centered Position (No Anchor) */
+    .centered {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    /* Anchored Position */
+    .anchored {
+        position-anchor: --tour-target;
+        
+        /* Initial Position: Bottom Center */
+        top: anchor(bottom);
+        left: anchor(center);
+        translate: -50% 16px; /* 16px padding */
+        
+        /* Auto-flip Strategies */
+        position-try-options: flip-block, flip-inline;
+    }
+</style>
