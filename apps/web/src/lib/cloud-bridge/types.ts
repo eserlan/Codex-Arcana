@@ -34,6 +34,11 @@ export interface IStorageAdapter {
    * Resolve a relative path (e.g. ./images/foo.png) to a usable URL.
    */
   resolvePath(path: string): Promise<string>;
+
+  /**
+   * Optional cleanup method for closing connections/timers.
+   */
+  dispose?(): Promise<void>;
 }
 
 export interface ICloudShareProvider {

@@ -131,4 +131,21 @@ export class P2PClientAdapter implements IStorageAdapter {
             }, 15000);
         });
     }
+
+    async dispose(): Promise<void> {
+        console.log('[P2P Client] Disposing adapter...');
+        try {
+            if (this.conn) {
+                this.conn.close();
+                this.conn = null;
+            }
+            if (this.peer) {
+                this.peer.destroy();
+                this.peer = null;
+            }
+            this.pendingRequests.clear();
+        } catch (err) {
+            console.error('[P2P Client] Error disposing adapter:', err);
+        }
+    }
 }

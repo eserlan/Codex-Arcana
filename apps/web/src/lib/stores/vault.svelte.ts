@@ -194,6 +194,41 @@ class VaultStore {
     }
   }
 
+  async exitGuest() {
+    this.status = "loading";
+    try {
+      // Cleanup adapter resources
+      if (this.storageAdapter?.dispose) {
+        await this.storageAdapter.dispose();
+      }
+
+      // Clear guest data
+      this.entities = {};
+      this.inboundConnections = {};
+      this.storageAdapter = null;
+      this.isGuest = false;
+      this.selectedEntityId = null;
+      this.errorMessage = null;
+
+      // Clear services populated by guest data
+      await searchService.clear();
+      oracle.clearMessages();
+
+      // Ensure a full re-initialization by clearing any existing root handle
+      // so that init() does not early-return based on a pre-existing handle.
+      // This will attempt to load the persisted local vault again.
+      this.rootHandle = undefined;
+
+      // Re-initialize (attempts to load persisted local vault)
+      await this.init();
+    } catch (err) {
+      console.error("Failed to exit guest mode", err);
+      this.status = "error";
+    } finally {
+      if (this.status !== "error") this.status = "idle";
+    }
+  }
+
   async ensureImagesDirectory() {
     if (!this.rootHandle) return;
     try {
