@@ -306,7 +306,7 @@
         {/if}
 
         <!-- Header -->
-        <div class="p-6 border-b border-theme-border bg-theme-surface">
+        <div class="p-4 md:p-6 border-b border-theme-border bg-theme-surface">
             <div class="flex justify-between items-start mb-2">
                 {#if isEditing}
                     <div class="flex flex-col gap-2 w-full mr-4">
@@ -319,7 +319,7 @@
                     </div>
                 {:else}
                     <h2
-                        class="text-3xl font-bold text-theme-text font-serif tracking-wide"
+                        class="text-2xl md:text-3xl font-bold text-theme-text font-serif tracking-wide"
                     >
                         {entity.title}
                     </h2>
@@ -381,7 +381,7 @@
                         <img
                             src={resolvedImageUrl}
                             alt={entity.title}
-                            class="w-full h-auto max-h-80 object-contain opacity-90 group-hover:opacity-100 transition mx-auto"
+                            class="w-full h-auto max-h-48 md:max-h-80 object-contain opacity-90 group-hover:opacity-100 transition mx-auto"
                         />
                         <div
                             class="absolute bottom-2 right-2 bg-theme-surface text-theme-primary text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition"
@@ -391,9 +391,9 @@
                     </button>
                 {:else}
                     <div
-                        class="mb-4 w-full h-32 rounded border border-dashed border-theme-border flex flex-col items-center justify-center gap-2 text-theme-muted group-hover:border-theme-primary transition"
+                        class="mb-4 w-full h-24 md:h-32 rounded border border-dashed border-theme-border flex flex-col items-center justify-center gap-2 text-theme-muted hover:border-theme-primary transition"
                     >
-                        <span class="icon-[lucide--image] w-8 h-8 opacity-20"
+                        <span class="icon-[lucide--image] w-6 h-6 md:w-8 md:h-8 opacity-20"
                         ></span>
                         <span class="text-[9px] font-bold uppercase opacity-40"
                             >No Image</span
@@ -498,9 +498,9 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-theme-bg">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-theme-bg">
             {#if vault.activeDetailTab === "status"}
-                <div class="space-y-8">
+                <div class="space-y-6 md:space-y-8">
                     <!-- Temporal Metadata -->
                     {#if isEditing}
                         <div class="space-y-4">
@@ -729,7 +729,7 @@
 
         <!-- Footer Action -->
         <div
-            class="p-4 border-t border-theme-border flex justify-between items-center bg-theme-surface"
+            class="p-3 md:p-4 border-t border-theme-border flex justify-between items-center bg-theme-surface"
         >
             {#if isEditing}
                 <div class="flex gap-2 w-full justify-end">
