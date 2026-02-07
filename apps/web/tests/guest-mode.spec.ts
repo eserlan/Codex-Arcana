@@ -1,6 +1,18 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Guest Mode", () => {
+  test.beforeEach(async ({ page }) => {
+    // Mock PeerJS networking to keep this test reliable in CI/headless runs
+    // Intercept requests to the default PeerJS cloud server or local peer server
+    await page.route("**/peerjs/**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ type: "OPEN" }), // Minimal mock response
+      });
+    });
+  });
+
   test("should enter guest mode and then exit correctly", async ({ page }) => {
     // Navigate with a shareId to trigger guest mode
     await page.goto("/?shareId=p2p-test-id");

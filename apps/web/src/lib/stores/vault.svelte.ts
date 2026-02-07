@@ -197,6 +197,11 @@ class VaultStore {
   async exitGuest() {
     this.status = "loading";
     try {
+      // Cleanup adapter resources
+      if (this.storageAdapter?.dispose) {
+        await this.storageAdapter.dispose();
+      }
+
       // Clear guest data
       this.entities = {};
       this.inboundConnections = {};
@@ -209,11 +214,18 @@ class VaultStore {
       await searchService.clear();
       oracle.clearMessages();
 
+      // Ensure a full re-initialization by clearing any existing root handle
+      // so that init() does not early-return based on a pre-existing handle.
+      // This will attempt to load the persisted local vault again.
+      this.rootHandle = undefined;
+
       // Re-initialize (attempts to load persisted local vault)
       await this.init();
     } catch (err) {
       console.error("Failed to exit guest mode", err);
       this.status = "error";
+    } finally {
+      if (this.status !== "error") this.status = "idle";
     }
   }
 
