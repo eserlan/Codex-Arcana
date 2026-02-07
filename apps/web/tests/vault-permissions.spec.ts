@@ -15,7 +15,7 @@ test.describe("Vault Permissions Handling", () => {
             async requestPermission() { return "denied"; }
         }
         
-        // @ts-ignore
+        // @ts-expect-error - Mocking global object for test
         window.FileSystemDirectoryHandle = MockFileSystemDirectoryHandle;
         
         // Helper to seed IDB
