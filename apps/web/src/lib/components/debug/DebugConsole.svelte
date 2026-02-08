@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { debugStore, type LogEntry } from '$lib/stores/debug.svelte';
+    import { debugStore } from '$lib/stores/debug.svelte';
     import { fade } from 'svelte/transition';
 
     let isOpen = $state(false);

@@ -25,20 +25,6 @@ describe("walkDirectory", () => {
 
   it("should continue after single entry failure", async () => {
     const goodFile = { kind: "file", name: "good.md" };
-    // Mock iterator that throws on one item but yields others?
-    // Hard to mock sync iterator throwing mid-way easily without generator.
-    
-    async function* mockGenerator() {
-      yield goodFile;
-      throw new Error("Bad Entry");
-    }
-    
-    // Actually, the try/catch is inside the loop `for await (const handle of dirHandle.values())`.
-    // If `values()` returns an iterator, and `.next()` throws, the loop terminates.
-    // The try/catch inside the loop catches errors processed *after* the handle is yielded (e.g. recursion).
-    
-    // Let's test the recursion error case where a subdirectory fails to process?
-    // Or if `handle.name` access throws (unlikely).
     
     // Let's simulate a subdirectory that fails to walk.
     const subDirHandle = {
