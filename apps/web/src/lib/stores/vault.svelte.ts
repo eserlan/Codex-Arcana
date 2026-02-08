@@ -1,6 +1,11 @@
 import { parseMarkdown, stringifyEntity, sanitizeId } from "../utils/markdown";
 import { walkDirectory, readFile, writeFile } from "../utils/fs";
-import { getPersistedHandle, persistHandle, clearPersistedHandle, getDB } from "../utils/idb";
+import {
+  getPersistedHandle,
+  persistHandle,
+  clearPersistedHandle,
+  getDB,
+} from "../utils/idb";
 import { KeyedTaskQueue } from "../utils/queue";
 import type { Entity, Connection } from "schema";
 import { searchService } from "../services/search";
@@ -12,7 +17,10 @@ import { workerBridge } from "../cloud-bridge/worker-bridge";
 import type { IStorageAdapter } from "../cloud-bridge/types";
 import { debugStore } from "./debug.svelte";
 
-export type LocalEntity = Entity & { _fsHandle?: FileSystemHandle; _path?: string | string[] };
+export type LocalEntity = Entity & {
+  _fsHandle?: FileSystemHandle;
+  _path?: string | string[];
+};
 
 class VaultStore {
   entities = $state<Record<string, LocalEntity>>({});
@@ -32,7 +40,9 @@ class VaultStore {
    * Bidirectional Adjacency List
    * Maps target entity IDs to an array of source entities that point to them.
    */
-  inboundConnections = $state<Record<string, { sourceId: string; connection: Connection }[]>>({});
+  inboundConnections = $state<
+    Record<string, { sourceId: string; connection: Connection }[]>
+  >({});
 
   /**
    * Project-wide index of all unique labels used across entities.
@@ -52,7 +62,10 @@ class VaultStore {
    * Incremental Adjacency Map Updates (O(1))
    */
   private rebuildInboundMap() {
-    const newInboundMap: Record<string, { sourceId: string; connection: Connection }[]> = {};
+    const newInboundMap: Record<
+      string,
+      { sourceId: string; connection: Connection }[]
+    > = {};
     for (const entity of Object.values(this.entities)) {
       for (const conn of entity.connections) {
         const targetId = conn.target;
@@ -73,16 +86,20 @@ class VaultStore {
       this.inboundConnections[targetId] = [];
     }
     // Prevent duplicates
-    if (!this.inboundConnections[targetId].some(c => c.sourceId === sourceId && c.connection.type === connection.type)) {
+    if (
+      !this.inboundConnections[targetId].some(
+        (c) => c.sourceId === sourceId && c.connection.type === connection.type,
+      )
+    ) {
       this.inboundConnections[targetId].push({ sourceId, connection });
     }
   }
 
   private removeInboundConnection(sourceId: string, targetId: string) {
     if (this.inboundConnections[targetId]) {
-      this.inboundConnections[targetId] = this.inboundConnections[targetId].filter(
-        c => c.sourceId !== sourceId
-      );
+      this.inboundConnections[targetId] = this.inboundConnections[
+        targetId
+      ].filter((c) => c.sourceId !== sourceId);
       if (this.inboundConnections[targetId].length === 0) {
         delete this.inboundConnections[targetId];
       }
@@ -130,7 +147,9 @@ class VaultStore {
           await this.loadFiles();
         } else {
           // Permission no longer valid or handle expired
-          console.warn("Persisted handle no longer valid or permission denied.");
+          console.warn(
+            "Persisted handle no longer valid or permission denied.",
+          );
           debugStore.warn("Persisted handle invalid, clearing...");
           await clearPersistedHandle();
           this.rootHandle = undefined;
@@ -158,7 +177,7 @@ class VaultStore {
   }
 
   /**
-   * Detaches the current vault, clearing all in-memory campaign data 
+   * Detaches the current vault, clearing all in-memory campaign data
    * and removing persistent directory references.
    */
   async close() {
@@ -270,9 +289,9 @@ class VaultStore {
       // Trying to list entries will fail if access is truly lost.
       // We limit iteration to 1 item to be fast.
       for await (const _entry of handle.values()) {
-        break; 
+        break;
       }
-      
+
       return true;
     } catch (err) {
       console.warn("Failed to verify permission (handle invalid)", err);
@@ -300,7 +319,9 @@ class VaultStore {
     this.isInitialized = false;
     try {
       if (!window.showDirectoryPicker) {
-        throw new Error("Your browser does not support local vault access (File System Access API). Please use a modern browser like Chrome or Edge, and ensure you are accessing via localhost or HTTPS.");
+        throw new Error(
+          "Your browser does not support local vault access (File System Access API). Please use a modern browser like Chrome or Edge, and ensure you are accessing via localhost or HTTPS.",
+        );
       }
       debugStore.log("Requesting directory picker...");
       const handle = await window.showDirectoryPicker({
@@ -334,14 +355,19 @@ class VaultStore {
     debugStore.log("Loading files...");
     try {
       aiService.clearStyleCache();
-      const files = await walkDirectory(this.rootHandle);
+      const files = await walkDirectory(this.rootHandle, [], (err, path) => {
+        debugStore.error(`Failed to scan ${path.join("/")}`, err);
+      });
       debugStore.log(`Found ${files.length} files`);
 
       // Clear index before reloading
       await searchService.clear();
 
       this.entities = {};
-      const newInboundMap: Record<string, { sourceId: string; connection: Connection }[]> = {};
+      const newInboundMap: Record<
+        string,
+        { sourceId: string; connection: Connection }[]
+      > = {};
 
       // Process files in parallel chunks to avoid overwhelming the system while staying fast
       const CHUNK_SIZE = 20;
@@ -431,8 +457,12 @@ class VaultStore {
 
               // Build inbound map for this chunk
               for (const conn of entity.connections) {
-                if (!newInboundMap[conn.target]) newInboundMap[conn.target] = [];
-                newInboundMap[conn.target].push({ sourceId: entity.id, connection: conn });
+                if (!newInboundMap[conn.target])
+                  newInboundMap[conn.target] = [];
+                newInboundMap[conn.target].push({
+                  sourceId: entity.id,
+                  connection: conn,
+                });
               }
 
               const metadataValues = Object.values(entity.metadata || {});
@@ -476,7 +506,6 @@ class VaultStore {
         // Update state incrementally
         Object.assign(this.entities, chunkEntities);
       }
-
     } finally {
       this.status = "idle";
       this.isInitialized = true;
@@ -590,7 +619,7 @@ class VaultStore {
         const deleteOldFile = async (path: string) => {
           const filename = path.split("/").pop();
           if (filename) {
-            await imagesDir.removeEntry(filename).catch(() => { });
+            await imagesDir.removeEntry(filename).catch(() => {});
           }
         };
         if (entity.image) await deleteOldFile(entity.image);
@@ -624,7 +653,10 @@ class VaultStore {
       const thumbPath = `./images/${thumbFilename}`;
 
       // Update entity metadata
-      this.updateEntity(entityId, { image: relativePath, thumbnail: thumbPath });
+      this.updateEntity(entityId, {
+        image: relativePath,
+        thumbnail: thumbPath,
+      });
 
       return relativePath;
     } catch (err) {
@@ -633,10 +665,7 @@ class VaultStore {
     }
   }
 
-  private async generateThumbnail(
-    blob: Blob,
-    size: number,
-  ): Promise<Blob> {
+  private async generateThumbnail(blob: Blob, size: number): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(blob);
@@ -646,13 +675,18 @@ class VaultStore {
 
         // Creating a temporary canvas is negligible compared to image decoding overhead.
         // This avoids race conditions inherent in pooling a single canvas for async operations.
-        const canvas = typeof OffscreenCanvas !== 'undefined'
-          ? new OffscreenCanvas(size, size)
-          : document.createElement("canvas");
+        const canvas =
+          typeof OffscreenCanvas !== "undefined"
+            ? new OffscreenCanvas(size, size)
+            : document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
         if (!ctx) {
-          reject(new Error("Failed to initialize canvas context for thumbnail generation"));
+          reject(
+            new Error(
+              "Failed to initialize canvas context for thumbnail generation",
+            ),
+          );
           return;
         }
 
@@ -674,7 +708,7 @@ class VaultStore {
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
     size: number,
     resolve: (blob: Blob) => void,
-    reject: (err: Error) => void
+    reject: (err: Error) => void,
   ) {
     // Calculate dimensions to maintain aspect ratio
     let width = img.width;
@@ -698,14 +732,22 @@ class VaultStore {
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0, width, height);
 
-    const blobPromise = 'toBlob' in canvas
-      ? new Promise<Blob | null>(r => (canvas as HTMLCanvasElement).toBlob(r, "image/webp", 0.75))
-      : (canvas as OffscreenCanvas).convertToBlob({ type: "image/webp", quality: 0.75 });
+    const blobPromise =
+      "toBlob" in canvas
+        ? new Promise<Blob | null>((r) =>
+            (canvas as HTMLCanvasElement).toBlob(r, "image/webp", 0.75),
+          )
+        : (canvas as OffscreenCanvas).convertToBlob({
+            type: "image/webp",
+            quality: 0.75,
+          });
 
-    blobPromise.then((result) => {
-      if (result) resolve(result);
-      else reject(new Error("Canvas toBlob failed"));
-    }).catch(reject);
+    blobPromise
+      .then((result) => {
+        if (result) resolve(result);
+        else reject(new Error("Canvas toBlob failed"));
+      })
+      .catch(reject);
   }
 
   // Subscription for P2P Broadcast
@@ -715,7 +757,7 @@ class VaultStore {
     this.subscribers.push(fn);
     // Return unsubscribe
     return () => {
-      this.subscribers = this.subscribers.filter(s => s !== fn);
+      this.subscribers = this.subscribers.filter((s) => s !== fn);
     };
   }
 
@@ -727,10 +769,16 @@ class VaultStore {
     this.entities[id] = updated;
 
     // Granular Cache Invalidation: Only clear if the title suggests style relevance
-    const styleKeywords = ["art style", "visual aesthetic", "world guide", "style"];
-    const isPossiblyStyle = styleKeywords.some(kw =>
-      entity.title.toLowerCase().includes(kw) ||
-      (updates.title && updates.title.toLowerCase().includes(kw))
+    const styleKeywords = [
+      "art style",
+      "visual aesthetic",
+      "world guide",
+      "style",
+    ];
+    const isPossiblyStyle = styleKeywords.some(
+      (kw) =>
+        entity.title.toLowerCase().includes(kw) ||
+        (updates.title && updates.title.toLowerCase().includes(kw)),
     );
 
     if (isPossiblyStyle) {
@@ -744,7 +792,7 @@ class VaultStore {
   // Called by P2P Client to merge updates from host silently
   ingestRemoteUpdate(entity: Entity) {
     // Just update in memory, do not schedule save
-    console.log('[Vault] Ingesting remote update for:', entity.title);
+    console.log("[Vault] Ingesting remote update for:", entity.title);
     this.entities[entity.id] = entity;
     // We might need to handle connections if they changed
     // But for now simple entity replacement is enough for data consistency
@@ -752,16 +800,18 @@ class VaultStore {
 
   scheduleSave(entity: Entity) {
     // Notify subscribers (e.g. P2P Host)
-    this.subscribers.forEach(fn => fn(entity));
+    this.subscribers.forEach((fn) => fn(entity));
 
     this.status = "saving";
-    this.saveQueue.enqueue(entity.id, async () => {
-      await this.saveToDisk(entity);
-      this.status = "idle";
-    }).catch(err => {
-      console.error("Save failed for", entity.title, err);
-      this.status = "error";
-    });
+    this.saveQueue
+      .enqueue(entity.id, async () => {
+        await this.saveToDisk(entity);
+        this.status = "idle";
+      })
+      .catch((err) => {
+        console.error("Save failed for", entity.title, err);
+        this.status = "error";
+      });
   }
 
   async saveToDisk(entity: Entity) {
@@ -792,7 +842,9 @@ class VaultStore {
         ...metadataKeywords,
       ].join(" ");
 
-      const filePath = Array.isArray(entity._path) ? entity._path.join('/') : entity._path as string;
+      const filePath = Array.isArray(entity._path)
+        ? entity._path.join("/")
+        : (entity._path as string);
 
       // Update index
       await searchService.index({
@@ -802,14 +854,20 @@ class VaultStore {
         type: entity.type,
         path: filePath,
         keywords,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
     }
   }
 
-  async saveImportedAsset(blob: Blob, entityId: string, originalName: string): Promise<{ image: string; thumbnail: string }> {
+  async saveImportedAsset(
+    blob: Blob,
+    entityId: string,
+    originalName: string,
+  ): Promise<{ image: string; thumbnail: string }> {
     if (!this.rootHandle) throw new Error("Vault not open");
-    const imagesDir = await this.rootHandle.getDirectoryHandle("images", { create: true });
+    const imagesDir = await this.rootHandle.getDirectoryHandle("images", {
+      create: true,
+    });
 
     const timestamp = Date.now();
     const hash = crypto.randomUUID().split("-")[0];
@@ -819,14 +877,18 @@ class VaultStore {
     const thumbFilename = `${baseFilename}-thumb.webp`;
 
     // Save original
-    const fileHandle = await imagesDir.getFileHandle(filename, { create: true });
+    const fileHandle = await imagesDir.getFileHandle(filename, {
+      create: true,
+    });
     const writable = await fileHandle.createWritable();
     await writable.write(blob);
     await writable.close();
 
     // Generate and save thumbnail
     const thumbBlob = await this.generateThumbnail(blob, 512);
-    const thumbHandle = await imagesDir.getFileHandle(thumbFilename, { create: true });
+    const thumbHandle = await imagesDir.getFileHandle(thumbFilename, {
+      create: true,
+    });
     const thumbWritable = await thumbHandle.createWritable();
     await thumbWritable.write(thumbBlob);
     await thumbWritable.close();
@@ -837,7 +899,11 @@ class VaultStore {
     };
   }
 
-  async createEntity(type: Entity["type"], title: string, initialData?: Partial<Entity>): Promise<string> {
+  async createEntity(
+    type: Entity["type"],
+    title: string,
+    initialData?: Partial<Entity>,
+  ): Promise<string> {
     if (this.isGuest) throw new Error("Cannot create entities in Guest Mode");
     const id = sanitizeId(title);
     if (this.entities[id]) {
@@ -879,13 +945,19 @@ class VaultStore {
       content: newEntity.content,
       type,
       path: filename,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
     return id;
   }
 
-  async batchCreateEntities(entitiesData: { type: Entity["type"]; title: string; initialData?: Partial<Entity> }[]): Promise<string[]> {
+  async batchCreateEntities(
+    entitiesData: {
+      type: Entity["type"];
+      title: string;
+      initialData?: Partial<Entity>;
+    }[],
+  ): Promise<string[]> {
     if (this.isGuest) throw new Error("Cannot create entities in Guest Mode");
     if (!this.rootHandle) throw new Error("Vault not open");
 
@@ -893,52 +965,56 @@ class VaultStore {
     const searchEntries: any[] = [];
 
     // 1. Process all file writes
-    await Promise.all(entitiesData.map(async (data) => {
-      const id = sanitizeId(data.title);
-      if (this.entities[id]) {
-        console.warn(`Skipping duplicate entity during batch import: ${id}`);
-        return;
-      }
+    await Promise.all(
+      entitiesData.map(async (data) => {
+        const id = sanitizeId(data.title);
+        if (this.entities[id]) {
+          console.warn(`Skipping duplicate entity during batch import: ${id}`);
+          return;
+        }
 
-      const filename = `${id}.md`;
-      const handle = await this.rootHandle!.getFileHandle(filename, { create: true });
+        const filename = `${id}.md`;
+        const handle = await this.rootHandle!.getFileHandle(filename, {
+          create: true,
+        });
 
-      const newEntity: LocalEntity = {
-        id,
-        type: data.type,
-        title: data.title,
-        content: data.initialData?.content || "",
-        tags: data.initialData?.tags || [],
-        labels: data.initialData?.labels || [],
-        connections: data.initialData?.connections || [],
-        metadata: data.initialData?.metadata || {},
-        lore: data.initialData?.lore,
-        image: data.initialData?.image,
-        thumbnail: data.initialData?.thumbnail,
-        _fsHandle: handle,
-        _path: [filename],
-      };
+        const newEntity: LocalEntity = {
+          id,
+          type: data.type,
+          title: data.title,
+          content: data.initialData?.content || "",
+          tags: data.initialData?.tags || [],
+          labels: data.initialData?.labels || [],
+          connections: data.initialData?.connections || [],
+          metadata: data.initialData?.metadata || {},
+          lore: data.initialData?.lore,
+          image: data.initialData?.image,
+          thumbnail: data.initialData?.thumbnail,
+          _fsHandle: handle,
+          _path: [filename],
+        };
 
-      await writeFile(handle, stringifyEntity(newEntity));
-      this.entities[id] = newEntity;
-      createdIds.push(id);
+        await writeFile(handle, stringifyEntity(newEntity));
+        this.entities[id] = newEntity;
+        createdIds.push(id);
 
-      searchEntries.push({
-        id,
-        title: data.title,
-        content: newEntity.content,
-        type: data.type,
-        path: filename,
-        updatedAt: Date.now()
-      });
-    }));
+        searchEntries.push({
+          id,
+          title: data.title,
+          content: newEntity.content,
+          type: data.type,
+          path: filename,
+          updatedAt: Date.now(),
+        });
+      }),
+    );
 
     // 2. Single expensive rebuilding operation
     this.rebuildInboundMap();
 
     // 3. Batch indexing
     // Assuming searchService has a batch method or we just map promises (SearchService is usually async/concurrent safe)
-    await Promise.all(searchEntries.map(entry => searchService.index(entry)));
+    await Promise.all(searchEntries.map((entry) => searchService.index(entry)));
 
     return createdIds;
   }
@@ -956,12 +1032,14 @@ class VaultStore {
 
       if (handle && this.rootHandle) {
         // Use standard remove() if available, else fallback to removeEntry on root for top-level files
-        if (typeof (handle as any).remove === 'function') {
+        if (typeof (handle as any).remove === "function") {
           await (handle as any).remove();
         } else if (path && path.length === 1) {
           await this.rootHandle.removeEntry(path[0]);
         } else {
-          throw new Error("Deletion of nested files is not supported in this environment.");
+          throw new Error(
+            "Deletion of nested files is not supported in this environment.",
+          );
         }
       }
 
@@ -971,19 +1049,25 @@ class VaultStore {
       // 2. Delete associated media
       if (entity.image || entity.thumbnail) {
         try {
-          const imagesDir = await this.rootHandle?.getDirectoryHandle("images", { create: false });
+          const imagesDir = await this.rootHandle?.getDirectoryHandle(
+            "images",
+            { create: false },
+          );
           if (imagesDir) {
             const deleteFile = async (path: string) => {
               const filename = path.split("/").pop();
               if (filename) {
-                await imagesDir.removeEntry(filename).catch(() => { });
+                await imagesDir.removeEntry(filename).catch(() => {});
               }
             };
             if (entity.image) await deleteFile(entity.image);
             if (entity.thumbnail) await deleteFile(entity.thumbnail);
           }
         } catch (err) {
-          console.warn("Failed to cleanup media files during entity deletion", err);
+          console.warn(
+            "Failed to cleanup media files during entity deletion",
+            err,
+          );
         }
       }
 
@@ -996,7 +1080,7 @@ class VaultStore {
           // Remove the connection from the source entity
           const updatedSource = {
             ...source,
-            connections: source.connections.filter(c => c.target !== id)
+            connections: source.connections.filter((c) => c.target !== id),
           };
           this.entities[sourceId] = updatedSource;
           // Persist the change
@@ -1026,7 +1110,9 @@ class VaultStore {
 
       // Show global error notification
       import("./ui.svelte").then(({ uiStore }) => {
-        uiStore.setGlobalError(`Failed to delete "${entity.title}": ${err.message}`);
+        uiStore.setGlobalError(
+          `Failed to delete "${entity.title}": ${err.message}`,
+        );
       });
 
       throw err;
@@ -1052,7 +1138,9 @@ class VaultStore {
     if (!source) return;
 
     if (
-      source.connections.some((c: Connection) => c.target === targetId && c.type === type)
+      source.connections.some(
+        (c: Connection) => c.target === targetId && c.type === type,
+      )
     ) {
       return;
     }
@@ -1112,7 +1200,9 @@ class VaultStore {
 
     const updated = {
       ...source,
-      connections: source.connections.filter((c: Connection) => c.target !== targetId),
+      connections: source.connections.filter(
+        (c: Connection) => c.target !== targetId,
+      ),
     };
 
     this.entities[sourceId] = updated;
@@ -1154,17 +1244,19 @@ class VaultStore {
     const targetNew = newLabel.trim().toLowerCase();
     if (!targetNew || targetOld === targetNew) return;
 
-    const affectedEntities = Object.values(this.entities).filter(e =>
-      e.labels?.some(l => l.toLowerCase() === targetOld)
+    const affectedEntities = Object.values(this.entities).filter((e) =>
+      e.labels?.some((l) => l.toLowerCase() === targetOld),
     );
 
     // Batch update in memory first to ensure UI remains responsive and consistent
-    const updates = affectedEntities.map(entity => {
-      const updatedLabels = (entity.labels || []).map(l =>
-        l.toLowerCase() === targetOld ? targetNew : l
+    const updates = affectedEntities.map((entity) => {
+      const updatedLabels = (entity.labels || []).map((l) =>
+        l.toLowerCase() === targetOld ? targetNew : l,
       );
       // Canonical deduplication
-      const uniqueLabels = Array.from(new Set(updatedLabels.map(l => l.toLowerCase())));
+      const uniqueLabels = Array.from(
+        new Set(updatedLabels.map((l) => l.toLowerCase())),
+      );
       return { id: entity.id, labels: uniqueLabels };
     });
 
@@ -1176,13 +1268,13 @@ class VaultStore {
   async deleteLabel(label: string) {
     if (this.isGuest) return;
     const target = label.trim().toLowerCase();
-    const affectedEntities = Object.values(this.entities).filter(e =>
-      e.labels?.some(l => l.toLowerCase() === target)
+    const affectedEntities = Object.values(this.entities).filter((e) =>
+      e.labels?.some((l) => l.toLowerCase() === target),
     );
 
-    const updates = affectedEntities.map(entity => {
-      const updatedLabels = (entity.labels || []).filter(l =>
-        l.toLowerCase() !== target
+    const updates = affectedEntities.map((entity) => {
+      const updatedLabels = (entity.labels || []).filter(
+        (l) => l.toLowerCase() !== target,
       );
       return { id: entity.id, labels: updatedLabels };
     });
