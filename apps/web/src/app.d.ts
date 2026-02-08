@@ -15,4 +15,12 @@ declare global {
   var gapi: typeof import("gapi");
 }
 
+interface ImportMetaEnv {
+  readonly VITE_STAGING: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 export { };

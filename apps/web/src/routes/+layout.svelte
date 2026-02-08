@@ -363,7 +363,7 @@
 				<ZenModeModal />
 				<TourOverlay />
 				<MobileMenu bind:isOpen={isMobileMenuOpen} />
-				{#if import.meta.env.DEV || (typeof window !== 'undefined' && (window as any).__E2E__)}
+				{#if import.meta.env.DEV || (typeof window !== 'undefined' && (window as any).__E2E__) || import.meta.env.VITE_STAGING === 'true'}
 					<DebugConsole />
 				{/if}
 			{/if}

@@ -46,14 +46,25 @@ jobs:
           VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
           NODE_ENV: production
         run: |
+          # 1. Build Production
           npm run build --workspace=apps/web
-          cp apps/web/build/index.html apps/web/build/404.html
+          mkdir -p dist
+          cp -r apps/web/build/* dist/
+          cp apps/web/build/index.html dist/404.html
+
+          # 2. Build Staging
+          export VITE_STAGING=true
+          export BASE_PATH=/staging
+          npm run build --workspace=apps/web
+          mkdir -p dist/staging
+          cp -r apps/web/build/* dist/staging/
+          cp apps/web/build/index.html dist/staging/404.html
 
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
           # this should match the `pages` option in your adapter-static config
-          path: 'apps/web/build/'
+          path: 'dist/'
 
   deploy:
     needs: build_site
