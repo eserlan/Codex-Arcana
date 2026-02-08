@@ -86,6 +86,9 @@ jobs:
           cp -r apps/web/build/* ../dist/staging/
           cp apps/web/build/index.html ../dist/staging/404.html
 
+      - name: Debug - List Dist Contents
+        run: ls -R ../dist
+
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
